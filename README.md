@@ -9,16 +9,16 @@ Written in Object Pascal using Borland Delphi 3 (circa 1997)
 -- Links --
 
 Information Page: 
-http://blaizenterprises.com/harmony.html
-http://blaiz.me/harmony.html
+* http://blaizenterprises.com/harmony.html
+* http://blaiz.me/harmony.html
 
 Help Page:
-http://blaizenterprises.com/harmony-help.html
-http://blaiz.me/harmony-help.html
+* http://blaizenterprises.com/harmony-help.html
+* http://blaiz.me/harmony-help.html
 
 Company Website:
-http://blaizenterprises.com
-http://blaiz.me
+* http://blaizenterprises.com
+* http://blaiz.me
 
 
 -- Information --
