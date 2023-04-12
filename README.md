@@ -30,7 +30,7 @@ Free, fully functional, portable software program, with no installation or setup
 Tip:
 Harmony is portable and will run from within the folder you downloaded to.
 
-![Harmony Screen Shot](screenshot.jpg?raw=true)
+![Harmony Screen Shot](harmony-screenshot.jpg?raw=true)
 
 
 -- Features --
@@ -92,13 +92,13 @@ Harmony is portable and will run from within the folder you downloaded to.
 
 -- Screen Shots --
 
-![Harmony Screen Shot 2](screenshot2.jpg?raw=true)
-![Harmony Screen Shot 3](screenshot3.jpg?raw=true)
-![Harmony Screen Shot 4](screenshot4.jpg?raw=true)
-![Harmony Screen Shot 5](screenshot5.jpg?raw=true)
-![Harmony Screen Shot 6](screenshot6.jpg?raw=true)
-![Harmony Screen Shot 7](screenshot7.jpg?raw=true)
-![Harmony Screen Shot 8](screenshot8.jpg?raw=true)
-![Harmony Screen Shot 9](screenshot9.jpg?raw=true)
-![Harmony Screen Shot 10](screenshot10.jpg?raw=true)
-![Harmony Screen Shot 11](screenshot11.jpg?raw=true)
+![Harmony Screen Shot 2](harmony-screenshot2.jpg?raw=true)
+![Harmony Screen Shot 3](harmony-screenshot3.jpg?raw=true)
+![Harmony Screen Shot 4](harmony-screenshot4.jpg?raw=true)
+![Harmony Screen Shot 5](harmony-screenshot5.jpg?raw=true)
+![Harmony Screen Shot 6](harmony-screenshot6.jpg?raw=true)
+![Harmony Screen Shot 7](harmony-screenshot7.jpg?raw=true)
+![Harmony Screen Shot 8](harmony-screenshot8.jpg?raw=true)
+![Harmony Screen Shot 9](harmony-screenshot9.jpg?raw=true)
+![Harmony Screen Shot 10](harmony-screenshot10.jpg?raw=true)
+![Harmony Screen Shot 11](harmony-screenshot11.jpg?raw=true)
