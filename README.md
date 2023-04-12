@@ -76,13 +76,13 @@ Harmony is portable and will run from within the folder you downloaded to.
 
 -- Technicals --
 
-Name: Harmony
-Version: 1.00.3320
-Edition: Standard
-Type: Desktop Application
-Classification: Free for personal and business use
-Status: New
-Release Date: 15th November 2022
-Portable: Yes
-Code Foundation: 4th Generation (Gossamer)
-Operating System(s): Microsoft Windows 95-11 and Wine (not Windows 10s/11s)
+* Name: Harmony
+* Version: 1.00.3320
+* Edition: Standard
+* Type: Desktop Application
+* Classification: Free for personal and business use
+* Status: New
+* Release Date: 15th November 2022
+* Portable: Yes
+* Code Foundation: 4th Generation (Gossamer)
+* Operating System(s): Microsoft Windows 95-11 and Wine (not Windows 10s/11s)
