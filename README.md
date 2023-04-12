@@ -30,7 +30,7 @@ Free, fully functional, portable software program, with no installation or setup
 Tip:
 Harmony is portable and will run from within the folder you downloaded to.
 
-![Harmony Screen Shot](harmony-screenshot.jpg?raw=true)
+![Harmony Screen Shot](screenshot.jpg?raw=true)
 
 
 -- Features --
@@ -88,3 +88,17 @@ Harmony is portable and will run from within the folder you downloaded to.
 * Portable: Yes
 * Code Foundation: 4th Generation (Gossamer)
 * Operating System(s): Microsoft Windows 95-11 and Wine (not Windows 10s/11s)
+
+
+-- Screen Shots --
+
+![Harmony Screen Shot 2](screenshot2.jpg?raw=true)
+![Harmony Screen Shot 3](screenshot3.jpg?raw=true)
+![Harmony Screen Shot 4](screenshot4.jpg?raw=true)
+![Harmony Screen Shot 5](screenshot5.jpg?raw=true)
+![Harmony Screen Shot 6](screenshot6.jpg?raw=true)
+![Harmony Screen Shot 7](screenshot7.jpg?raw=true)
+![Harmony Screen Shot 8](screenshot8.jpg?raw=true)
+![Harmony Screen Shot 9](screenshot9.jpg?raw=true)
+![Harmony Screen Shot 10](screenshot10.jpg?raw=true)
+![Harmony Screen Shot 11](screenshot11.jpg?raw=true)
