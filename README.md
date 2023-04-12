@@ -30,6 +30,8 @@ Free, fully functional, portable software program, with no installation or setup
 Tip:
 Harmony is portable and will run from within the folder you downloaded to.
 
+![Harmony Screen Shot](screenshot.jpg?raw=true)
+
 
 -- Features --
 
