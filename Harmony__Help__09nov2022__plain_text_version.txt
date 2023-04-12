@@ -1,0 +1,729 @@
+[c] [banner]
+
+[c] [programname] v[programversion] by [bename]
+
+[t]About
+Digital display chiming clock with 100+ chimes and 50 alarms + reminders.  Multiple chime styles of Melody, Ships Bells, British Royal Ships Bells, Grande Sonnerie and Petite Sonnerie.  On-screen date / time / part of day.  Custom coloring, time/date format and many options.  Right click clock face for menu.
+ 
+[freepaid], fully functional portable software program, with no installation or setup.  Your existing computer libraries/files remain unchanged/unmodified.
+
+Tip:
+[programname] is portable and will run from within the folder you downloaded to.
+
+
+[t]Information
+* Classification - [programpaid]
+* Type - [programmode]
+* Usage - Personal and business use
+* Operating System - Microsoft [programscope]
+* Security - Anti-tamper, multi-layer and realtime aware
+
+Homepage Page
+[programurl]
+
+[ld]Download Site
+[ld][programzip]
+[ld]
+Portal - Blaiz Enterprises
+http://www.blaizenterprises.com
+
+
+[t]Features
+* 135+ built-in face colors + 10 custom - set clock text / background color
+* Brightness 10-100%
+* Frame Brightness 10-100%
+* Reduce Brightness during evening hours (7 PM - 7 AM default)
+* Background Shade Styles: Flat, Shade, Shade 2, Round and Glow
+* Background Shade Power: 10-100%
+* Feathering: None, Low, Medium, High and Ultra
+* Color Options: Tint Background and Swap Colors
+* 56 Melody chimes
+* 30 Ships Bells (Standard + British Royal) chimes
+* 16 Sonnerie (Grande + Petite) chimes
+* Quarterly chiming: 15m, 30m and 45m
+* Chime volume 0-200%
+* Chime speed 25-400% 
+* Reduce Volume during evening hours (7 PM - 7 AM default)
+* Definable Playback Device
+* Chime Options: Always On Midi + Preview Sample Chime
+* 50 reminders - on-screen scrolling message 
+* 50 alarms - flashing on-screen scrolling message + audio alert
+* 60+ Audio Alerts
+* Alarm Duration: 10 seconds to 2 hours in 10 second intervals
+* Set alarms and reminders by: daily, day of week, month or date
+* Copy, Paste, Save and Open alarms and reminders to/from file and Clipboard
+* General Options: Frame Maximised, Start Maximised and On Top
+* Time Format: 24hr, 12hr AM/PM or 12hr am/pm
+* Date Options: Show, Uppercase, At Top and Full
+* 4 Date Formats
+* Day of Week Options: Show, Uppercase, At Top and Full
+* Part of Day Options: Show and Uppercase
+* Reminder Options: Uppercase and At Top
+* Definable Evening range of 1-11 PM (7 PM default)
+* Definable Morning range of 1-11 AM (7 AM default)
+* Customisable Part of Day labels: Afternoon, Evening, Predawn and Morning
+* Simple and easy to use
+* Lightweight and customisable graphical user interface (180+ color schemes, framed, font, zoom, cursor and many more options)
+[ld]* Portable - No installation/alteration to your operating system
+* Built-in Help - View detailed information directly in program
+* No Internet Required - Run completely offline
+[ld]* Free To Use - 100% freeware, no cost, no membership, no nags, no strings attached
+
+
+[t]Right click menu explained
+Right click clock face to display menu.  From top to bottom, it has the options of:
+
+Visit Blaiz Enterprises
+[tep:be20] [programname] Website - Visit the [programname] website in default browser 
+[tep:be20] Portal - www.BlaizEnterprises.com - Visit the Blaiz Enterprises' website in default browser
+
+Settings and Information
+[tep:yes20] On Top - Tick to place [programname] above all other programs
+[tep:yes20] Touch - Tick to enlarge controls for easier finger touch/tap access
+[tep:options20] Options - Show "Options" to adjust face color, chime, alarms and GUI settings
+[tep:vol20] Mixer - Show computer volume controls
+[tep:help20] Help - Show / hide built-in help panel
+[tep:about20] About - Show "About" window
+[tep:refresh20] Restore Default Zoom... - Reset font zoom to 100%
+[tep:refresh20] Restore Defaults - Restore GUI defaults
+
+Position
+[tep:top20] Top of Screen - Fit to top half of screen
+[tep:left20] Left of Screen - Fit to left half of screen
+[tep:right20] Right of Screen - Fit to right half of screen
+[tep:bottom20] Bottom of Screen - Fit to bottom half of screen
+
+Window
+[tep:max] Maximise - Fit to full screen
+[tep:nor] Normalise - Show as window
+[tep:min] Minimise - Hide to Taskbar
+[tep:clo] Close - Close [programname] down
+
+Additional
+[tep:exe20] New Program Instance - Run another copy of [programname]
+[tep:folder20] Show Program Folder - Open [programname]'s portable folder
+
+
+[t]Change clock face coloring
+Right click clock face, select "[tep:options20] Options" and select "[tep:color20] Face Color" tab.
+
+Change Face Color
+[programname] comes with 135+ built-in colors and 10 customisable colors.  Select a built-in color.  The clock face will update.
+
+Three built-in colors are special: System Frame, System Title and System Text.  These colors change according to the GUI's coloring - see "[tep:color20] Color" tab.
+
+Custom Face Color
+Scroll to the bottom of "Face Colors" list.  Select a "Custom 1-10" color option.  In the right column a "Custom Color" title will show along with two color palettes "Text" and "Background".
+
+Click a color palette to display "Color" window.  Pick a color and click "OK" to set.  Clock face will update.
+
+Alternatively, click and drag on color palette to acquire screen color in realtime and update clock face.  Release to set color.
+
+Hint:
+By default the clock frame is colored by the "Text" color palette.  When the "Swap Colors" option is selected, the color is instead sourced from the "Background" palette.
+
+Options (right column)
+Brightness:
+Set brightness of clock face text/background on screen.  High values for brighter, crisper text/background.  Low values for duller, dimmer text/background.
+
+Frame Brightness:
+Set brightness of frame coloring.  Works in conjunction with "Brightness" value.
+
+Reduce Brightness:
+Off = disabled
+90-10% = on, clock face text/background and frame brightness automatically reduced (dimmed) between the hours of evening and morning, typically set to 7 PM - 7 AM (adjustable, see "[tep:screen20] Display" tab and the options "Begin Evening" and "Begin Morning"). 
+
+Shade Style:
+Set clock face background shade style.
+
+Shade Power:
+Set clock face background shade strength.  Range of 10-100%.
+
+Feathering:
+Set clock fact text/symbol feathering.  Strength and effect dependent on font in use - see "Font" tab for font options. 
+
+Tint Background:
+Select to bleed portion of clock face text color into background.
+
+Swap Colors:
+Select to switch clock face text and background colors.
+
+
+[t]Change the chime
+Right click clock face, select "[tep:options20] Options" and select "[tep:mid20] Chime" tab.
+
+[programname] comes with 56 Melody, 30 Ships Bells and 16 Sonnerie chimes.
+
+Chime Style - Melody
+A melody chime typically has a musical introduction played on the hour (e.g. 7:00).  Dongs sound for each hour, and are optionally chimed once on the quarter hour.
+
+Mode:
+Melody and Dongs - Select to play musical melody and sound dongs
+Dongs Only - Select to sound only dongs
+
+Quarterly:
+15m - Select to play a single dong at quarter-past the hour (e.g. 7:15)
+30m - Select to play a single dong at half-past the hour (e.g. 7:30)
+45m - Select to play a single dong at quarter-to the hour (e.g. 7:45)
+
+Chime Style - Ships Bells
+A Ships Bells chime sounds out the time using a series of double and single dongs.
+
+Mode:
+Standard - Select to sound original ships bells
+British Royal - Select to sound modified British Royal - In 1797 at Nore a mutiny started during the dogwatch at five bells (6:30 PM), afterwards British ships changed the sequence to omit the five bells.
+
+Chime Style - Sonnerie
+Typically a fast sequence of high-pitched dongs and optional quarter hour dongs.
+
+Mode:
+Grande Sonnerie - Select to chime hour dongs quarterly and quarterly dongs
+Petite Sonnerie - Select to chime hour dongs on the hour and quarterly dongs
+
+Quarterly:
+15m - Select to play quarter-past the hour dongs (e.g. 7:15)
+30m - Select to play half-past the hour dongs (e.g. 7:30)
+45m - Select to play quarter-to the hour dongs (e.g. 7:45)
+
+Volume
+Set chime volume to 0-200%.  High values for louder chiming, and low values for quieter chiming.
+
+Speed
+Set chime speed to 25-400% playback speed.  100% is normal.  200% is twice the playback speed.
+
+Reduce Volume
+Off = no volume reduction
+90-10% = on, chiming volume automatically reduced (quietened) between the hours of evening and morning, typically set to 7 PM - 7 AM (adjustable, see "[tep:screen20] Display" tab and the options "Begin Evening" and "Begin Morning". 
+
+Playback Device
+Select the midi playback device to handle chiming.  Default is "Map" and uses the standard midi hardware for midi chiming.  For Windows 10+ this is the first installed device.
+
+[programname] supports realtime device selection during playback.  Select a device 1-10 (numbers are shown when a compatible device is present) to play chime on that device.
+
+Hint:
+Under Wine on Linux, the correct midi device may take a few tries to find.  Typically playback device is 2 or 3.
+
+Options
+Always on Midi - Select to maintain an open connection to the midi device for fast, lay free chime commencement.
+
+Preview Sample Chime - Select to play a sample chime whenever a chime name is selected/clicked or tapped on in the "Chimes" list.
+
+
+[t]Set/change an alarm
+Right click clock face, select "[tep:options20] Options" and select "[tep:clock20] Alarms" tab.
+
+[programname] comes with 50 customisable alarms, each of which can be copied to and pasted from Clipboard.
+
+To cancel/silence a sounding alarm click or tap the clock face once.
+
+Toolbar Links
+[tep:copy20] Copy - Copy selected alarm to Clipboard
+[tep:paste20] Paste - Overwrite selected alarm with that in Clipboard
+[tep:open20] Open - Load complete list of alarms from file
+[tep:save20] Save As -  Save complete list of alarms to file
+
+Choose an Alarm to set
+From the "Alarms" list select an alarm slot 1-50.  Set the alarm style (right column) to Off, Daily, Week, Month or Date.  Each option has a different range of settings.  Below is a list of common settings to all alarms:
+
+Hour:
+Set alarm hour - 12 AM to 11 PM
+
+Minute:
+Set alarm minute - 0 to 59
+
+Duration:
+Set the length of time for which to sound the alarm.  Range is 10 seconds to 2 hours, in 10 second intervals.
+
+Message:
+Type a message to display on the clock face.  A message is flashed, and long messages scrolled.
+
+Audio Alerts:
+Select an optional audio alert to sound.  When set, it's volume will gradually increase for a gentle wake up.
+
+Alarm Style - Off
+No alarm - alarm is disabled and all values previously set are retained and hidden from view.
+
+Alarm Style - Daily
+Sound an alarm every day at the set time.
+
+Alarm Style - Week
+Sound an alarm at the set time on the selected days of the week.
+
+Day of Week:
+Sun to Sat - Select a day/s to sound alarm
+
+Alarm Style - Month
+Sound an alarm on the set month, day and time.
+
+Day:
+1 to 31 - Select the day of the month.
+
+Month:
+Jan to Dec - Select the month of year.
+
+Alarm Style - Date
+Sound an alarm on the set year, month, day and time.
+
+Day:
+1 to 31 - Select the day of the month.
+
+Month:
+Jan to Dec - Select the month of year.
+
+Year:
+Click down arrow to select a year from the list, or type one into the box.
+
+
+[t]Set/change a reminder
+Right click clock face, select "[tep:options20] Options" and select "[tep:alert20] Reminders" tab.
+
+[programname] comes with 50 customisable reminders, each of which can be copied to and pasted from Clipboard.
+
+Toolbar Links
+[tep:copy20] Copy - Copy selected reminder to Clipboard
+[tep:paste20] Paste - Overwrite selected reminder with that in Clipboard
+[tep:open20] Open - Load complete list of reminders from file
+[tep:save20] Save As -  Save complete list of reminders to file
+
+Choose a Reminder to set
+From the "Reminders" list select a reminder slot 1-50.  Set the reminder style (right column) to Off, Daily, Week, Month or Date.
+
+Each reminder has a Message:
+Type a message to display on the clock face.  A long message will be scrolled.
+
+Hint:
+A reminder is shown for a whole day (24 hours), and commences at midnight and finishes just before midnight the next day.
+
+Reminder Style - Off
+No reminder - reminder is disabled and all values previously set are retained and hidden from view.
+
+Reminder Style - Daily
+Show reminder every day.
+
+Reminder Style - Week
+Show reminder on a specific day/s of the week.
+
+Day of Week:
+Sun to Sat - Select a day/s to show reminder
+
+Reminder Style - Month
+Show reminder on the set month and day.
+
+Day:
+1 to 31 - Select the day of the month.
+
+Month:
+Jan to Dec - Select the month of year.
+
+Reminder Style - Date
+Show reminder on the set year, month and day.
+
+Day:
+1 to 31 - Select the day of the month.
+
+Month:
+Jan to Dec - Select the month of year.
+
+Year:
+Click down arrow to select a year from the list, or type one into the box.
+
+
+[t]Adjust various clock display options and formatting
+Right click clock face, select "[tep:options20] Options" and select "[tep:screen20] Display" tab.
+
+General
+Frame Maximised:
+Select to display a frame when full screen
+
+Start Maximised:
+Select to run full screen on startup
+
+On Top:
+Select to place [programname] above all other programs
+
+Time Format
+24hr:
+Select to display time in 24 hour format
+
+12hr AM/PM:
+Select to display 12 hour time with uppercase AM/PM
+
+12hr am/pm:
+Select to display 12 hour time with lowercase am/pm
+
+Date
+Show:
+Select to display date on clock face
+
+Uppercase:
+Select to show date in uppercase (e.g. NOVEMBER)
+
+At Top:
+Select to show date at top of clock face
+
+Full:
+Select to use full month labels (e.g. November)
+
+Date Format
+Choose from one of four date formats.
+
+Example of a specific date in all four formats:
+* 14 November 2022
+* 14th November 2022
+* November 14, 2022
+* November 14th, 2022
+
+Day of Week
+Show:
+Select to display current day (e.g. Monday)
+
+Uppercase:
+Select to show day in uppercase (e.g. MONDAY)
+
+At Top:
+Select to display day at top of clock face
+
+Full:
+Select to use full day label (e.g. Monday)
+
+Reminder
+Uppercase:
+Select to show reminder in uppercase
+
+At Top:
+Select to display reminder at stop of clock face
+
+Begin Evening
+Set the time afternoon becomes evening.  Range of 1-11 PM.  Default is 7 PM.
+
+Begin Morning
+Set the time evening becomes morning.  Range of 1-11 AM.  Default is 7 AM.
+
+Part of Day
+Show:
+Select to display descriptive time label - Afternoon, Evening, Predawn and Morning
+
+Uppercase:
+Select to show in uppercase (e.g. EVENING)
+
+Afternoon Label
+Leave blank to use default label "Afternoon" or type your own.
+
+Evening Label
+Leave blank to use default label "Evening" or type your own.
+
+Predawn Label
+Leave blank to use default label "Predawn" or type your own.
+
+Morning Label
+Leave blank to use default label "Morning" or type your own.
+
+
+[t]Change the coloring of [programname]
+From the right click menu select "[tep:options20] Options" to display "Options" window.  Click "[tep:color20] Color" tab to display "Color Schemes" list.
+
+"Color Schemes" list is comprised of three distinct sections:
+* Built-In Color Schemes
+* Custom Color Schemes
+* Saved Color Schemes
+
+There are 180+ built-in color schemes.  Select one.  For instance, try "Black".  The appearance changes to shades of black.
+
+Twenty colors make up a single color scheme which determines the final appearance.  Two colors govern the frame, nine for title colors (e.g. important sections - as the top toolbar and title panels), and a further nine for standard colors, for the majority of the background area.
+
+Each built-in color scheme is comprised of its own set of unique colors, and cannot be modified.  However, a custom color scheme does allow for adjustment.  To create a custom color scheme, scroll further down the list to the section titled "Custom".
+
+Here you'll find 10 custom slots, labelled "Custom 1" through to "Custom 10".  Each slot is a fully managed storage point - any changes you make are automatically saved.
+
+To create a custom color scheme, select a slot.  For instance select "Custom 1".  The list divides into two separate columns.  The column on the left retains the color scheme names from before, while the column on the right displays four groups of color palettes - Frame Colors, Title Colors, Standard Colors and Special Color Generators.
+
+The first three sections are comprised of color palettes that directly represent a color in the color scheme.
+
+To adjust a color, click the color palette to display a "Color" window.  Adjust the color as desired by sliding the Red, Green and Blue color sliders to the left for less color, or to the right for more color.  Or, click and drag the surface of the "Color Matrix" panel.  Moving your cursor or finger within the matrix assigns the color directly beneath your cursor/finger.  It is also possible to drag outside the matrix area to obtain a color from your screen.
+
+When done, click the "OK" button to accept the color and close the Color window.  The color palette updates to reflect the new color, as does [programname].
+
+Alternatively, click and drag the surface of the color palette to acquire any visible color on the screen.  As different colors pass beneath your cursor/finger, the color palette and [programname] updates in realtime.
+
+Save Color Scheme
+To save your color scheme to file select "[tep:menu20] Menu > [tep:save20] Save As...".  A "Save" window will display.  Type a name for your color scheme and click the "Save" button.  Your color scheme is saved to file and listed in the "Color Schemes" list.
+
+Use Saved Color Scheme
+Scroll down to the bottom of the "Color Schemes" list to find your saved color scheme(s).  To use one in particular, select it.  The colors apply immediately.
+
+Make Changes To Saved Color Scheme
+Select the saved color scheme you wish to change.  The column on the right displays the color scheme palettes.  As before, adjust one or more colors by accessing the color palette(s).
+
+Any changes made are automatically saved to the file on disk.  There is no need to manually resave the color scheme.
+
+
+[t]How to change the frame style, size and sparkle
+Our uniquely framed window design allows for easy resizing and recognition.  A frame can be made wider or narrower and include an optional embedded random sparkle effect.
+
+From the right click menu select "[tep:options20] Options" to display "Options" window.  Then click the "[tep:color20] Frame" tab.
+
+Choose from one of the 32 built-in frame styles.  For instance "Flat".  The frame updates to reflect the new style.
+
+Some frames require a minimum size to display at their best.  For "Flat" this is 32.  Setting a size below this results in a hint recommending a size of 32+ be set.
+
+A frame may have a size from 0 (no frame) to a maximum size of 72 pixels.  Drag the "Size" slider right to widen the frame, and left to narrow it.
+
+Some frames benefit from a little sparkle.  Using a sparkle value of 1 or more embeds a random texture into the frame.  The higher the sparkle the more noticeable the effect.
+
+The range of a sparkle is from 0 (off) to 20 (maximum).
+
+For a clean-cut look, set sparkle to 0.  
+
+Tip:
+A sparkle of 1 or more will also embed a random texture into the window's top title bar.
+
+
+[t]How to change the font, zoom factor, antialias level and size of text
+Support for large text and automatic zoom for large displays is built-in.  Control how much anti-aliasing (smoothing of characters) is applied.
+
+From the right click menu select "[tep:options20] Options" to display "Options" window.  Then click the "[tep:font20] Font" tab.
+
+Zoom
+High resolution monitors, such as 4K and 8K display far more pixels (colored dots) per inch on screen than previous generations of monitors.  To maintain the correct appearance of [programname] across these significantly different graphic resolutions presents a challenge.
+
+Comparison Of Monitor Resolutions:
+2K = 1920w x 1080h =  2,073,600 pixels
+4K = 3840w x 2160h =  8,294,400 pixels
+8K = 7680w x 4320h = 33,177,600 pixels
+
+From above, a 4K monitor uses four times more pixels to its 2K counterpart, for the same physical screen size.  This means a program created to look and function correctly on a 2K monitor will appear smaller on a 4K monitor, technically half its intended width and height.  Making everything that much smaller to view and click.  And, the same program on an 8K monitor will suffer even more drastic shrinkage, rendering it pretty much unusable.
+
+This is where zoom compensates.  By default, zoom is set to automatic, making the necessary adjustments to enlarge text and images appropriately in order to maintain the expected appearance of [programname] across all monitor resolutions.
+
+A 2K monitor needs no adjustment.  But a 4K monitor requires a 2x (200%) enlargement of text and images.  These are calculated and implemented on-the-fly.  And an 8K monitor requires a 4x (400%) enlargement of text and images.
+
+The end result is [programname] looks and feels the same on all monitors.
+
+You can override the default automatic setting and specify a zoom value of 100%, 200%, 300% or 400%.  This will force text and images to zoom accordingly.  This may prove useful for a custom or unusual monitor resolution, for instance an ultra-wide monitor.  Any change to the zoom setting takes effect immediately.
+
+For a monitor with a resolution of 2K or less, manually setting a high zoom value may render a part or a majority of [programname] inaccessibly off screen.  In this case, a special internal safety feature automatically limits the zoom to a maximum safe level.
+
+Font Size
+Change the display size of text.  The default value is 10.  A smaller value decreases text size, and larger values increase it.
+
+Tip:
+Not all sizes are supported by every font.  In some instances on Ubuntu, selecting a large font size for Arial may cause text to look strange.  If this occurs, reduce the size until the text appears normally, or use another font.
+
+Font Name
+A font name represents the font to use when drawing text on the screen.  It controls what style or characters are used, and even the technology used to draw the font.  Older fonts like "System" are a bitmap based font, meaning they are unable to be scaled (resized).  More modern fonts like Arial can scale, making them versatile across many different sizes.  The main difference is memory.  Bitmap fonts use memory for each size, whereas a scalable font, or vector font (made up of mathematically calculated lines and shapes) uses a single set of instructions and thus far less memory, but at the expense of speed.
+
+Eleven predefined font names commonly found, in the most part, on modern Microsoft Windows operating systems, and to a lesser extend on older versions, and Ubuntu Linux are presented in a single "Font Name" panel.
+
+By default, Arial is used.  It is present on almost all computer operating systems, including Windows 95 and Ubuntu.
+
+To use a different font name, click its name to select.  The text on screen will update to reflect the change.  If a font is not present on the current operating system, for instance "DejaVu Sans", would not be present on a Windows 95 operating system, a fallback font is used instead.
+
+If you require a custom font name, then select the last option "Custom".  The font name stored in this option takes affect.  Click the "Custom" option again to display a "Font" window.  A list of all font names present on your operating system is shown, numbered and in alphabetical order (A-Z).  From this list, select the font name to be used and click the "OK" button.  Text on the screen will update to reflect your change.
+
+Font Feather / Font Specific Antialiasing
+For maximum compatibility, two completely separate antialiasing systems are employed to render text on the screen.
+
+The first is "Font Feather".  A realtime, text character feathering algorithm for fonts without antialiasing.  These are typically older, bitmap based fonts.  But sometimes, even modern fonts cannot, or will not, support antialiasing under a specific font size.  For instance, Arial on Windows drops antialias support for sizes under 14.
+
+In this case, font feathering renders a gentle blurring of the character.  A range of "Off" to "High" can be set.  The higher the value, the more obvious the blurring effect.
+
+Typically a high quality computer monitor will require only a value of "Low" for text to be presentable.  Whereas lower resolution devices like TVs, which don't always honour every single pixel, and suffer from quality degradation, will require a stronger value of "Medium" or "High", for best results.
+
+The easiest method to set the right value is to select the lowest value first, "Off" and work your way up to "Ultra" until the text appears comfortable for you, on the screen.
+
+The second method employed is the "Font Specific Antialiasing" system.  In this case, the font itself contains all the necessary information to render smooth edges to each of its characters.  To use, select a value from "Dark" (use only partial information) to "Light" (make full use).
+
+Typically it is best to try each option in turn until the text looks best for you.
+
+Tip:
+On Windows, the default font "Arial" may not support font specific antialiasing for font sizes under 14.  As an alternative, try "Segoe UI", which does support smaller font sizes.
+
+On Ubuntu v20, "Arial" does support font specific antialiasing for small font sizes.
+
+
+[t]Miscellaneous Settings
+From the right click menu select "[tep:options20] Options" to display "Options" window.  Then click the "[tep:settings20] Settings" tab.
+
+A collection of program specific options to change how [programname] behaves, looks and uses resources.  Each option can be easily used by selecting it with a click or tap.  When an option is selected, it appears colored or filled in.  To turn it off, click or tap the option again.  Coloring is removed to indicate deselected.
+
+Program Links
+Start button link - select to create a Start Menu shortcut "[programname] by BlaizEnterprises.com", and deselect to remove it
+
+Desktop link - select to create a Desktop shortcut "[programname] by BlaizEnterprises.com", and deselect to remove it
+
+For more detailed information refer to the help topic "Start button and Desktop links".
+
+Options
+Curved Corners - Round corners on controls, menus and windows
+
+Soft Close - Automatically close an active dialog window, e.g. Save, Open, Font etc, when clicked outside of its window
+
+Safe Area - Force main window to stay on screen at all times.  Any attempt to drag it off the side of the screen triggers an automatic reposition at the screen's edge, ensuring the window is always accessible.  Deselect this option to use across multiple monitors.
+
+Show Splash - Display an informative/artistic splash screen on startup.
+
+Realtime Help - Scroll useful help hints at the top of windows and menus.  Help based on current cursor position or last tap position.
+
+On Top - Position [programname] above all other running program windows.
+
+Touch - Enlarge controls and menus for easier finger tap access.
+
+Double Clicks - Support traditional single clicks and double clicks.  For instance, double tapping or clicking the top title bar of the main window maximises the window.  Deselecting this option also disables this feature.
+
+Frame Maximised - Show the frame on the main window when maximised (using entire screen area).  Deselect to automatically hide the frame upon entering maximise state.
+
+Economy - Automatically reduces paint cycles and some CPU usage during periods of extended idleness.  For more detailed information refer to the topic "Economy mode".
+
+32bit Graphics - Suitable for all modern computers.  Deselect to revert to 24bit mode, a slightly more optimised mode for older computers with lower powered graphics cards and less memory.  The older machines with 24bit mode runs slightly faster, and uses a little less memory.
+
+Minimal Scrollbars - Reduces visual clutter with a simple slider.
+
+Large Title - Large 32px high window title bar.  Deselect for the shorter 24px title.
+
+Effects
+Special Colors - Show panels and settings with specific coloring for fast, easy access.
+Enhanced - Shade control surfaces for a more defined display.
+Curved Shading - Use a round shade.  Deselect for a linear shade.
+Colorise Images - Display control images in shades of current color scheme.
+
+Sparkle
+Range 0 to 20.  Increase to show more texture in the frame.  Or, reduce to lessen.
+
+Frame Size
+Determines the size of the frame with a range of 0 to 72.  Increase for a wider frame, and reduce for a narrower one.
+
+Scrollbar Size
+Change the size of all scrollbars with a range of 5 to 72.  Larger values display either wider or taller scrollbars.  Reducing shrinks their size.
+
+Cursor
+9 built-in colored cursors: Orange, Pink, Yellow, Purple, Navy, Green, Grey, Black and White.  Default uses the system cursor, white on Windows and black on Linux.  The custom option supports use of an external cursor, in either the static ".cur" or animated ".ani" cursor file formats.
+
+Miscellaneous
+Click the "[tep:options20] Misc" link (top of Options window) to display a new page of settings.
+
+Wine
+Automatic (default) engages Wine related enhancements automatically, for smoother operation under Linux.  Use the Enable option to force Wine support and the Disable option to turn off Wine support altogether.
+
+Hint:
+Detection of Wine is discovered by the presence of drive "Z:\".
+
+Restore Defaults
+Click or tap the "[tep:refresh20] Restore Defaults..." button located at the bottom of the Options window to restore the main settings and options to their original values.
+
+A program typically has more settings and menu options in addition to these that will not restore by this option.  In this case, the settings and menu options may be changed by the user.
+
+
+[t]Economy mode
+Automatically reduce battery consumption and CPU/graphic loads on your computer with Economy mode.  A short period of inactivity reduces paint requests and internal processing to ease the load on your computer's hardware, and reduce overall energy expenditure. 
+
+The first stage of economy mode activates after a short inactivity period of 30 seconds, lowering the maximum paint rate to no more than 2 requests per second.
+
+After a continued inactivity of 10 minutes or more, the paint rate is further reduced to 1 request per second.
+
+Internal processing may also lower, reducing the CPU load.
+
+A single keyboard stroke, mouse click or touch will instantly disengage economy savings and return [programname] to normal operation.
+
+How to turn Economy mode on/off:
+From the right click menu select "[tep:options20] Options" to display "Options" window.  Click "[tep:settings20] Settings" tab and select "Economy" from the Options panel to enable.  Select it again to deselect the option and disable economy mode.
+
+
+[t]What is a portable program?
+A portable program is a standard program, but with less requirements in order to run.  The most important difference is that a portable program does not install.  This enables it to run outside the normal scope of the computer's operating system - quite simply, it is not tied down.
+
+Typically, a portable program might reside on a USB pen stick or other removable storage media, allowing it to be transferred between many different computers.  This is not possible with an installed program as it must run on the computer it was specifically installed on.
+
+The second important difference is the ability of a portable program to carry with it all the settings and support files it requires to operate.  An installed program typically relies on a central storage structure determined by the type and version of the operating system to store, track and maintain a program's settings.  This is the registry in Windows - a large, library of settings and parameters organised and protected by the Microsoft Windows operating system.  On Linux, it is often a collection of predefined system folders, each with a specific type of function/purpose.
+
+Without these, a portable program is solely responsible for the maintenance and organisation of its settings.  For this reason a higher level of understanding and coding diligence is required.  A portable program can be thought of as a special kind of software program.
+
+A portable program may well be more difficult to code, but the advantage of not being tied to any one specific operating system or computer can be quite significant.  From the convenience of having your program and data with you, to the greater privacy for those with a focus on security.
+
+Our portable software programs are engineered exclusively "in house", with no third party add ons, plugins or additional DLLs.  We believe in creating reliable, secure and lightweight code in order to produce efficient, powerful and simple to use software.  Our engineering is designed to remain inconspicuous so that every program we build can be used with ease and simplicity.
+
+Our definition of a portable program:
+
+* No Installation - no additional DLL libraries or alterations to your operating system
+* No Setup - run and use the program immediately
+* No Registry Modifications - no changes to behaviour of your computer
+* No Zipped Folder of Contents - no need to unpack a "zipped installation folder" to run
+* No Specialised Hardware Requirements - a typical modern computer is sufficient
+* No Specialised Software Requirements - no need for Direct X or .NET in order to run 
+* No Internet Required - no need for additional downloads, addons, or an internet connection to run or view documentation
+* No External Help - integrated help displays inside the program, no need for help on disk or help on the internet, and no need for a web browser or text editor to view
+* Self-contained - program comes with everything it needs, including any sample files etc
+* All settings and support files stored in a sub-folder "Blaiz Enterprises" directly alongside the program EXE
+* Consistent operation, behaviour and display over many different operating systems
+* High Level of Backwards Compatibility - able to run on older hardware and operating systems, e.g. Windows 95/98
+* Multiple Input Support - mouse and touch support for interaction on desktops, laptops and tablets
+* Small Footprint - typical program size of ~1.2 Mb 
+* System Independent Code - Our 4th Generation Code Foundation utilises custom built dialog windows (Open, Save, Color, Options, etc), custom GUI rendering engine, custom window rendering and management subsystem, and custom graphics subsystem, empowering our software to run well across many different operating systems, including non-native systems such as Ubuntu v20 (via the use of Wine).
+
+Tip:
+Even though a program is portable, sometimes a change is made to the host computer.  For instance, selecting the option "Desktop link" or "Start button link" from the right click menu "[tep:options20] Options > [tep:settings20] Settings > Program Links" panel will create a shortcut file (a file with the extension ".lnk") on the computer.  This is a function of the computer and is the exception, not the rule.  By default, both options are not selected (off).
+
+
+[t]Start button and Desktop links
+By default, [programname] does not place a link on your computer's Start button or Desktop.  
+
+To place a link on your Start button:
+Right click menu "Options > Settings" and select "Start button link".  [programname] is now on your Start button as "[programname] by BlaizEnterprises.com".  Click this link to run [programname].
+
+To place a link on your Desktop:
+Right click menu "Options > Settings" and select "Desktop link".  [programname] is now on your Desktop as "[programname] by BlaizEnterprises.com".  Click this link to run [programname].
+
+To remove link from your Start button:
+Right click menu "Options > Settings" and deselect "Start button link".  [programname] is now removed from your Start button.
+
+To remove link from your Desktop:
+Right click menu "Options > Settings" and deselect "Desktop link".  [programname] is now removed from your Desktop.
+
+
+[t]On Top
+Want [programname] to sit above other programs? Right click menu "Options > Settings" and select "On Top" option.  [programname] now has priority and sits atop all other programs and windows.  To turn this feature off, deselect "On Top".
+
+Alternative:
+Click the [tep:inf] button (top right of window) and click "On Top" option to toggle on/off.
+
+
+[t]Show Splash on Start
+On startup [programname] pauses momentarily to display an artistic splash screen.  This feature can be turned off.  To turn off, right click menu "Options > Settings" and deselect "Show Splash" option.
+
+
+[t]Show Program Folder
+Can't remember where you put [programname]? No need to worry.  From the top right of the window click the [tep:inf] button and select "[tep:folder20] Show Program Folder".  A Microsoft File Explorer folder window will display with the [programname] program (EXE) listed inside.
+
+
+[t]Remove [programname]
+[programname] is 100% portable and does not install onto your computer, or alter or adjust the operation of your computer.  Since there is no installation, there is no uninstall option.  To remove [programname] from your computer/disk, the process must be done manually.
+
+Note:
+Before you remove [programname], ensure both the "Start button link" and "Desktop link" options under right click menu "Options > Settings" are both deselected.
+
+Due to the complex nature of security protocols under modern day Microsoft Windows' operating system, if these links are not removed by the program that created them, e.g. [programname], they may linger/persist.
+
+From [programname] click the [tep:inf] (show program menu) button at the top right of the window and select "[tep:folder20] Show Program Folder" option.  A folder will display with the [programname] program (EXE) listed within it.  Typically [programname] will have the name "[programname].exe".
+
+Close any instances of [programname] that are running.  Right click the EXE file and select the delete option.  If prompts appear, confirm your intention to delete.
+
+[programname] is now removed from your computer/disk.
+
+Note:
+A shared folder of "Blaiz Enterprises" is automatically created and maintained by [programname] during its normal operation.  This folder is responsible for holding settings, files and associated data for [programname].  It can also be used by other Blaiz Enterprises' programs located in the same folder as [programname].  If there are no other programs (EXEs) in the folder, it is safe to delete the "Blaiz Enterprises" folder.  Right click the folder and select the Delete option.  If prompts appear, confirm your intention to delete.
+
+The data for [programname] is now removed from your computer/disk.
+
+
+[t]License Agreement
+Company name and all software products contained on our websites are the intellectual property, copyrights and trademarks of Blaiz Enterprises. 
+
+All title, copyrights and intellectual property rights in and to the software product and content, and any copies thereof, are the property of Blaiz Enterprises.
+
+License:
+Blaiz Enterprises grants to you the right to use the software product.  You may not reverse engineer, decompile or disassemble the software product.  Any alteration or attempt to alter the original software product will cause a fatal error to occur and the product to become dysfunctional.
+
+Indemnity:
+Any use of the software product is at your own risk.  Blaiz Enterprises disclaim all warranties and conditions, either expressed or implied.  In no event shall Blaiz Enterprises be liable for any special, incidental, indirect, or consequential damages (including, without limitation, damages for loss of business, profits, business interruption, loss of business information, or any other pecuniary loss) arising out of the use of or inability to use the software product.
+ 
+[c][tep:sep]
+
