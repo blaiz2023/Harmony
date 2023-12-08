@@ -335,9 +335,6 @@ General
 Frame Maximised:
 Select to display a frame when full screen
 
-Start Maximised:
-Select to run full screen on startup
-
 On Top:
 Select to place [programname] above all other programs
 
@@ -551,6 +548,8 @@ Start button link - select to create a Start Menu shortcut "[programname] by Bla
 
 Desktop link - select to create a Desktop shortcut "[programname] by BlaizEnterprises.com", and deselect to remove it
 
+Automatic Startup - select to create a link in the Windows Startup folder, to start [programname] when your computer starts, and deselect to remove it/disable.
+
 For more detailed information refer to the help topic "Start button and Desktop links".
 
 Options
@@ -660,7 +659,7 @@ Our definition of a portable program:
 * System Independent Code - Our 4th Generation Code Foundation utilises custom built dialog windows (Open, Save, Color, Options, etc), custom GUI rendering engine, custom window rendering and management subsystem, and custom graphics subsystem, empowering our software to run well across many different operating systems, including non-native systems such as Ubuntu v20 (via the use of Wine).
 
 Tip:
-Even though a program is portable, sometimes a change is made to the host computer.  For instance, selecting the option "Desktop link" or "Start button link" from the right click menu "[tep:options20] Options > [tep:settings20] Settings > Program Links" panel will create a shortcut file (a file with the extension ".lnk") on the computer.  This is a function of the computer and is the exception, not the rule.  By default, both options are not selected (off).
+Even though a program is portable, sometimes a change is made to the host computer.  For instance, selecting the option "Desktop link" or "Start button link" or "Automatic Startup" from the right click menu "[tep:options20] Options > [tep:settings20] Settings > Program Links" panel will create a shortcut file (a file with the extension ".lnk") on the computer.  This is a function of the computer and is the exception, not the rule.  By default, these options are not selected (off).
 
 
 [t]Start button and Desktop links
@@ -698,7 +697,7 @@ Can't remember where you put [programname]? No need to worry.  From the top righ
 [programname] is 100% portable and does not install onto your computer, or alter or adjust the operation of your computer.  Since there is no installation, there is no uninstall option.  To remove [programname] from your computer/disk, the process must be done manually.
 
 Note:
-Before you remove [programname], ensure both the "Start button link" and "Desktop link" options under right click menu "Options > Settings" are both deselected.
+Before you remove [programname], ensure that the "Start button link" and "Desktop link" and "Automatic Startup" options under right click menu "Options > Settings" are all deselected.
 
 Due to the complex nature of security protocols under modern day Microsoft Windows' operating system, if these links are not removed by the program that created them, e.g. [programname], they may linger/persist.
 

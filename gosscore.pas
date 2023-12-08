@@ -1,76 +1,157 @@
 unit gosscore;
-//Note: To compile program correctly the following compiler conditionals are
-//      required (Delphi 3 > Project > Options > Directories/Conditionals):
-//      D3 jpeg mm chimes gif ico
-
 //#######################################################################################################################################
-//## Global Compiler Directive Usage ####################################################################################################
-//-- Delphi 3 --
-//Select "Project > Options" from dialog select "Directories/Conditionals" and select/enter ONE of the compiler directives listed below
-//into the "Conditional defines" drop down box:
-//
-// "D3"       = Delphi 3 + Windows 32bit support
-// "D10"      = Delphi 10 + Windows and Android 32bit support (unfinished)
-// "DEBUG"    = System wide debugging systems, slows down performance but displays integrated debugging information
-// "mm"       = Engage "gossmm" multimedia support (midi / wave / snd32 / media support)
-// "chimes"   = Engage chimes support -> Note: requires "mm" support as well
-// "jpeg"     = Engage jpeg image Support
-// "gif"      = Engage gif image Support
-// "ico"      = Engage ico/cur/ani image Support
-// "tbt"      = Engage tbt support - TBT Encryption/Decryption - 13jun2022
-// "man"      = Engage management "man__*" class of procs for managing objects automatically in a pdlobject array - 09feb2022
-// "mfile"    = Engage memfile/link1 "memfile__*" and "link1*" class of procs for linking to external programs using memory mapped files etc
-// "storeapp" = Engage store app mode (if not used, program checks for "sys-<programname>.app" in settings folder to trigger app mode - 02may2022
-// "plus"     = Engage plus support (programplus=true) for multi-tab versions - 27jun2022
-  //## Debugging switches #################################################################################################################
-//{$D+}
-//{$L+}
-//{$Y+}
-//#######################################################################################################################################
-
-
-//## D3 Complier History -> Known errors and fatal failings #############################################################################
-//ERROR: Unknown exception error -> sometimes consistent, other times no sign of an error!!!!!!!!!!!!
-
-//ERROR: 30jul2021 -> FATAL Compiler error MAP257 or MA234 or DBG2428 on Delphi 4 Pro or Delphi 7 Enterprise
-//                    and RANDOM error messaging/program crash/failure on Delphi 3 due to one or more corrupted
-//                    return codes.  Proper return code is (13+10) but the error is caused when there is one or more
-//                    (10+10) style return codes -> this really messes Delphi's compiler up.  Simply load the .pas
-//                    file into "Just Does Text" and save over the top using (13+10) Windows return codes.  Delphi will
-//                    now compile the program properly and the program will run without crashing or unpredictable results.
-//                    Use "low__checkfilebadchars('c:\123blaiz\layers\layers1.pas');" to check source files.
-//#######################################################################################################################################
-
-
-//#######################################################################################################################################
-//## Name......... Gossamer - lightweight Windows / Android 32bit GUI system
-//## Type......... System Core -> replaces 98%+ of host OS and host programming language functions and API support load
-//## Desciption... Replaces the "Blaiz Enterprises Software Platform v4.0" R&D platform of User Management
-//## Items........ 25
-//## Version...... 4.00.32446 (+2955)
-//## Date......... 15nov2022, 06nov2022, 11oct2022, 28sep2022, 05jul2022, 29jun2022, 14jun2022, 31may2022, 14may2022, 30apr2022, 30mar2022, 27feb2022, 08feb2022, 31jan2021, 30dec2021, 19dec2021, 30sep2021, 29aug2021, 09aug2021, 27jul2021, 07jul2021, 20jun2021, 02jun2021, 30may2021, 12may2021, 10may2021, 30apr2021, 19apr2021, 14apr2021, 03apr2021, 31mar2021, 20mar2021, 08mar2021, 26feb2021, 01feb2021, 28jan2021, 11oct2020, 25sep2020, 07sep2020, 26aug2020, 22aug2020, 28jul2020, 23may2020, 10may2020
-//## Lines........ 99,952 [74,555 lines without multimedia support - 19feb2022]
-//## Translation.. No Support for Languages other than English
-//## Fast Timer .. Non-threaded, high-speed timer - 07jul2021 (updated more paint procs and low level system drawing procs)
+//## -- NOTICE OF USE --
+//## This source code is provided strictly 'as is' for the purpose of study and testing, unless otherwise stated
+//## Parts of the code base remain incomplete, and are a 'work in progress'
+//## The primary execution target at this stage is Delphi 3 on Win32 - Windows 95 and up with support for Wine on Linux
+//## Partial support exists for Android on mobile, but is not complete or functional at this stage
+//## Object files "ADLER32.OBJ DEFLATE.OBJ INFBLOCK.OBJ INFCODES.OBJ INFFAST.OBJ INFLATE.OBJ INFTREES.OBJ INFUTIL.OBJ and TREES.OBJ" provide ZIP compression support
+//##
+//## -- Gossamer Core --
+//## The Gossamer core is comprised of low level functions, mid-level helpers and built-in high-level GUI controls.  Designed to reduce demand
+//## on the host operating system, and the amount of complicated code to interact with it.  Gossamer is capable of generating sophisticated
+//## GUI's with little code, and maintain them with little overhead to the operating system.  Appearance and function remains familiar across all
+//## platforms.  Code once, use everywhere.
+//##
+//## -- Error Handling --
+//## A non-standard error handling approach is taken to contain any execution failures or short comings at the procedure / function level
+//## in question.  The code base is designed to keep functioning at all costs, regardless of actual errors.  Typically an error is trapped in a
+//## standard "try..except..end" structure.  Important functions return TRUE(ok) or FALSE(error) allowing the calling code to passively detect
+//## an error.  An error message is often supplied via the "e:string" variable in the function's variable list.
+//##
+//## -- Window Support --
+//## Gossamer creates, paints and manages its own windows.  A window is created using the "tbasicscroll" visual component.
+//## Though technically a visual component for use on a window, it supports 4 window modes, which when set, make it a
+//## window.
+//##
+//## Supported modes:
+//## 1) wmControl = act as scrolling control on a window.  Default mode for tbasicscroll control.
+//## 2) wmFullwin = act as the root window (lowest window on stack) and occupy whole canvas area.  Default mode for most programs.
+//## 3) wmWindow  = act as a floating / movable window.  Sits above wmFullwin and below wmOntop
+//## 4) wmOntop   = act as a floating / movable window above other windows but below wmDialog
+//## 5) wmDialog  = act as a dialog window and sit above all other window types (top of stack)
+//##
+//## The tbasicscroll control is a multi-mode control that can be both a visual control on a window and a window itself.  It supports
+//## both static content (content that cannot be scrolled) and scrolling content (content which can be scrolled out of view).
+//## A scrolling control requires additional graphics support in-order to re-map visual components in order for the paint system
+//## to know what to paint, and when to paint it to the screen.  It also needs to take into account what layer in the window stack
+//## it is, and whether it is contained within other scrolling controls, or it itself contains other scrolling controls and organise
+//## the paint order accordingly.
+//##
+//## -- Modular Design --
+//## The core has been designed to work with the least amount for support, when required.  This makes tracking down
+//## an error in core code a lot easier (less code to debug) and also provides the option for a slightly smaller foot print when
+//## additional support is not required.
+//##
+//## The core is designed to work with only the "d3" complier tag present.  This is the bare minimum required to operate the core
+//## and represents approximately 74,000 lines of code.  At this level, most graphics support is disabled, for example JPEG/GIF and ICO
+//## formats do not function, though PNG does.  This does not prevent the core from running.  Areas where these formats are required,
+//## will use blanks or fallbacks to safe defaults.
+//##
+//## A more typical use case is "d3 jpeg gif ico".  This provides the core with enough graphics support to perform all basic functions,
+//## like custom folder icons, image conversion, in document image display (.bwp documents) etc.
+//##
+//## Below is a list of Gossamer compiler directives and their functions:
+//## ===========================================================================================
+//## | Directive    | Function / description
+//## |--------------|---------------------------------------------------------------------------
+//## | d3           | Delphi 3 for Win32 support - default mode.  Programs built with this run on Windows 95 and up, and Wine on Linux and are portable
+//## | d10          | Delphi 10 for Android mobile support.  Currently unfinished and non-functional
+//## | debug        | Turn on realtime debugging.  Displays integrated debugging information - use for tracking memory leaks and debugging tags.  Higher paint cycles lower performance.
+//## | mm           | Turn on multimedia support: midi, wave, snd32 and media support
+//## | chimes       | Turn on chimes support (ships bells / alarms etc via midi) - requires "mm"
+//## | jpeg         | Turn on jpege image support - load / save / convert
+//## | gif          | Turn on gif image support - load / save / convert
+//## | gif2         | Turn on progressive GIF support also requires "gif" - 27dec2022
+//## | ico          | Turn on icon(.ico), cursor(.cur) and animated cursor(.ani) support
+//## | tbt          | Turn on TBT encryption / decryption support - 13jun2022
+//## | man          | Turn on management "man__*" class of procs for managing objects automatically in a pdlobject array - 09feb2022
+//## | mfile        | Turn on memfile/link1 "memfile__*" and "link1*" class of procs for linking to external programs using memory mapped files etc
+//## | storeapp     | Turn on store app mode (if not used, program checks for "sys-<programname>.app" in settings folder to trigger store app mode - 02may2022
+//## | plus         | Turn on plus support for 7 work tabs.  Code checks the global variable "programplus" is "true" - 27jun2022
+//## ===========================================================================================
+//##
+//## Where to enter a compiler directive?
+//## From Delphi 3 > select "Project > Options" from dialog select "Directories/Conditionals" and enter one or more of
+//## the compiler directives listed above into the "Conditional defines" drop down box.  Be sure to include "d3".
+//##
+//## Being a modular core, all functions and procedures in the compiler directives are present, regardless of
+//## their inclusion.  Functions without their required directive tag will passively fail, that is, their functions will return a FALSE value
+//## to the calling code.  A design that ensures source code never breaks.  Some directives have passive checkers that can be implemented
+//## to display a visual warning if support for the directive is required but not provided.  For example the need_jpeg and need_gif functions
+//## display an error when the "jpeg" and "gif" directives respectively are not present.
+//##
+//## -- System Defaults --
+//## The core accesses the default display scheme, style, font size / name, icon(s) etc from the "gossdat.pas" file.
+//## Some values such as the "programname", "programwebname" and "programversion" etc are tamper protected, meaning
+//## any changes to these values trips the internal security system and causes the program to fail.
+//## This is primarily designed to prevent hackers from changing the program's identity and passing it off
+//## as something it isn't.
+//##
+//## An optional program document in the format plain text (.txt), enhanced text (.bwd) or advanced text (.bwp) can be
+//## stored in gosssdat.pas using the "programhelp" array variable, as either a compressed binary array, or an uncompressed
+//## binary array in order to provide the program with built-in help.  The help document must be accompanied by the corresponding
+//## check code, or the security system will be triggered.
+//##
+//## An optional program splash graphic can be set.  By default the program icon is used, which is automatically enhanced up to scale
+//## for the splash screen / about window.
+//##
+//## -- Word Core / low__wordcore --
+//## The set of procedures termed "low__wordcore" is not to be confused with Microsoft's Word technology.  They are two
+//## distinctly different technologies.  Our word core is a low level set of procedures designed to process visual text
+//## independently of any GUI, freeing it from the constraints of a GUI system and allowing for reuse in different situations
+//## with minimal-to-zero recoding.  A GUI specific control sits on top and calls these low level functions to control the text
+//## formatting and input.
+//##
+//## In Gossamer this visual control is "tbasicbwp" and supports 3 text formats:
+//## 1) Plain text (.txt) - text only
+//## 2) Enhanced text (.bwd) - support for font styles bold, italic, underline, strikeout and highlight
+//## 3) Advanced text (.bwp) - support for fonts (size, color and style), text alignment (left, center and right), images and hyperlinks
+//##
+//## Additional support for optional integrated spell checker and current misspelt word indicator (red dotted underline).
+//## Support for ascii text only - unicode not supported at this stage.  Low memory usage.  A simple and robust data design makes use
+//## of three, strictly linear data streams, e.g. 1 character maps to 1 byte in each stream, for corruption free text processing and
+//## fast and straight forward html conversion / integration with direct access to formatting and stlying information.
+//##
+//## -- Known Error with Delphi Compilers --
+//## Delphi compiler malfunctions when source code (.pas) has one or more non-standard return codes of "10+10".  The compiler expects
+//## standard Windows return codes of "13+10".  When the compiler comes across a "10+10" return code, it can behave randomly, anywhere from
+//## reporting an error in Delphi 4 Pro / Delphi 7 Enterprise with codes such as MAP257, MA243 or DBG2428, and no error code in Delphi 3,
+//## all the way to successful compiling, followed often by a fatal error upon running the program, through to the program running but acting
+//## randomly and extremely unpredictably, frequently resulting in a number of strange crashes / unprogrammed behaviours.
+//##
+//## A simple fix:
+//## Load suspect (.pas) source file(s) into a text editor and save using standard Windows return codes.
+//## Recompile program as usual and execute.
+//##
+//## -- Gossamer as a Code Foundation --
+//## Version.................. 4.00.33775 (+3104)
+//## Components in use........ 53
+//## Last updated on.......... 09dec2023, 25nov2023, 19may2023, 25feb2023, 30dec2022, 15nov2022, 06nov2022, 11oct2022, 28sep2022, 05jul2022, 29jun2022, 14jun2022, 31may2022, 14may2022, 30apr2022, 30mar2022, 27feb2022, 08feb2022, 31jan2021, 30dec2021, 19dec2021, 30sep2021, 29aug2021, 09aug2021, 27jul2021, 07jul2021, 20jun2021, 02jun2021, 30may2021, 12may2021, 10may2021, 30apr2021, 19apr2021, 14apr2021, 03apr2021, 31mar2021, 20mar2021, 08mar2021, 26feb2021, 01feb2021, 28jan2021, 11oct2020, 25sep2020, 07sep2020, 26aug2020, 22aug2020, 28jul2020, 23may2020, 10may2020
+//## Lines of code............ 104,989 - reduces to approx. 74,000 lines when multimedia support is not in use - 19feb2022
+//## Languages supported...... English
+//##
+//## Below is a table of components and their specific function(s) for the core, and their update history:
 //##
 //## ==========================================================================================================================================================================================================================
-//## | Name                   | Hierarchy         | Version   | Date        | Desciption
+//## | Name                   | Hierarchy         | Version   | Date        | Update history / brief description of function
 //## |------------------------|-------------------|-----------|-------------|--------------------------------------------------------
-//## | low level procs        | n/a               | 1.00.1600 | 11oct2022   | 27sep2022, 14may2022, 21may2020, Collection of basic procedures and functions to support platform and it's controls etc
-//## | mis class of procs     | n/a               | 1.00.800  | 22may2022   | 26apr2022, 23may2020, Multi-image subsystem -> work with different image handlers
+//## | low level procs        | n/a               | 1.00.1602 | 19may2023   | 11oct2022, 27sep2022, 14may2022, 21may2020, Collection of basic procedures and functions to support platform and it's controls etc
+//## | mis class of procs     | n/a               | 1.00.830  | 17nov2023   | 22may2022, 26apr2022, 23may2020, Multi-image graphics subsystem -> works with different image data handlers
+//## | GIF2 support           | n/a               | 1.00.130  | 31dec2022   | Progressive GIF creation
 //## | tbasicprg1             | tobject           | 1.00.023  | 05mar2022   | 01jan2021, 05oct2020, Root level program outline
 //## | tbasicprg2             | tbasicprg2        | 1.00.020  | 05oct2020   | Semi-managed program outline -> manages "system:tbasicsystem" and "rootwin:tbasicscroll" on host "xhost:tform1"
 //## | tobjectex              | tobject           | 1.00.001  | 10may2020   | Reserved - to track number of objects in use
 //## | tbasicthreadstop       | tthread           | 1.00.050  | 24may2021   | Simple outline of a stoppable thread - safe to stop->shutdown using "freeobj()"
 //## | tbasictimer            | tthread           | 1.00.450  | 10may2021   | High speed (15ms) timer with thread safe locking and optional synchronize mode for easy threaded timer support
 //## | tbitmapenhanced        | tbitmap           | 1.00.020  | 10may2020   | Supports additional information for animation and reading/writing formats
-//## | tstr8                  | tobject           | 1.00.680  | 20mar2022   | 27dec2021, 28jul2021, 30apr2021, 14feb2021, 28jan2021, 21aug2020, 8bit binary string replacement for Delphi 10's lack of native 8bit string support
+//## | tstr8                  | tobject           | 1.00.682  | 27dec2022   | 20mar2022, 27dec2021, 28jul2021, 30apr2021, 14feb2021, 28jan2021, 21aug2020, 8bit binary string replacement for Delphi 10's lack of native 8bit string support
 //## | tvars8                 | tobject           | 1.00.220  | 31jan2022   | 02jan2022, 16aug2020, 8bit binary replacement for "tdynamicvars" and "tdynamictext" -> simple, fast, and lighter with full binary support (no string used)
 //## | tmask8                 | tobject           | 1.00.360  | 07jul2021   | 10may2020, Rapid 8bit graphic mask for tracking onscreen window areas (square and rounded) at speed: WRITE: 101x[1920x1080] mask redraws in under 500ms ~ 5ms/mask and READ: 101x[1920x1080] mask scans in under 1,100ms ~11ms/mask on Intel Atom 1.1Ghz
-//## | tbasicsystem           | tobject           | 1.00.2682 | 20may2022   | 27mar2022, Updated onaccept proc for deep drag and drop support, 26feb2022, Fixed ibuffer.w/h mismatch with mustmask - 21sep2021, 29aug2021, 28jul2021, 07jul2021, 18jun2021, 29may2021, 14apr2021, 03apr2021, 08mar2021, 25feb2021, 11oct2020, 28jul2020, 20may2020, GUI manager - handles all GUI related work -> connect to a form easily with little code on the form side required
-//## | tbasiccontrol          | tobject           | 1.00.970  | 12jan2022   | 09sep2021, 27mar2021, 11oct2020, 20may2020, 12apr2020, 14mar2020, flicker free base control with buffer, _ontimer and _onpaint support
-//## | tbasichead             | tbasiccontrol     | 1.00.653  | 06nov2022   | 11oct2022, 16sep2022, 30apr2022, 28may2021, 26apr2021, 27mar2021, 24feb2021, 06oct2020, 12apr2020,14mar2020, form head
-//## | tbasichelp             | tbasiccontrol     | 1.00.082  | 12apr2020   | 25mar2020, realtime help scroller
+//## | tbasicsystem           | tobject           | 1.00.2750 | 09dec2023   | 19nov2023, 12feb2023, 20may2022, 27mar2022, Updated onaccept proc for deep drag and drop support, 26feb2022, Fixed ibuffer.w/h mismatch with mustmask - 21sep2021, 29aug2021, 28jul2021, 07jul2021, 18jun2021, 29may2021, 14apr2021, 03apr2021, 08mar2021, 25feb2021, 11oct2020, 28jul2020, 20may2020, GUI manager - handles all GUI related work -> connect to a form easily with little code on the form side required
+//## | tbasiccontrol          | tobject           | 1.00.1050 | 02dec2023   | 17nov2023, 12jan2022, 09sep2021, 27mar2021, 11oct2020, 20may2020, 12apr2020, 14mar2020, flicker free base control with built-in _onnotify/_ontimer and _onpaint procs for easy customisation
+//## | tbasichead             | tbasiccontrol     | 1.00.670  | 02dec2023   | 06nov2022, 11oct2022, 16sep2022, 30apr2022, 28may2021, 26apr2021, 27mar2021, 24feb2021, 06oct2020, 12apr2020,14mar2020, form head
+//## | tbasichelp             | tbasiccontrol     | 1.00.085  | 02dec2023   | 12apr2020, 25mar2020, realtime help scroller
 //## | tbasicscrollbar        | tbasiccontrol     | 1.00.470  | 04oct2022   | 03mar2022, 08feb2022, 25jul2021, 13apr2020, streamlined scrollbar with full and partial keyboard/wheel handling -> can pass critical handling to parent control for consistent operation
 //## | tbasicscroll           | tbasiccontrol     | 1.00.525  | 04oct2022   | 02jun2021, 29may2021, 08mar2021, 25feb2021, 14aug2020, 05apr2020, vertical scrollbox
 //## | tbasiccols             | tbasiccontrol     | 1.00.300  | 07mar2022   | 26feb2021, Multi-column handler - supports upto 10 columns
@@ -79,38 +160,39 @@ unit gosscore;
 //## | tbasicsetcolor         | tbasicscroll      | 1.00.700  | 01mar2021   | Advanced color picker and support for "popcolor" dlg
 //## | tbasicsplash           | tbasicscroll      | 1.00.488  | 27apr2022   | style=2=IconArt, 24feb2022, 21sep2021, 18jun2021, 05oct2020, System splash screen and about window
 //## | tbasicinfo             | tbasiccontrol     | 1.00.130  | 13apr2020   | 16mar2020, simple information list
-//## | tbasicstatus           | tbasiccontrol     | 1.00.130  | 29dec2021   | 07jul2021, 02jun2021, 05oct2020, 12apr2020, 15mar2020, simple statusbar
-//## | tbasictitle            | tbasiccontrol     | 1.00.052  | 24feb2021   | 11oct2020, Standard title -> supports both small and large modes -> exactly matches tbasictoolbar.maketitle() display output
-//## | tbasictoolbar          | tbasiccontrol     | 1.00.2150 | 26sep2022   | 28jun2022, 25mar2022, 19dec2021, 21sep2021, 07jul2021, 30may2021, 27mar2021, 21feb2021, 11oct2020, 22sep2020, 23apr2020, 29mar2020, advanced toolbar with "title + links" support
+//## | tbasicstatus           | tbasiccontrol     | 1.00.142  | 06dec2023   | 29dec2021, 07jul2021, 02jun2021, 05oct2020, 12apr2020, 15mar2020, simple statusbar
+//## | tbasictitle            | tbasiccontrol     | 1.00.053  | 19nov2023   | 24feb2021, 11oct2020, Standard title -> supports both small and large modes -> exactly matches tbasictoolbar.maketitle() display output
+//## | tbasictoolbar          | tbasiccontrol     | 1.00.2155 | 09dec2023   | 03nov2023, 26sep2022, 28jun2022, 25mar2022, 19dec2021, 21sep2021, 07jul2021, 30may2021, 27mar2021, 21feb2021, 11oct2020, 22sep2020, 23apr2020, 29mar2020, advanced toolbar with "title + links" support
 //## | tbasictick             | tbasiccontrol     | 1.00.170  | 11apr2020   | 06apr2020, simple tick
 //## | tbasicedit             | tbasiccontrol     | 1.00.1101 | 19jun2022   | 03mar2022, 31mar2021, 07apr2020, advanced edit box, supports makers for edit/password/drop/dropstatic/progress -> simulates 5 controls in one with many useful features and functions
 //## | tbasicjump             | tbasiccontrol     | 1.00.066  | 06mar2022   | 21feb2022, 22mar2021, 10mar2021, realtime jumpto panel for millisecond precision position jumping for song/midi playback
 //## | tbasicmenu             | tbasiccontrol     | 1.00.2810 | 28sep2022   | 20mar2022, 26feb2022, 08jun2021, 27mar2021, 11oct2020, 13apr2020, advanced menu handler
-//## | tbasicnav              | tbasiccontrol     | 1.00.1085 | 11oct2022   | 27sep2022, 28jun2022, 22may2022, 23mar2022, 12jan2022, 09aug2021, 28jul2021, 18jun2021, 06apr2021, 25mar2021, 22sep2020, Advanced, multi-purpose favouries/files/folders/open/save navigation control
-//## | low__wordcore          | procedure         | 1.00.4967 | 27sep2022   | 05jul2022, 29jun2022, 02may2022, 22apr2022 09mar2022, 05feb2022, 11jan2022, 28dec2021, 28aug2021, 15may2021, 31mar2021, 12mar2021, 11oct2020, 26aug2020, 29feb2020 Ultra-low-level text box subsystem for 1) plain text (txt), enhanced text with styles (bwd) and advanced text (bwp) with image support, text styles, fonts, colors and text alignment
-//## | tbasicbwp              | tbasiccontrol     | 1.00.460  | 04oct2022   | 24sep2022, 18jun2022, 29may2021, 12mar2021, gui front-end for low__wordcore text box -> supports txt,bwd and bwp text documents - original IP of BlaizEnterprises.com
+//## | tbasicnav              | tbasiccontrol     | 1.00.1095 | 11feb2023   | 11oct2022, 27sep2022, 28jun2022, 22may2022, 23mar2022, 12jan2022, 09aug2021, 28jul2021, 18jun2021, 06apr2021, 25mar2021, 22sep2020, Advanced, multi-purpose favouries/files/folders/open/save navigation control
+//## | low__wordcore          | procedure         | 1.00.5380 | 02may2023   | 02may2023 (fixed redo list flush failure), 25feb2023, 25dec2022, 27sep2022, 05jul2022, 29jun2022, 02may2022, 22apr2022 09mar2022, 05feb2022, 11jan2022, 28dec2021, 28aug2021, 15may2021, 31mar2021, 12mar2021, 11oct2020, 26aug2020, 29feb2020 Ultra-low-level text box subsystem for 1) plain text (txt), 2) enhanced text with styles (bwd) and 3) advanced text (bwp) with image support, text styles, fonts, colors and text alignment, 4) RichText support not complete
+//## | tbasicbwp              | tbasiccontrol     | 1.00.642  | 15nov2023   | 18feb2023, 04oct2022, 24sep2022, 18jun2022, 29may2021, 12mar2021, gui front-end for low__wordcore text box -> supports txt, bwd and bwp text documents
+//## | tbwpbar                | tbasiccontrol     | 1.00.120  | 15nov2023   | font name / size / color and style toolbar for tbasicbwp text box
 //## | tbasicint              | tbasiccontrol     | 1.00.425  | 12nov2022   | 27mar2022, 27feb2022, 28jul2021, 27mar2021, 26feb2021, 17aug2020, Fast and responsive slide bar -> compact and easy to use
-//## | tbasicset              | tbasiccontrol     | 1.00.275  | 27mar2022   | 30mar2021, 18aug2020, Upto 32 "yes/no" slots with boolean in/out for each slot -> compact multiple option chooser control
-//## | tbasicsel              | tbasiccontrol     | 1.00.153  | 18sep2022   | 27mar2022, 29aug2021, 27mar2021, 19aug2020, Upto 32 "choose" positions with a value range of 0..31 -> each choice has help/caption for select a value range for a specific setting e.g. Text Feather 0=off, 1=mild, 2=strong
-//## | tdynamiclist           | tbasiccontrol     | 1.00.112  | 07feb2021   | 08aug2017, Base class for dynamic arrays/lists of differing structures: byte, word, integer, currency, pointer. Can be useed with user-defined records/structures/objects
-//## | tdynamicvars           | tobject           | 1.00.185  | 15jun2019   | 20oct2018, 13apr2018, 04JUL2013, Dynamic set of named variables with rapid lookup system (e.g. fred=some value)
-//## | tdynamictext           | tobject           | 1.00.070  | 21dec2019   | 19SEP2010, Name-Value variables (single lines) for client-server communication
-//## | tmainhelp              | tbasicscroll      | 1.00.233  | 27apr2022   | 30mar2022, 08jan2022, 22sep2021, 24jul2021, 29may2021, 26aug2020, Floating help window with BWP file support
-//## | tbasicmidi             | tobjectex         | 1.00.5370 | 16mar2022   | 23feb2022, 30sep2021, 21may2021, 21may2021: thread safe version -> all attempts to use high level thread safe locking and syncing failed, tried Windows message qeueues also failed, instead built a managed thread system for rock-soild thread communication via "systhread__start" family of procs - 19feb2022, 10may2021, error hunt begins - 20apr2021, 15apr2021, 04apr2021, 30mar2021, 22feb2021, Realtime midi playback (format 0/1 in tick mode only) for .mid, .midi and .rmi
+//## | tbasicset              | tbasiccontrol     | 1.00.285  | 25dec2022   | 27mar2022, 30mar2021, 18aug2020, Upto 32 "yes/no" slots with boolean in/out for each slot -> compact multiple option chooser control
+//## | tbasicsel              | tbasiccontrol     | 1.00.163  | 25dec2022   | 18sep2022, 27mar2022, 29aug2021, 27mar2021, 19aug2020, Upto 32 "choose" positions with a value range of 0..31 -> each choice has help/caption for select a value range for a specific setting e.g. Text Feather 0=off, 1=mild, 2=strong
+//## | tdynamiclist           | tbasiccontrol     | 1.00.112  | 07feb2021   | 08aug2017, Base class for dynamic arrays/lists of differing structures: byte, word, integer, currency, pointer. Can be used with user-defined records/structures/objects
+//## | tmainhelp              | tbasicscroll      | 1.00.233  | 27apr2022   | 30mar2022, 08jan2022, 22sep2021, 24jul2021, 29may2021, 26aug2020, Built-in help display panel with BWP file support
+//## | tbasicmidi             | tobjectex         | 1.00.5370 | 16mar2022   | 23feb2022, 30sep2021, 21may2021, 21may2021: thread safe version -> all attempts to use high level thread safe locking and syncing failed, tried Windows message queues also failed, instead built a managed thread system for rock-solid thread communication via "systhread__start" family of procs - 19feb2022, 10may2021, error hunt begins - 20apr2021, 15apr2021, 04apr2021, 30mar2021, 22feb2021, Realtime midi playback (format 0/1 in tick mode only) for .mid, .midi and .rmi
 //## | tbasicchimes           | tobjectex         | 1.00.2000 | 15nov2022   | Centralised system chiming + audio alerts support via midi
 //## | tsnd32                 | tobjectex         | 1.00.220  | 30sep2021   | 14jul2021, 32bit slot based audio stream storage and manipulation handler
 //## | tplaylist              | tobjectex         | 1.00.350  | 20mar2022   | Integrated m3u playlist manager - syncs with list for seamless playlist handling
 //## | taudiobasic            | tobjectex         | 1.00.300  | 19feb2022   | 14apr2017, Playback and Recording systems now fully operational as at 25JUN2009
-//## | tbasicimage            | tobject           | 1.00.157  | 09may2022   | 27jul2021, 25jan2021, ??jan2020 Lightweight, fast, variable bit system independent image handler
+//## | tbasicimage            | tobject           | 1.00.187  | 07dec2023   | 09may2022, 27jul2021, 25jan2021, ??jan2020 Lightweight, fast, variable bit system independent image handler
 //## | tbmp                   | tobject           | 1.00.120  | 05feb2022   | 08jun2021, 25jan2021, ??jan2020 Bitmap to system image conversion and handler with Android and Windows lock/unlock support for Mobile phone and 32bit support
 //## | tframe                 | tobject           | 1.00.450  | 01feb2021   | Enhanced framer drawer, compatible with Framer Plus frames (*.fps)
 //## | low__nav               | n/a               | 1.00.230  | 25mar2021   | 20feb2021, Advanced file list/sorting/organised function
-//## | plus__* support        | family of procs   | 1.00.050  | 27jun2022   | Collection of proc for swift multi-tab "PLUS" version support
+//## | plus__* support        | family of procs   | 1.00.050  | 27jun2022   | Collection of procs for swift multi-tab "PLUS" version support
+//## | tspell                 | tobjectex         | 1.00.150  | 11feb2022   | System dictionary of 296,000+ full length, non-encoded / non-shortened words
 //## ==========================================================================================================================================================================================================================
 //##
-//## Verification: (none) 10may2020
-//## Language NOT enabled
-//## Copyright (c) 1997-2022 Blaiz Enterprises / BlaizEnterprises.com
+//## -- Debugging Switches --
+//{$D+}
+//{$L+}
+//{$Y+}
 //#######################################################################################################################################
 
 interface
@@ -139,10 +221,6 @@ const
    programplusmax=programpluscount-1;
 {$endif}
 
-   //.Program Name -> used in code for FILENAMES and WEB addresses -> website always lowercase, files and folders as is -> set as required -> e.g. "Synthesiser"
-   programwebname=programname;//'Secure Message';
-   programwebname_check=programname_check;//16771570;
-
 //debug support ----------------------------------------------------------------
 {$ifdef debug}
    system_debug         =true;//turn on system wide debug systems -> slows down performance and counts critical controls and other vital information sets - 06may2021
@@ -163,12 +241,10 @@ const
    system_jpeg          =false;
 {$endif}
 
-{$ifdef tbt}
-  tbtFeedback =0;
-  tbtEncode   =1;
-  tbtDecode   =2;
-{$endif}
-
+   //.TBT encryption
+   tbtFeedback =0;
+   tbtEncode   =1;
+   tbtDecode   =2;
 
    //security checkid 1 of 2 -> put it here to space it out inside the EXE - harder to track - 11oct2022
    programcode_checkid:array[0..103] of byte=(44,50,108,119,16,181,130,87,73,239,74,55,206,75,168,25,115,142,124,70,204,9,12,103,127,198,110,246,163,40,238,47,31,113,70,136,56,48,31,98,177,159,88,124,54,81,211,78,232,199,238,108,88,216,215,124,53,243,96,117,127,171,11,37,13,18,112,55,162,217,46,56,250,68,10,91,127,62,253,234,126,79,67,179,44,42,165,221,191,11,177,229,107,41,121,207,15,238,18,165,27,91,72,169);
@@ -313,6 +389,10 @@ const
    feM3U          ='m3u';//20mar2022 - playlist
    feFootnote     ='footnote';//21mar2022
    feCursorScript ='cscript';//17may2022
+   feQuoter       ='quoter';//24dec2022
+   feQuoter2      ='quoter2';//10jan2022
+   fezip          ='zip';//10feb2023
+   feexe          ='exe';//14nov2023
    //.combinations
    feallfiles     =feany;
    fealldocs      =fetxt+fesepX+febwd+fesepX+febwp;
@@ -354,6 +434,8 @@ const
    peM3U          =feM3U+fesep;//20mar2022
    peFootnote     =feFootnote+fesep;//21mar2022
    peCursorScript =feCursorScript+fesep;//17may2022
+   peQuoter       =feQuoter+fesep;//24dec2022
+   peQuoter2      =feQuoter2+fesep;
    pemjpeg        =femjpeg+fesep;
    peallfiles     =feallfiles+fesep;
    pealldocs      =fealldocs+fesep;
@@ -362,7 +444,9 @@ const
    peallcurs2     =feallcurs2+fesep;
    pealljpgs      =fealljpgs+fesep;
    pebcs          =febcs+fesep;
-
+   pezip          =fezip+fesep;
+   peexe          =feexe+fesep;
+   
    //Color Format
    cfNone         =0;
    cfRGB24        =1;
@@ -391,6 +475,7 @@ const
    sbbottom       =4;
 
    //-- Easy access chars and symbols for use with BYTE arrays -----------------
+   //Access ASCII values without under Delphi 10+ which no longer supports 8 bit characters
    //numbers 0-9
    nn0 = 48;
    nn1 = 49;
@@ -457,6 +542,8 @@ const
    lly = 121;
    llz = 122;
    //common symbols
+   ssdollar = 36;//"$" - 10jan2023
+   sspipe = 124;//"|"
    sshash = 35;
    ssAsterisk = 42;
    ssdash =45;
@@ -475,6 +562,7 @@ const
    ssquestion = 63;
    ssunderscore =  95;
    ssspace = 32;
+   ssspace2 = 160;//05feb2023
    ss10 = 10;
    ss13 = 13;
    ss9 = 9;
@@ -515,6 +603,8 @@ const
    scMixer        ='sys:mixer';//07mar2022
    scMax          ='sys:max';//15mar2022
    scOntop        ='sys:ontop';//15mar2022
+   scFindpop      ='sys:find.pop';//18feb2023
+   scFind         ='sys:find';//18feb2023
    scPlus         ='plus~';//used to signal a plus orientated page control
 
    //own list -> special mode
@@ -549,7 +639,8 @@ const
    wwsNone        =0;
    wwsWindow      =1;
    wwsPage        =2;
-   wwsMax         =2;
+   wwsPage2       =3;
+   wwsMax         =3;
    //.multi-undo styles -> low__wordcore - 02jul2022
    musNone        =0;
    musDelL        =1;
@@ -655,6 +746,7 @@ const
    satMenu             =84;
    satCols             =85;
    satSetcolor         =86;
+   satOther            =87;//16nov2023
 
    //tbasicccols -> styles
    bcVertical          =0;//all vertical columns
@@ -889,7 +981,15 @@ const
    tepAddL20               =100;//14jun2022
    tepSubL20               =101;//14jun2022
    tepPanel20              =102;//05jul2022
-
+   tepClosed20             =103;//black - uses system font color - 21nov2023
+   tepUpward20             =104;//black
+   tepDownward20           =105;//black
+   tepInstagram20          =106;
+   tepFacebook20           =107;
+   tepTwitter20            =108;
+   tepSourceForge20        =109;//02dec2023
+   tepGitHub20             =110;
+   
    //.file format teps
    tepXXX20                =170;
    tepBMP20                =171;
@@ -911,6 +1011,7 @@ const
    tepCUR20                =187;//23may2022, 17may2022
    tepRTF20                =188;//22jun2022
    tepSFEF20               =189;//05oct2022
+   tepQuoter20             =190;//26dec2022
 
    //.duplicates
    tepRun20                =tepEXE20;
@@ -933,6 +1034,10 @@ const
    tepBullet               =223;
    tepSep                  =224;
    tepHelpBanner           =225;//medium sized banner
+
+   //.custom images (200) are program specific -> offload from core inclusion
+   tepCustomStart          =300;
+   tepCustomEnd            =499;
 
    //.large 32x32 images
    tepIcon32               =500;//actual program icon -> program specific - 11oct2020
@@ -1374,6 +1479,7 @@ type
    tbasicjump      =class;
    tbasictea       =class;
    tmainhelp       =class;
+   tbwpbar         =class;
    tpulleventfunc  =function(n:string;var v:string;var int1:longint;var bol1:boolean):boolean;
    TFarProc             =pointer;
    UINT                 =longint;
@@ -1630,7 +1736,7 @@ type
    twordcore=record
      //init
      initstate     :string;//is set to "done" once this structure has be setup for the first time - 21aug2019
-     dataonly      :boolean;//defaults=false=fonts load for GUI, true=font don't load and thus no GUI support (but faster for pure data conversion)
+     dataonly      :boolean;//defaults=false=fonts load for GUI, true=fonts don't load and thus no GUI support (but faster for pure data conversion)
      hostsizing    :boolean;//default=false=host is NOT resizing so it's ok to perform WRAP request, true=host IS resizing so hold off performing WRAP calculations - 22apr2022
      //.onefontname/size - 05feb2022
      onefontname   :string;//default="<nil>", if set to a font name then ALL font names are overridden inclduing any pasted, io'ed, current etc even in dataonly mode -> now supports multiple dynamic fontnames of "$fontname=viFontname/$fontname2=viFontname2/default/default 2/<any valid fontname>" - 05feb2022
@@ -1662,8 +1768,8 @@ type
      imgh          :array[0..999] of longint;
      //data streams
      data          :tstr8;//single byte text stream
-     data2         :tstr8;//as above, forms a 16bit (word) list id in range 0..999 for above
-     data3         :tstr8;//2nd part of list1's 16bit list id
+     data2         :tstr8;//1st byte of 16bit dataid stream -> this id points to the text list/image list above
+     data3         :tstr8;//2nd byte of 16bit dataid stream -> 2x single byte streams making mapping/undoing/redoing easier as all values identically match the first "data" text stream
      //alt datastreams - these are assumed to be POINTERS and thus are not destroyed - 26jun2022
      alt1          :tstr8;//pointer only
      alt2          :tstr8;//pointer only
@@ -1681,7 +1787,7 @@ type
      mfrom1        :longint;//required
      mact          :longint;//vital - 03jul2022
      mlen          :longint;//required
-     //support streams -> list every item's x,y,w,h information (in 32bit blocks) and line information - 21aug2019
+     //support streams -> list every line's x,y,w,h information (in 32bit blocks) and line information - 21aug2019 - individual characters can then be calculated from the start of the line onwards without the overhead of 1:1 character mapping, inline with WordPad's memory overhead
      linex         :pdlLONGINT;
      liney         :pdlLONGINT;
      lineh         :pdlLONGINT;
@@ -1690,13 +1796,13 @@ type
      //.hard and fast limit of each core, exceeding these limits will cause memory corruption/system failure - 22aug2019
      linesize      :longint;
      listsize      :longint;
-     //.stream cores
+     //.stream cores -> these provide the actual memory in RAM for the array pointers "linex/liney/.../linep" above -> reading/writing to a pointer array is fast and straight forward
      corelinex     :tstr8;
      coreliney     :tstr8;
      corelineh     :tstr8;
      corelineh1    :tstr8;
      corelinep     :tstr8;
-     //current support
+     //current "font/style" support -> this represent the text cursor's current formatting
      cfontname     :string;
      cfontsize     :longint;
      cbold         :boolean;
@@ -1708,13 +1814,13 @@ type
      cborder       :longint;
      calign        :byte;//0=left, 1=centre, 2=right
      //paint + management
-     cursorpos     :longint;
-     cursorpos2    :longint;
-     papersize     :longint;//0=psA4, 1=psA3 etc -> used when wrapstyle=wwsPage
+     cursorpos     :longint;//text cursor position within the "data" stream and thus the "data2" and "data3" streams
+     cursorpos2    :longint;//highlight to this position
+     papersize     :longint;//0=psA4, 1=psA3 etc -> used when wrapstyle=wwsPage - visual handling/painting only at this stage - no print support
      paperwidth    :longint;//read only - width of paper for screen purposes
      paperheight   :longint;//read only - height of paper for screen purposes
      dpi           :longint;//default=95, widescreen=120
-     widestline    :longint;//retains the wides line in pixels even when said lines have been removed -> inline with Notepad - 12mar2021
+     widestline    :longint;//retains the widest line in pixels even when said lines have been removed -> inline with Notepad - 12mar2021
      usezoom       :boolean;//default=true=zoom fontsize and images to system zoom level (vizoom), false=do not apply zoom - 14mar2021
      lastzoom      :longint;//internal use only -> tracks change in zoom level - 14mar2021
      zoomnow       :longint;//internal use only -> current zoom level -> used for all zooming of text and images - 14mar2021
@@ -1737,13 +1843,14 @@ type
      hpos          :longint;//control horizontal scrollbar position
      hhostsync     :boolean;//true=host must read "hpos/hmax" and sync with host scrollbar
      pagecount     :longint;//number of pages (always 1 or more) -> works when "wrapstyle=wwsPage"
-     totalheight   :longint;//height of all items within the confines of pagewidth & pageheight
+     totalheight   :longint;//height of all lines of text within the confines of pagewidth & pageheight
      linecount     :longint;
      line          :longint;
      col           :longint;
-     wrapcount     :longint;//indicates HOW FAR the wrap system has progressed (complete when wrapcount>=length(x.data))
-     dataid        :longint;//reset between documents and calls to "clear"
-     dataid2       :longint;//this dataid is NEVER reset and is persistent between documents, calls to "clear" etc, but is RESET only on call to "init" - 14jun2022
+     wrapcount     :longint;//indicates HOW FAR the wrap system has progressed (considered complete when wrapcount>=length(x.data))
+     dataid        :longint;//track changes to document content AND visual parameters such as width and height -> resets between documents and calls to "clear"
+     dataid2       :longint;//this dataid is NEVER reset and is persistent between documents, calls to "clear" etc, but is RESET only on a call to "init" - 14jun2022
+     dataid3       :longint;//this dataid is NEVER reset and is persistent between documents, calls to "clear" etc, but is RESET only on a call to "init" AND relates ONLY to content change and NOT control resize/wordwrap status - 25dec2022
      mustpaint     :boolean;
      paintlock     :boolean;
      modified      :boolean;
@@ -1753,12 +1860,12 @@ type
      idleref       :currency;
      k_idleref     :currency;//keyboard idle - 26sep2022
      timerbusy     :boolean;
-     wrapstack     :tstr8;//stack of wordwrap ranges to process (from(4b)+to(4b)=64bit)
+     wrapstack     :tstr8;//stack of wordwrap ranges to process (from(4b)+to(4b)=64bit blocks)
      kstack        :tstr8;//stack of keyboard inputs
      mstack        :tstr8;//stack of mouse inputs
      briefstatus   :string;
-     shortcuts     :boolean;
-     styleshortcuts:boolean;
+     shortcuts     :boolean;//enable built-in keyboard shortcuts
+     styleshortcuts:boolean;//enable more keyboard shortcuts for keyboard based text styling such as "bold" and "italic"
      flashcursor   :boolean;//internally managed
      drawcursor    :boolean;//internally managed
      cursoronscrn  :boolean;//*
@@ -1772,12 +1879,20 @@ type
      feather       :longint;//0=sharp edges to text, 1=light feather, 2=heavy feather
      sysfeather    :boolean;//default=true=uses system feather (fills ".feather" with "vifeather" value) - 26aug2020
      activecursor  :tcursor;
+     //.dic support
+     dicref1       :longint;//used by "odic=true"
+     dicref2       :longint;//used by "odic=true"
+     dicid         :longint;//used by "odic=true"
+     dicshow       :boolean;//used by "odic=true"
+     dicfrom       :longint;//used by "odic=true"
+     dicto         :longint;//used by "odic=true"
+     dic_addword   :string;//used by "odic=true" - contains the currently misspelt word - use to add to supplementary dictionary - 11feb2023
      //.buffer support -> used for screen painting
-     buffer24      :tbasicimage;//we could use 24bits here since it's our image handler - 21aug2020
+     buffer24      :tbasicimage;//we can use 24bits here since it's our image handler - 21aug2020
      bufferref     :string;
      syncref       :string;
      //consts
-     c_smallwrap   :longint;//set once by "init"
+     c_smallwrap   :longint;//set once by "init" - progressive wordwrap range
      c_bigwrap     :longint;//set once by "init"
      c_pagewrap    :longint;//use to wrap an entire screen of characters -> best guess -> not actual requirement, but a large number to cover even 8k displays
      c_idlepause   :longint;//time to take before cursor can flash again, default=500ms
@@ -1787,17 +1902,18 @@ type
      timer_chklinecursorx    :boolean;
      sysfontDefault          :string;
      sysfontDefault2         :string;
-//xxxxxxxxxxxxxxxx     wine                    :boolean;//default=false, true=then all fonts thare are listed as "Default" are remade and the control updated - 02feb2022
      //other
      landscape     :boolean;//default=false
-     wrapstyle     :longint;//0=wwsNone=no wrap, 1=wwsWindow=to window(viewwidth/height), 2=wwsPage=to page (pagewidth/pageheight)
+     wrapstyle     :longint;//0=wwsNone=no wrap, 1=wwsWindow=to window(viewwidth/height), 2=wwsPage=to page (pagewidth/pageheight), 3=wwsPage+Manuscript Left Margin
      wrapreadonly  :boolean;//default=false=wrapstyle adjust with "ioset()", true=wrap ONLY changes when specifically called via "low__wordcore(x,'wrap','<new wrapstyle value>') - 12mar2021
      lastfindalignpos:longint;//default=-1=not set
      //reference
-     bwd_color     :longint;
+     bwd_color     :longint;//support for "enhanced text" color support which uses three colors: font color, font color 2 (typically was red)  and highlight color (text background)
      bwd_color2    :longint;
      bwd_bk        :longint;
-     //claude support - optional color overrides for Claude - 14jul2020
+     //Claude support - optional color overrides for Claude - 14jul2020
+     //Claude v1.00.* supported dynamically allocated document coloring for html encoding with variables below,
+     //whereas Claude v2.00.* supports a more direct approach to it's document coloring and html encoding with more sophisticated handling
      useclaudecolors  :boolean;//default=false=off
      claude_text1     :longint;
      claude_text2     :longint;
@@ -1815,7 +1931,12 @@ type
      defFontsize      :longint;//"12"
      defFontcolor     :longint;//"0" = black
      //special actions - 19apr2021
-     oviewurl         :boolean;//default=true=click on a url "http://" or "https://" or "ftp://" or "ftps://" or "mailto:" with not active selection and the link is executed via the default system handler - 19apr2021
+     oviewurl         :boolean;//default=true=click on a url "http://" or "https://" or "ftp://" or "ftps://" or "mailto:" with no active selection and the link is executed via the default system handler (browser / email client) - 19apr2021
+     olinespacing     :longint;//1=normal, 2=double - 04feb2023
+     odic             :boolean;//default=false, true=indicate misspelt words and offer dictionary support
+     obackup          :boolean;//default=false, true=write whole document backup copies to disk whenever document changes significantly - 05feb2023
+     obackupname      :string;//default=nil, optional trailing name (extension is always automatically assigned) - 25feb2023
+     ofindhandler     :longint;//default=assigned at init
      end;
 
 //zip support ------------------------------------------------------------------
@@ -1890,6 +2011,44 @@ type
     destructor destroy; override;
    end;
 
+{tspell}
+//xxxxxxxxxxxxxxxxxxxx//ssssssssssssssssssssss
+    tspell=class(tobjectex)
+    private
+     iwordlist:tdynamicstring;
+     iwordrefs:tdynamicinteger;
+     icount,iid:longint;
+     ifilename:string;
+     icansave,imodified:boolean;
+     procedure xclearwords;
+     function xsettext(xtext:string):boolean;
+     procedure settext(x:string);
+     function gettext:string;
+     function findempty(var xindex:longint):boolean;
+    public
+     //create
+     constructor create(xstoragefilename:string);
+     destructor destroy; override;
+     //information
+     property id:longint read iid;
+     property filename:string read ifilename;
+     property modified:boolean read imodified;
+     property cansave:boolean read icansave;
+     property count:longint read icount;
+     //spelling
+     function findword(x:string):boolean;
+     function findword2(x:string;var xindex:longint):boolean;
+     function addword(x:string):boolean;
+     function delword(x:string):boolean;
+     function clear:boolean;
+     //io
+     function load:boolean;
+     function save:boolean;
+     function mustsave:boolean;
+     //data
+     property text:string read gettext write settext;
+    end;
+
 {ttbt}
 {$ifdef tbt}
     ttbt=class(tobjectex)
@@ -1911,9 +2070,9 @@ type
      property power:integer read ipower write setpower;
      property password:string read ipassword write setpassword;
      function encode(s,d:tstr8;var e:string):boolean;
-     function encode4(s,d:tstr8;var e:string):boolean;
+     function encode4(s,d:tstr8;var e:string):boolean;//14nov2023
      function encodeLITE4(s:tstr8;e:string):boolean;
-     function decode(s,d:tstr8;var e:string):boolean;
+     function decode(s,d:tstr8;var e:string):boolean;//14nov2023
      function decodeLITE(s:tstr8;var e:string):boolean;//uses minimal RAM - 02JAN2012
      //internal
      function frs(s,d:tstr8;m:byte):boolean;//feedback randomisation of string - 16sep2017, 16nov2016
@@ -1921,7 +2080,6 @@ type
 {$endif}
 
 //GIF - thashtable
-{$ifdef gif}
     tgifscreen=packed record//7
      w:word;
      h:word;
@@ -1937,6 +2095,7 @@ type
      h:word;
      pf:byte;//bit fields
      end;
+{$ifdef gif}
    // A Hash Key is 20 bits wide.
     // - The lower 8 bits are the postfix character (the new pixel).
     // - The upper 12 bits are the prefix code (the GIF token).
@@ -1998,6 +2157,9 @@ type
     iprows24:pcolorrows24;
     iprows32:pcolorrows32;
     istable:boolean;
+    procedure setareadata(sa:trect;sdata:tstr8);
+    function getareadata(sa:trect):tstr8;
+    function getareadata2(sa:trect):tstr8;
    public
     //animation support
     ai:tanimationinformation;
@@ -2027,10 +2189,15 @@ type
     //io
     function todata:tstr8;//19feb2022
     function fromdata(s:tstr8):boolean;//19feb2022
-
     //core
     property data:tstr8 read idata;
+    //.raw data handlers
     function setraw(dbits,dw,dh:longint;ddata:tstr8):boolean;
+    function getarea(ddata:tstr8;da:trect):boolean;//07dec2023
+    function getarea_fast(ddata:tstr8;da:trect):boolean;//07dec2023 - uses a statically sized buffer (sizes it to correct length if required) so repeat usage is faster
+    function setarea(ddata:tstr8;da:trect):boolean;//07dec2023
+    property areadata[sa:trect]:tstr8 read getareadata write setareadata;
+    property areadata_fast[sa:trect]:tstr8 read getareadata2 write setareadata;
    end;
 
 {tbmp}
@@ -2186,6 +2353,11 @@ type
     //ease of use support options
     oautofree:boolean;//default=false
     otestlock1:boolean;//debug only - 09may2021
+    //misc
+    tag1:longint;
+    tag2:longint;
+    tag3:longint;
+    tag4:longint;
     //create
     constructor create(xlen:longint); virtual;
     destructor destroy; override;
@@ -2216,6 +2388,7 @@ type
     function clear:boolean;
     function setlen(x:longint):boolean;
     function minlen(x:longint):boolean;
+    procedure setcount(x:longint);//07dec2023
     function fill(xfrom,xto:longint;xval:byte):boolean;
     function del(xfrom,xto:longint):boolean;
     function del3(xfrom,xlen:longint):boolean;//27jan2021
@@ -2332,6 +2505,22 @@ type
     property bappend:tstr8 write setbappend;
    end;
 
+{trnd8}
+//xxxxxxxxxxxxxxxxxxxxxxxxxxxx//111111111111111111111111111111
+   trnd8=class(tobject)//29nov2023
+   private
+    icore:tstr8;
+    imax,ipos,iposcount:longint;
+   public
+    //create
+    constructor create(xsize:longint); virtual;
+    destructor destroy; override;
+    //workers
+    function pull:byte;
+    function pull2:byte;
+   end;
+
+
 {tmemstr8}
    tmemstr8=class(tstream)//tstringstream replacement
    private
@@ -2417,6 +2606,7 @@ type
     property data:tstr8 read getdata write setdata;
     property binary[hdr:string]:tstr8 read getbinary write setbinary;
     function xnextname(var xpos:longint;var xname:string):boolean;
+    function findcount:longint;//10jan2022
     function xdel(xname:string):boolean;//02jan2022
    end;
 
@@ -2763,13 +2953,13 @@ type
       list:array[0..254] of word;
       count:longint;
       end;
-//xxxxxxxxxxxxxxxxxxxxxxxxxxx//ssssssssssssssssssssssssssssss
+//xxxxxxxxxxxxxxxxxxxxxxxxxxx//
    tbasicsystem=class(tobject)
    private
     //general
-    imousedownref,ihidecursorref,ipumptimer2,ibufferresize64,ibufferresize642,ilastsystem_slowref64,iecomode64,itimer1000,itimer250,ishowonceref:comp;
+    isnapshot64,imousedownref,ihidecursorref,ipumptimer2,ibufferresize64,ibufferresize642,ilastsystem_slowref64,iecomode64,itimer1000,itimer250,ishowonceref:comp;
     isizing,ilastmousemovecheckx,ilastmousemovechecky,icursorloadid,ishowaitcount,icloselocked,imustgstate,ilastdataid,iwinmax,iwinlimit,ilastsystem_mustidSLOW,ilastsystem_mustid,igstate:longint;
-    ishowoptions_crosssync,iwinemaximised,imustcloseprompt,iwasdrop_showing,itimer_busy,idragging_fullwin,iclosed,iontimerbusy,iinternalpaint,ilastshowing,itiming,icreating,idestroying,imustclose,ialigning:boolean;
+    iecopainting,ifullscreen_hidehead,ishowoptions_crosssync,iwinemaximised,imustcloseprompt,iwasdrop_showing,itimer_busy,idragging_fullwin,iclosed,iontimerbusy,iinternalpaint,ilastshowing,itiming,icreating,idestroying,imustclose,ialigning:boolean;
     inormalarea:trect;//nor only
     ikeyboardlaststate:byte;
     ihost:tcommonform;
@@ -2796,7 +2986,6 @@ type
     iax:array[0..maxcore] of longint;
     iay:array[0..maxcore] of longint;
     iacount:longint;
-    iabusy :boolean;
     //pop support
     ipophost:tbasiccontrol;
     ipopshortcut:longint;//aknone=nothing
@@ -2814,6 +3003,7 @@ type
     iscreenmovingfinexy,imousedownxy,imousemovexy:tpoint;
     iscreendownxy,iscreenmovexy:tpoint;
     iscreenmovingfine64,imousedbclicktime:comp;
+    fonshortcut:tsystemnotify;
     //paint support
     ipartpaintarea:trect;
     ipartpaintareaok,ipaintingpart,imasking,ipaintbusy:boolean;
@@ -2858,6 +3048,8 @@ type
     procedure __ontimer2(sender:tobject);
     procedure setfullscreen(x:boolean);
     function getfullscreen:boolean;
+    function getmaxscreen:boolean;
+    procedure setmaxscreen(x:boolean);
     function xmaximised:boolean;//supports both Windows and Wine modes - 05feb2022
     function xnormal:boolean;
     procedure xsetNM(xmax:boolean);//set normal/maximised
@@ -2874,6 +3066,7 @@ type
     function getgstate:longint;
     procedure setgstate(x:longint);
     procedure __onaccept(sender:tobject;var msg:tmessage);//drag&drop files - 24APR2011, 07DEC2009
+    procedure xsnapshot_make;
     //.status support
     procedure __xstatus(xpert:double;xtitle:string;xshow,xupdatenow:boolean);
     function getstatustext(xindex:longint):string;
@@ -2948,13 +3141,16 @@ type
     property painting:boolean read ipaintbusy;
     property paintingpart:boolean read ipaintingpart;
     property partpaintareaok:boolean read ipartpaintareaok;
+    property ecopainting:boolean read iecopainting;//true=system has switched to reduced painting (eco mode), false=normal painting - 16nov2023
     //.window mask support
     property masking:boolean read imasking;//paint via mask8 layer support -> for fast, multiple overlapping window support - 17may2020
     function mustmask:boolean;
     property mask:tmask8 read imask;
     property maskval:longint read getmaskval;
     //.fullscreen
+    property fullscreen_hidehead:boolean read ifullscreen_hidehead write ifullscreen_hidehead;//12feb2023
     property fullscreen:boolean read getfullscreen write setfullscreen;
+    property maxscreen:boolean read getmaxscreen write setmaxscreen;
     procedure xsyncfullscreen;//internal use only
     //new handlers
     function nfullwin:tbasicscroll;
@@ -2966,6 +3162,7 @@ type
     function nstatus(xtitle:string):tbasicscroll;
     function nscroll(da:trect):tbasicscroll;
     function nsetcolor(da:trect;xshowhead:boolean):tbasicsetcolor;//27feb2021
+    function nsetcolor2(da:trect;xshowhead,xuse32:boolean):tbasicsetcolor;//17nov2023
     //position support (left/right/top/bottom) - 27feb2022
     function canposition:boolean;
     procedure position(xstyle:string);
@@ -2973,8 +3170,10 @@ type
     //.special
     function popint(var xval:longint;xmin,xmax,xdef:longint;xtep32:longint;xtitle,xcap,xhelp,xcancelcap,xokcap:string;xsize:longint):boolean;
     //.edit
+    function poppass(var x:string;xcap,xhelp:string):boolean;
     function popedit(var x:string;xcap,xhelp:string):boolean;
     function popedit2(var x:string;xtep32:longint;xtitle,xcap,xhelp,xcancelcap,xokcap:string;xsize:longint):boolean;
+    function popedit3(var x:string;xtep32:longint;xtitle,xcap,xhelp,xcancelcap,xokcap:string;xsize:longint;xpassword:boolean):boolean;
     function popmanyedit2(xcount:longint;var x:array of string;xtep32:longint;xtitle:string;xcap:array of string;xhelp:array of string;xcancelcap,xokcap:string;xsize:longint):boolean;
     //.txt - poptext()
     function poptxt(var x:string;xwrap:longint;xcap,xhelp:string):boolean;
@@ -2990,11 +3189,15 @@ type
     function poperror(x:string):boolean;
     function poperror2(x,xclosecap:string;xlarge:boolean):boolean;
     function poperrorex(x,xclosecap:string;dw,dh,cclose:longint):boolean;
+    //.status
+    function popstatus(xmsg:string;xshowsec:longint):boolean;//03jnov2023
     //.info
     function popinfo(xtitle,x:string):boolean;
     function popinfo2(xtitle,x,xclosecap:string;xlarge:boolean):boolean;
     function popinfoex(xtitle,x,xclosecap:string;dw,dh,cclose:longint):boolean;
     function poperrorORinfo(xtitle,x,xclosecap:string;dw,dh,cclose:longint;xinfo:boolean):boolean;//03jun2021
+    //.find
+    function popfind(xhandler:longint;var xtext,xcmd:string):boolean;
     //.menu
     function popmenu(xpopstyle,ximagealign:longint;xmenudata:tstr8;var xcode:longint;var xcode2:string;var xtepcolor:longint):boolean;
     function popmenu2(xpopstyle,ximagealign:longint;xmenudata:tstr8;xmenuname:string;xstyle:longint;var xcode:longint;var xcode2:string;var xtepcolor:longint):boolean;
@@ -3021,20 +3224,22 @@ type
     function popnav(var xfilename:string;xcommonfolder:string):boolean;
     //.color
     function popcolorstatic(var xvalue:longint):boolean;
-    function popcolorhistory(var xvalue:longint):boolean;
-    function popcolorhistory__add(xvalue:longint):boolean;
+    function popcolorhistory(var xvalue:longint;xuse32:boolean):boolean;
+    function popcolorhistory__add(xvalue:longint;xuse32:boolean):boolean;
     function popcolorhistory__edit:boolean;
     function popcolor(var xvalue:longint):boolean;
+    function popcolor2(var xvalue:longint;xuse32:boolean):boolean;
     //..color support
-    function xcolorhistory(var xvalue:longint;xaddonly,xeditonly:boolean):boolean;//19mar2021
+    function xcolorhistory(var xvalue:longint;xaddonly,xeditonly,xuse32:boolean):boolean;//17nov2023, 19mar2021
     //.font - 26mar2022
     function popfont(var xfontname:string):boolean;//26mar2022
+    function popfont2(var xfontname:string;xscreen,xprinter,xspecial,xaslist:boolean;xpopcontrol:tbasiccontrol):boolean;//15nov2023
 
     //.pop dialogs
     procedure xsafepopXYWHex(var dx,dy,dw,dh:longint;dy2:longint);//15NOV2010
-    function xshowwait(a:tbasicscroll;xpreviousfocus:longint):boolean;
-    function xshowwait2(a:tbasicscroll;xpreviousfocus,xtimeout:longint):boolean;
-    function xshowwait3(a:tbasicscroll;xpreviousfocus,xtimeout:longint;xlimitsize:boolean):boolean;
+    function xshowwait(a:tbasicscroll;xpreviouscontrol:tbasiccontrol;xpreviousfocus:longint):boolean;
+    function xshowwait2(a:tbasicscroll;xpreviouscontrol:tbasiccontrol;xpreviousfocus,xtimeout:longint):boolean;
+    function xshowwait3(a:tbasicscroll;xpreviouscontrol:tbasiccontrol;xpreviousfocus,xtimeout:longint;xlimitsize:boolean):boolean;
     function xpopwait(a:tbasicscroll;xpreviousfocus,dw,dh:longint;xcenter:boolean):boolean;//21may2020
     function xpopwait2(a:tbasicscroll;xcontrol:tbasiccontrol;xpreviousfocus,dw,dh:longint;xcenter:boolean):boolean;//21may2020
     procedure xclose(a:tbasiccontrol);
@@ -3090,6 +3295,7 @@ type
     procedure xshowhelp;
     procedure xdefaults;
     procedure xdefaultzoom;
+    procedure xsnapshot;//03nov2023
     //core handlers
     property core[x:longint]:tbasiccontrol read getcore;
     property corecount:longint read icorecount;
@@ -3157,6 +3363,9 @@ type
     property mousemovingfine:boolean read iscreenmovingfine;//takes ~2px - 27feb2022
     function mousedownstroke:boolean;//mouse has been clicked down
     function mouseupstroke:boolean;//mouse has released the click
+    //.strictly ONCE up and down detectors - excludes MOVE events
+    function mousedownonce:boolean;//strictly excludes ANY move events - triggers ONLY once - 19nov2023
+    function mouseuponce:boolean;//strictly excludes ANY move events - triggers ONLY once - 19nov2023
     //.button modes
     property mousebutton:longint read imousebutton;//abnone, ableft, abcenter, abright
     function mousenone:boolean;
@@ -3203,6 +3412,7 @@ type
     procedure _onnotify(sender:tobject;xstyle:char);
     procedure _onnotifylast(sender:tobject;xhandled:boolean);
     function  _onshortcut(sender:tobject):boolean;
+    property onshortcut:tsystemnotify read fonshortcut write fonshortcut;//11feb2023
     //additional support
     procedure paintallnow;
     procedure paintnow;
@@ -3224,7 +3434,7 @@ type
     iclientarea:trect;//area of control (visible bits or not)
     ipaintarea:trect;//area of control that is visible (invalid rect if nothing is visible at all)
     icaption,ihelp,ihelp2,isubhelp,isubhelp2:string;
-    iwoundtime,imakemode,iid,iaid,iwinstyle,iparentcoreindex,icoreindex,iheightref,ibordersize:longint;
+    irichstart,iwoundtime,imakemode,iid,iaid,iwinstyle,iparentcoreindex,icoreindex,iheightref,ibordersize:longint;
     iidleREF64,iwoundtimer:comp;
     fontimer2,fonvalue,fonalign,fonpaint:tnotifyevent;
     fonnotify:tsystemnotify;
@@ -3259,6 +3469,7 @@ type
     procedure __onimageviewertimer(sender:tobject);//22may2022
    public
     //options
+    oheadbase:longint;//0=default=off, 1=part of window head, 2=part of window base
     omade:longint;//default==0=made_none -> helps the control know what to do when it "makes" itself into special handler - 23mar2022
     ominimal:boolean;//default=false
     ocanshowmenu:boolean;//default=false
@@ -3266,6 +3477,7 @@ type
     oparentcorners:boolean;//default=true=draws control's corners with parent's background color when the control is ROUNDED - 07oct2020
     osafearea:boolean;//default=true=only for window controls
     oroundstyle:longint;//default=1=corRound
+    osquareframe:boolean;//default=false=based on "oroundstyle", true=square frame even if control is round - 02dec2023
     oautotop:boolean;//default=true=when a window it is automatically brought to top of it's stack, false=retain stack order
     ominheight:longint;//default=0=off, use to specify another height other than "getalignheight"
     ominwidth:longint;//default=0=off, use to specify another width other than "getalignwidth"
@@ -3333,6 +3545,7 @@ type
     function canautoheight:boolean; virtual;//26feb2021
     function setbc14(v1,v2,v3,v4:tbasiccontrol):boolean;//15mar2021
     procedure xfaster;//boost system performance for upto 5sec - 25jul2021
+    property _mustpaint:boolean read imustpaint write imustpaint;//17nov2023
     //system handlers
     //.timer
     property timer:boolean read itimer write itimer;//start or stop calling of "_ontimer()"
@@ -3348,13 +3561,15 @@ type
     procedure xonvalue; virtual;
     //.winstyle
     property winstyle:longint read iwinstyle write setwinstyle;
+    function iswin:boolean;//true=control is a window
     function xwinfocused:boolean;
     function xwindow(var x:tbasiccontrol):boolean;//return our containing window
+    function xwindow2(var x:tbasicscroll):boolean;//return our containing window
     function xwindowindex:longint;
     function winmaxed:boolean;//14mar2021
     //.paint
     procedure paintallnow;
-    procedure paintnow;
+    procedure paintnow; virtual;//17nov2023
     procedure parentpaintnow;
     procedure paintimmediate;//use sparingly - 09sep2021
     function xcanpaint:boolean;
@@ -3439,18 +3654,26 @@ type
     //.local draw support -> special draw procs for non-ms and non-delphi graphic drawing - 09apr2020
     procedure ldv(dx,dy,dy2,dcol:longint;xround:boolean);
     procedure ldv2(dx,dy,dy2,dcol:longint;xdot,xround:boolean);
+    procedure ldv3(dcliparea:trect;dx,dy,dy2,dcol:longint;xdot,xround:boolean);
     procedure ldh(dx,dx2,dy,dcol:longint;xround:boolean);
     procedure ldh2(dx,dx2,dy,dcol:longint;xdot,xround:boolean);
+    procedure ldh3(dcliparea:trect;dx,dx2,dy,dcol:longint;xdot,xround:boolean);
     procedure ldsOUTSIDE(dx,dy,dw,dh,dcol:longint);//02jun2021
     procedure lds(darea:trect;dcol:longint;xround:boolean);//draw solid area
     procedure lds2(darea:trect;dcol,dcol2,dcol3,drich:longint;xoptions:string;xround:boolean);
+    procedure lds2ex(var xbackref:longint;darea:trect;dcol,dcol2,dcol3,drich:longint;xoptions:string;xround:boolean);
     procedure lds3(xdyanmicCorners:boolean;darea:trect;dcol,dcol2,dcol3,drich:longint;xoptions:string;xround,xdarktolight:boolean);
     procedure ldo(darea:trect;dcol:longint;xround:boolean);//draw hollow area
     procedure ldo2(darea:trect;dcol,dcol2,dcol3,drich:longint;xoptions:string;xround:boolean);
     procedure ldo3(xdyanmicCorners:boolean;darea:trect;dcol,dcol2,dcol3,drich:longint;xoptions:string;xround,xdarktolight:boolean);
     procedure ldso(darea:trect;dborder,dback:longint;xround:boolean);
+    procedure ldsob(dcliparea,darea:trect;dborder,dback:longint;xround:boolean);
     procedure ldso2(darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround:boolean);
+    procedure ldso2ex(var xbackref:longint;darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround:boolean);
+    procedure ldso2b(dcliparea,darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround:boolean);
     procedure ldso3(xdyanmicCorners:boolean;darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround,xdarktolight:boolean);
+    procedure ldso3b(xdyanmicCorners:boolean;dcliparea,darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround,xdarktolight:boolean);
+    procedure ldso4(xdyanmicCorners:boolean;dcliparea,darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround,xdarktolight:boolean);//improved clip handling - 02dec2023
     procedure ldr(darea:trect;dcol:longint;xround:boolean);
     procedure ldr2(darea:trect;dcolTL,dcolTR,dcolBL,dcolBR,drich:longint;xoptions:string;xround:boolean);
     procedure ldr3(xdynamicCorners:boolean;darea:trect;dcolTL,dcolTR,dcolBL,dcolBR,drich:longint;xoptions:string;xround:boolean);
@@ -3466,6 +3689,7 @@ type
     procedure ldi(darea:trect;dx,dy,dcol,dtep:longint;xfocus,xgrey,xround:boolean);
     procedure ldi2(darea:trect;dx,dy,dcol,dcol2,dtep:longint;xfocus,xgrey,xround:boolean);
     procedure ldis(darea:trect;dx,dy,dcol,dtep:longint;xfocus,xgrey,xround:boolean);//system version
+    procedure ldis_e(xbackref:longint;darea:trect;dx,dy,dcol,dtep:longint;xfocus,xgrey,xround:boolean);//system version
     procedure ldis2(darea:trect;dx,dy,dcol,dcol2,dtep:longint;xfocus,xgrey,xround:boolean);//system version
     procedure ltea(xdynamicCorners,xcolorise,xsyszoom:boolean;darea:trect;dx,dy,dcol:longint;xteadata:tstr8;xfocus,xgrey,xround:boolean);//07apr2021
     procedure lteas(darea:trect;dx,dy,dcol,dcol2:longint;xteadata:tstr8;xfocus,xgrey,xround:boolean);//07apr2021
@@ -3474,13 +3698,14 @@ type
     procedure ldcs(xcolorise1,xcolorise2:longint;darea:trect;ddx,ddy,ddw,ddh:currency;sa:trect;s:tobject;xpower255,xtrans,xtc:longint;xoptions:currency);//system version
     procedure ldcs2(xcolorise1,xcolorise2:longint;darea:trect;ddx,ddy,ddw,ddh:currency;sa:trect;s:tobject;xpower255,xtrans,xtc:longint;xoptions:currency;xusealpha:boolean);//system version
     procedure ldt(darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xround:boolean);
-    procedure ldt2(darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
+    procedure ldt1(xbackref:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xround:boolean);//emboss version - 18nov2023
+    procedure ldt2(xbackref:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
     procedure ldt3(darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xround:boolean);
     procedure ldt4(darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
-    procedure ldtTAB(xtab:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xround:boolean);
-    procedure ldtTAB2(xtab:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
-    procedure ldtTAB3(xtab:longint;darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xround:boolean);
-    procedure ldtTAB4(xtab:longint;darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
+    procedure ldtTAB(xbackref,xtab:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xround:boolean);
+    procedure ldtTAB2(xbackref,xtab:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
+    procedure ldtTAB3(xbackref,xtab:longint;darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xround:boolean);
+    procedure ldtTAB4(xbackref,xtab:longint;darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
     //system id
     property id:longint read iid;//unique for each and every control system wide
     //area id
@@ -3500,6 +3725,7 @@ type
     function findframe2:longint;//find frame2 color - 17mar2021
     procedure infovars(var xinfo:pvirtualinfo;var xclientspace,xclientinner:trect;var fn,fb,fnH,fbH,fnbH,xclientwidth,xclientheight,xfont,xfontdisable,xback,xborder,xhover,xfontheight,xfeather,xbordersize:longint;var xenabled,xround,xnormal:boolean);
     procedure infovars2(var xinfo:pvirtualinfo;var xclientspace,xclientinner:trect;var fn,fb,fnH,fbH,fnbH,xclientwidth,xclientheight,xfont,xfontdisable,xfont2,xback,xback2,xborder,xhover,xfontheight,xfeather,xbordersize:longint;var xenabled,xround,xnormal:boolean);
+    procedure infovars3(var xinfo:pvirtualinfo;var xclientspace,xclientinner:trect;var fn,fb,fnH,fbH,fnbH,xclientwidth,xclientheight,xfont,xfontdisable,xfont2,xback,xback2,xback3,xborder,xborder3,xhover,xfontheight,xfeather,xbordersize:longint;var xenabled,xround,xnormal:boolean);
     procedure xresetcanvas(x:tcanvas;xenabled:boolean);
     property normal:boolean read inormal write inormal;
     function mousex:longint;
@@ -3508,6 +3734,7 @@ type
     property bordersize:longint read ibordersize write setbordersize;
     function findbordersize:longint; virtual;
     function rounded:boolean;
+    function roundframe:boolean;//used to signal to paint proc to draw a square frame even though the control itself and it's children maybe round - 02dec2023
     //.help support
     property help:string read ihelp write ihelp;
     property help2:string read ihelp2 write ihelp2;//optional - replaces "help"
@@ -3523,7 +3750,7 @@ type
     function ntitlebar2(xlarge,xright:boolean;xcap,xhelp:string):tbasictoolbar;
     function ninfo(xtitle,xhead,xtext,xhelp:string):tbasicinfo;
     function ncontrol:tbasiccontrol;
-    function nlabel(xcap,xhelp:string):tbasiccontrol;
+    function nlabel(xcap,xhelp:string):tbasictitle;
     function njump(xcap,xhelp:string;xpos,xlen:longint):tbasicjump;
     function nint(xcap,xhelp:string;xmin,xmax,xdef,xval:longint):tbasicint;
     function nint2(xcap,xhelp:string;xmin,xmax,xdef,xval:longint;xbackname:string):tbasicint;//26feb2021
@@ -3542,7 +3769,9 @@ type
     function ndropstatic(xhelp:string;xtep:longint):tbasicedit;
     function npass(xcap,xhelp:string):tbasicedit;
     function ncolor(xcap,xhelp:string):tbasiccolor;
+    function ncolor1(xcap,xhelp:string;xuse32:boolean):tbasiccolor;
     function ncolor2(xcap,xhelp:string;xvert:boolean;hsp:longint):tbasiccolor;
+    function ncolor3(xcap,xhelp:string;xvert:boolean;hsp:longint;xuse32:boolean):tbasiccolor;
     function nscrollbar(xhelp:string;xvert:boolean):tbasicscrollbar;
     function nscroll(xhelp:string):tbasicscroll;//06oct2020
     function ntoolbar(xhelp:string):tbasictoolbar;//29may2021
@@ -3553,6 +3782,7 @@ type
     function nbwp2(xhelp:string;xdata:tstr8;xwrap:longint;xrows,xautoheight:boolean):tbasicbwp;//17mar2021
     function nbwp3(xhelp:string;xdata:tstr8;xwrap:longint;xrows,xautoheight,xretaindata:boolean):tbasicbwp;//17mar2021
     function nbwp4(xhelp:string;xdata:tstr8;xwrap:longint;xrows,xautoheight,xretaindata,xtransform,xwebimages:boolean):tbasicbwp;//15may2021
+    function nbwpbar(xbox:tbasicbwp;xsysbox:boolean):tbwpbar;
     function nmenu(xcap,xhelp:string):tbasicmenu;
     function npoplist(xcap,xhelp:string;xlistdata:tstr8):tbasicmenu;
     function nlist(xcap,xhelp:string;xlistdata:tstr8;xrowcount:longint):tbasicmenu;
@@ -3562,6 +3792,7 @@ type
     function nnav:tbasicnav;//22sep2020
     function ncolormatrix:tbasiccolormatrix;//26feb2021
     function nsetcolor:tbasicsetcolor;//27feb2021
+    function nsetcolor2(xuse32:boolean):tbasicsetcolor;//17nov2023
     function nbreak(xheight:longint):tbasicbreak;
     //events
     procedure _ontimer(sender:tobject); virtual;
@@ -3614,6 +3845,15 @@ type
     function xwound_finddir(xtime:longint):longint;
     function xwound_dirmatch(xtime1,xtime2:longint):boolean;
     procedure xwound_wheel(xtimems:longint);
+    //-- shared handlers - 03dec2023 -------------------------------------------
+    procedure make__backgroundhead; virtual;
+    procedure make__backgroundbase; virtual;
+    procedure background__head(da:trect;xback:longint;xround:boolean;var xsparkle:longint);//window head background
+    procedure background__head1(da:trect;xback:longint;xround:boolean;var xsparkle:longint);//extend head background to next control down, usually realtime help
+    procedure background__head2(da:trect;xback:longint;xround:boolean;var xsparkle:longint);//extend head background further down, usually toolbar
+    procedure background__realtimehelp(da:trect;xback:longint;xround:boolean);//stock standard realtime help
+    procedure background__title(da:trect;xback:longint;xround:boolean);
+    procedure background__toolbar(da:trect;xback,xback2:longint;xround:boolean);
    end;
 
 {tbasichead}
@@ -3622,7 +3862,7 @@ type
     idragref64,idragref64check,itimer250:currency;
     iimg:tbasicimage;
     itranscol,istyle,itep,ilongperiod,ishortperiod,vinf,vmin,vmax,vclo,idownindex,ihoverindex:longint;
-    icaption2,iinfostate,iinforef:string;
+    irootheadREF,icaption2,iinfostate,iinforef:string;
     iformrect:trect;
     //.note: control supports both system buttons (vmin,vmax,vclo) and user buttons with a total of 9 buttons supported (3 for system) and (6 for user - optional) - 14mar2020
     ibuttep:array[0..8] of longint;
@@ -3650,6 +3890,7 @@ type
     oiconpad:longint;//default=1
     osafepos:boolean;//default=true=always on screen checking with smart next screen autooff, false=no checking and form can be dragged off screen without chance of recovery
     osmall:boolean;//default=false;
+    oroothead:boolean;//default=false, true=main head for root window (set by rootwin.xhead) - 12feb2023
     //create
     constructor create2(xparent:tobject;xstart:boolean); override;
     destructor destroy; override;
@@ -3706,6 +3947,7 @@ type
     destructor destroy; override;
     procedure _ontimer(sender:tobject); override;
     procedure _onpaint(sender:tobject); override;
+    function _onnotify(sender:tobject):boolean; override;
     function getalignheight(xclientwidth:longint):longint; override;
     //information
     property showhelp:boolean read ishowhelp write setshowhelp;
@@ -3805,6 +4047,7 @@ type
     function xfrom(sender:tbasiccontrol;xvars:tvars8;xname:string):boolean; override;
     function xto(sender:tbasiccontrol;xvars:tvars8;xname:string):boolean; override;
     function xcmd(xcode:longint;xcode2:string;xtepcolor:longint):boolean;
+    procedure make__backgroundhead; override;//03dec2023
     //change ids - 27sep2022
     property folderID:longint read ifolderid;//increments each time a new folder is loaded - 27sep2022
 
@@ -3875,6 +4118,7 @@ type
     function xnamelabel:tbasiccontrol;
     function xfilter:tbasicedit;
     function xfilterlabel:tbasiccontrol;
+    function xfocusname:boolean;//11feb2023
     //.special value handlers
     function xvaluefile(xdef:string):string;
     //home
@@ -3897,11 +4141,14 @@ type
     icore:twordcore;
     iv,ih:tbasicscrollbar;
     islowdownref,itimersync:comp;
-    imustpos,imustpos2,imustscrollv,imustscrollh,itimersync_fastcount,imleft,imright,imtop,imbottom:longint;
+    imustpos,imustpos2,imustscrollv_px,imustscrollv,imustscrollh,itimersync_fastcount,imleft,imright,imtop,imbottom:longint;
     iusepagecolor,ibuildingcontrol:boolean;
     iref:string;
     irevertdata:tstr8;
     fonact:tsimplestringeventb;
+    //.wordcount support
+    iwordcount,inewcount,inewpos,inewid:longint;
+    inewword:boolean;
     procedure setpos(x:longint);
     function getpos:longint;
     procedure setposh(x:longint);
@@ -3929,13 +4176,20 @@ type
     function getundoenabled:boolean;
     procedure setundoenabled(x:boolean);
     procedure _onarrow(sender:tobject;var xmoveval:longint);
+    procedure setlinespacing(x:longint);
+    function getlinespacing:longint;
+    function getcanspell:boolean;
+    procedure setcanspell(x:boolean);
+    procedure setstyle(x:longint);
+    function getstyle:longint;
    public
     //options
     orows:boolean;//default=false, true=draw text with alternating row color - 12mar2021
     omenustyles:boolean;//default=false, true=show style options in menu - 19dec2021
-    ocopystyles:boolean;//default=true=show copy enhanced etc, else hide them - 18jun2022
+    ocopystyles:boolean;//default=false=hide, true=show copy enhanced etc - 18jun2022
     ousecolorise:boolean;//default=true=works with "syscols" etc, false=instructs box NOT to colorise it's images - 21jun2022
     vsmooth:boolean;//default=true=smooth scroll by pixels, false=older style, scroll by lines - 21jun2022
+    olivewordcount:boolean;//default=false, true=wordcounts in background in realtime - 05feb2023
     //create
     constructor create(xparent:tobject); override;
     constructor create2(xparent:tobject;xstart:boolean); override;
@@ -3960,11 +4214,17 @@ type
     property cpos:longint read getposc write setposc;
     property cpos2:longint read getposc2 write setposc2;
     property wrap:longint read getwrap write setwrap;
+    function line:longint;//current line 1..N
+    function pages:longint;
+    function page:longint;
+    function maxline:longint;
     property wrapreadonly:boolean read getwrapreadonly write setwrapreadonly;
     property syscols:boolean read getsyscols write setsyscols;
+    property linespacing:longint read getlinespacing write setlinespacing;
+    property style:longint read getstyle write setstyle;//wrap: 0=none, 1=window, 2=page, 3=page + 2x, 4=manuscript
     //scrollto
     procedure vscrolltopos(xpos:longint);
-    procedure scrollto(_vpos,_hpos,_pos,_pos2:longint;xforcewrapall:boolean);
+    procedure scrollto(_vpos_px,_vpos,_hpos,_pos,_pos2:longint;xforcewrapall:boolean);
     //margin
     procedure margin(xl,xt,xr,xb:longint);
     property mleft:longint read imleft;
@@ -3973,11 +4233,20 @@ type
     property mbottom:longint read imbottom;
     //revert support
     procedure revertinit(xdata:tstr8;xenable:boolean);
+    //spell
+    property canspell:boolean read getcanspell write setcanspell;
+    procedure spell;
+    //find
+    function canfind:boolean;
+    procedure findpop;
+    procedure find;
+    //live wordcount
+    property wordcount:longint read iwordcount;//approxmately only
     //io
     function ioget(xdata:tstr8;xformat:string):boolean;
     function ioset(xdata:tstr8):boolean;
-    function ioset2(xdata:tstr8;xvpos:longint):boolean;
-    function ioset3(xdata:tstr8;xvpos,xhpos,xpos,xpos2:longint;xtransform,xwebimages:boolean):boolean;
+    function ioset2(xdata:tstr8;xvpos_px,xvpos:longint):boolean;
+    function ioset3(xdata:tstr8;xvpos_px,xvpos,xhpos,xpos,xpos2:longint;xtransform,xwebimages:boolean):boolean;
     //.txt
     function iogettxt(xdata:tstr8):boolean;
     function iosettxt(xdata:tstr8):boolean;
@@ -4025,9 +4294,46 @@ type
     procedure makebwp2;
     //.full version (all fonts, styles, images etc) -21jun2022
     procedure makebwpFull;
+    procedure makebwpFull2;//14nov2023
     procedure makexxx(xformatlevel:longint;xuseonefont:longint;xviewurl:boolean);//12jun2022
     //events
     property onact:tsimplestringeventb read fonact write fonact;//19jun2022
+   end;
+
+{tbwpbar}
+//77777777777777777777777777777777777//xxxxxxxxxxxxxxxx
+   tbwpbar=class(tbasiccontrol)
+   private
+    itimer250:comp;
+    iref:string;
+    ilabel:boolean;
+    ibox:tbasicbwp;
+    ihoverindex,idownindex,icount:longint;
+    iarea:array[0..19] of trect;
+    ipert:array[0..19] of longint;
+    icap:array[0..19] of string;
+    //index refs
+    iname,isize,icolor,inormal,ibold,iitalic,istrikeout,iunderline,ihighlight,ileft,icenter,iright,iwrap:longint;
+    procedure setbox(x:tbasicbwp);
+    function xnew(xcap:string;xpert:longint):longint;
+   public
+    //options
+    osysbox:boolean;//default=false=use specified box, true=use currently set box
+    //create
+    constructor create(xparent:tobject);
+    constructor create2(xparent:tobject;xstart:boolean); virtual;
+    destructor destroy; override;
+    procedure _ontimer(sender:tobject); override;
+    procedure _onpaint(sender:tobject); override;
+    function _onnotify(sender:tobject):boolean; override;
+    function getalignheight(xclientwidth:longint):longint; override;//07sep2020
+    procedure showmenuFill(xstyle:string;xmenudata:tstr8;var ximagealign:longint;var xmenuname:string); override;
+    function showmenuClick(sender:tobject;xstyle:string;xcode:longint;xcode2:string;xtepcolor:longint):boolean; override;
+    //box
+    property box:tbasicbwp read ibox write setbox;
+    function findbox:tbasicbwp;
+    function findbox2:tbasicbwp;
+    function findindex(x,y:longint):longint;
    end;
 
 {tbasiccolor}
@@ -4036,10 +4342,12 @@ type
     icolor,ishadecolor:longint;
     foncolor:tlongintevent;
     ishadearea:trect;
-    ishadeused:boolean;
+    iuse32,ishadeused:boolean;
     procedure setcolor(x:longint);
     procedure _setcolor(x:longint);
     procedure xdomenu(xcode2:string);
+    procedure setcolor24(x:longint);
+    function getcolor24:longint;
    public
     //options
     opopcolor:boolean;//default=true=click to show colordlg
@@ -4052,6 +4360,8 @@ type
     function getalignwidth(xclientheight:longint):longint; override;
     //information
     property color:longint read icolor write setcolor;
+    property color24:longint read getcolor24 write setcolor24;
+    property use32:boolean read iuse32 write iuse32;
     //workers
     procedure showmenu;
     //events
@@ -4115,14 +4425,24 @@ type
     //Note: Now supports auto-width if no cellwidths are set BUT "celltext[0]" has text - 05oct2020
     itimer250:currency;
     ilastflash,ipause:boolean;
-    iflashcount:longint;
-    iinforef:string;
-    icellflash:array[0..9] of boolean;
-    icellwidth:array[0..9] of longint;
-    icellpert:array[0..9] of double;
-    icelltext:array[0..9] of string;
-    icellref:array[0..9] of string;
+    iclickindex,iflashcount:longint;
+    iclickname,iinforef:string;
+    icellmark:array[0..19] of boolean;
+    icellflash:array[0..19] of boolean;
+    icellwidth:array[0..19] of longint;
+    icellleft:array[0..19] of longint;//left pixel boundary that starts the cell - filled via _onpaint - 04feb2023
+    icellright:array[0..19] of longint;//right pixel boundary that finished the cell - filled via _onpaint - 04feb2023
+    icellpert:array[0..19] of double;
+    icelltext:array[0..19] of string;
+    icellname:array[0..19] of string;
+    icellhelp:array[0..19] of string;//03dec2023
+    icellref:array[0..19] of string;
+    fclickcell:tnotifyevent;
     function xcellok(x:longint):boolean;
+    procedure setcellname(x:longint;y:string);
+    function getcellname(x:longint):string;
+    procedure setcellhelp(x:longint;y:string);
+    function getcellhelp(x:longint):string;
     procedure setcelltext(x:longint;y:string);
     function getcelltext(x:longint):string;
     procedure setcellwidth(x,y:longint);
@@ -4131,19 +4451,31 @@ type
     function getcellpert(x:longint):double;
     procedure setcellflash(x:longint;y:boolean);
     function getcellflash(x:longint):boolean;
+    procedure setcellmark(x:longint;y:boolean);
+    function getcellmark(x:longint):boolean;
    public
+    //options
+    ocenter:boolean;//default=true=center text inside each cell, false=left align
     //create
     constructor create2(xparent:tobject;xstart:boolean); override;
     destructor destroy; override;
     procedure _ontimer(sender:tobject); override;
     procedure _onpaint(sender:tobject); override;
+    function _onnotify(sender:tobject):boolean; override;
     function getalignheight(xclientwidth:longint):longint; override;
     //information
     property pause:boolean read ipause write ipause;
+    property cellname[x:longint]:string read getcellname write setcellname;
+    property cellhelp[x:longint]:string read getcellhelp write setcellhelp;
     property celltext[x:longint]:string read getcelltext write setcelltext;
     property cellwidth[x:longint]:longint read getcellwidth write setcellwidth;
     property cellpert[x:longint]:double read getcellpert write setcellpert;//07jul2021
     property cellflash[x:longint]:boolean read getcellflash write setcellflash;//29dec2021
+    property cellmark[x:longint]:boolean read getcellmark write setcellmark;//02dec2023
+    //.cell click
+    property clickindex:longint read iclickindex;
+    property clickname:string read iclickname;
+    property clickcell:tnotifyevent read fclickcell write fclickcell;
    end;
 
 {tbasictitle}
@@ -4157,6 +4489,7 @@ type
    public
     //options
     olarge:boolean;//default=false=small
+    ocentertext:boolean;//default=false - 19nov2023
     //create
     constructor create(xparent:tobject;xlarge,xlabel:boolean;xcaption:string);
     constructor create2(xparent:tobject;xstart,xlarge,xlabel:boolean;xcaption:string); virtual;
@@ -4217,6 +4550,7 @@ type
     ovalshow:boolean;
     ovalmultiplier:extended;//default=1
     ovalunit:string;//default=<nil>, can use to show a unit of measure AND/OR include helpful hints etc
+    ovalunit_defshow:boolean;//true=default=same unit for value display as default display, false=don't include on the default display such when used for hints etc on "frame size" => "options > frame > size" - 12feb2023
     ovalstyle:string;//default=<nil>, msfps=ms -> frames per second
     oloadfromname:string;//get value from a system value using a name
     oautoreload:boolean;
@@ -4285,6 +4619,7 @@ type
     //options
     oautoreload:boolean;
     ovpad:longint;//default=0, set to Nxbordersize to pad vertical height to match other stacked controls - 21may2022
+    oshowtitle:boolean;//default=true - 25dec2022
     //create
     constructor create(xparent:tobject); virtual;
     constructor create2(xparent:tobject;xstart:boolean); virtual;
@@ -4353,6 +4688,7 @@ type
     omididevice:boolean;//running as a Midi Device selector - 05mar2022
     owavedevice:boolean;//running as a Wave Device selector - 05mar2022
     oboldhead:boolean;//default=false - 12mar2022
+    oshowtitle:boolean;//default=true
     //create
     constructor create(xparent:tobject); virtual;
     constructor create2(xparent:tobject;xstart:boolean); virtual;
@@ -4632,7 +4968,7 @@ type
     function xgetimgright2(x:string):boolean;
     function xcapok(xindex:longint):boolean;
     function xtepok(xindex:longint):boolean;
-    function xcapok2(xindex:longint):boolean;//supports visible=false
+    function xcapok2(xindex:longint;xallowemptyCAP:boolean):boolean;
     function xtepok2(xindex:longint):boolean;//supports visible=false
     function xrowheight:longint;
     function xrowcount:longint;
@@ -4647,6 +4983,7 @@ type
     oclickthru:boolean;//default=false, true=transmit internally handled clicks to external host for analysis - 19jun2022
     owrap:boolean;//default=true
     oasbuttons:boolean;//default=false, true=draw as buttons
+    odownsubtle:boolean;//default=false, true=draw background of "down" item with a subtle background shade - 11feb2023
     orighttoleft:boolean;//default=false
     ocountdown:boolean;//default=true=allow countdowns
     ocountdown_dlgcheck:boolean;//default=true=countdown only if top dlg - 05sep2020
@@ -4703,6 +5040,7 @@ type
     function maketitle(xcap:string):tbasictoolbar;
     function maketitle2(xcap:string;xlarge:boolean):tbasictoolbar;
     function maketitle3(xcap:string;xlarge,xright:boolean):tbasictoolbar;
+    function makelinksSubtle:tbasictoolbar;//11feb2023
     //add
     procedure clear;//22sep2020
     function add(xcap:string;xtep,xcode:longint;xcode2,xhelp:string):longint;
@@ -5001,22 +5339,26 @@ type
 {tbasicsetcolor}
    tbasicsetcolor=class(tbasicscroll)
    private
-    ir,ig,ib:tbasicint;
+    ir,ig,ib,ia:tbasicint;
     im:tbasiccolormatrix;
     ic:tbasiccolor;
     icolor,iundocolor,irevertcolor:longint;
-    icanfillundo,ilocksync:boolean;
+    iuse32,icanfillundo,ilocksync:boolean;
     foncolor:tlongintevent;
     procedure setcolor(x:longint);
     procedure __onclick(sender:tobject);
     procedure __oncolor(sender:tobject;xval:longint);
     function ext__onnotify(sender:tobject):boolean;
+    procedure setcolor24(x:longint);
+    function getcolor24:longint;
    public
     //create
-    constructor create2(xparent:tobject;xscroll,xstart:boolean); override;
+    constructor create(xparent:tobject;xuse32:boolean); virtual;
+    constructor create2(xparent:tobject;xscroll,xuse32,xstart:boolean); virtual;
     destructor destroy; override;
     //information
     property color:longint read icolor write setcolor;
+    property color24:longint read getcolor24 write setcolor24;
     property revertcolor:longint read irevertcolor write irevertcolor;
     //workers
     procedure setparams(xcolor,xrevertcolor:longint;xpage:string);
@@ -5205,6 +5547,7 @@ type
     procedure settitle(x:string);
     function xundoautofill(xref:longint):boolean;//pass-thru proc
     procedure xundofill;
+    procedure xfindsync;
    public
     //options
     olimit:longint;//0=no limit, 1..maxint=limit content to this length
@@ -5212,6 +5555,7 @@ type
     opassword:boolean;//default=false, true=PASSWORD mode and thus option to hide chars and display a mask char "#"
     oborder2:boolean;//default=false, true=draw border around tep2
     omoreoptions:boolean;//default=true=full right click menu of options, false=brief right click menu - 31mar2021
+    osysfind_textsync:boolean;//default=false, true=mirror text to "sysfind_text" - 18feb2023
     //create
     constructor create(xparent:tobject;xcaption:string); virtual;
     constructor create2(xparent:tobject;xstart:boolean;xcaption:string); virtual;
@@ -5242,6 +5586,7 @@ type
     function canpastepassword:boolean;
     function pastepassword:boolean;
     //makers
+    procedure makefind;
     procedure makeedit;
     procedure makepass;
     procedure makedrop;
@@ -5963,6 +6308,12 @@ tep_save20:array[0..248] of byte=(
 84,69,65,49,35,14,0,0,0,20,0,0,0,255,0,0,43,107,107,207,12,255,0,0,1,107,107,207,1,172,172,255,12,107,107,207,2,172,172,255,2,255,255,255,8,172,172,255,2,107,107,207,2,172,172,255,2,255,255,255,1,172,172,255,6,255,255,255,1,172,172,255,2,107,107,207,2,172,172,255,2,255,255,255,8,172,172,255,2,107,107,207,2,172,172,255,2,255,255,255,1,172,172,255,6,255,255,255,1,172,172,255,2,107,107,207,2,172,172,255,2,255,255,255,8,172,172,255,2,107,107,207,2,172,172,255,12,107,107,207,2,172,172,255,12,107,107,207,2,172,172,255,2,107,107,207,9,172,172,255,1,107,107,207,2,172,172,255,2,107,107,207,6,255,255,255,2,107,107,207,1,172,172,255,1,107,107,207,2,172,172,255,2,107,107,207,6,255,255,255,2,107,107,207,1,172,172,255,1,107,107,207,2,172,172,255,2,107,107,207,6,255,255,255,2,107,107,207,1,172,172,255,1,107,107,207,1,255,0,0,1,107,107,207,12,255,0,0,43);
 tep_close20:array[0..152] of byte=(
 84,69,65,49,35,11,0,0,0,20,0,0,0,0,255,0,55,255,0,0,2,0,255,0,7,255,0,0,5,0,255,0,5,255,0,0,3,0,255,0,1,255,0,0,3,0,255,0,3,255,0,0,3,0,255,0,3,255,0,0,3,0,255,0,1,255,0,0,3,0,255,0,5,255,0,0,5,0,255,0,7,255,0,0,3,0,255,0,7,255,0,0,5,0,255,0,5,255,0,0,3,0,255,0,1,255,0,0,3,0,255,0,3,255,0,0,3,0,255,0,3,255,0,0,3,0,255,0,1,255,0,0,3,0,255,0,5,255,0,0,5,0,255,0,7,255,0,0,2,0,255,0,44);
+tep_closed20:array[0..152] of byte=(
+84,69,65,49,35,11,0,0,0,20,0,0,0,255,0,0,55,0,0,0,2,255,0,0,7,0,0,0,5,255,0,0,5,0,0,0,3,255,0,0,1,0,0,0,3,255,0,0,3,0,0,0,3,255,0,0,3,0,0,0,3,255,0,0,1,0,0,0,3,255,0,0,5,0,0,0,5,255,0,0,7,0,0,0,3,255,0,0,7,0,0,0,5,255,0,0,5,0,0,0,3,255,0,0,1,0,0,0,3,255,0,0,3,0,0,0,3,255,0,0,3,0,0,0,3,255,0,0,1,0,0,0,3,255,0,0,5,0,0,0,5,255,0,0,7,0,0,0,2,255,0,0,44);
+tep_upward20:array[0..136] of byte=(
+84,69,65,49,35,15,0,0,0,20,0,0,0,255,0,0,127,0,0,0,1,255,0,0,13,0,0,0,3,255,0,0,11,0,0,0,2,255,0,0,1,0,0,0,2,255,0,0,9,0,0,0,2,255,0,0,3,0,0,0,2,255,0,0,7,0,0,0,2,255,0,0,5,0,0,0,2,255,0,0,5,0,0,0,2,255,0,0,7,0,0,0,2,255,0,0,3,0,0,0,2,255,0,0,9,0,0,0,2,255,0,0,1,0,0,0,2,255,0,0,11,0,0,0,3,255,0,0,13,0,0,0,1,255,0,0,45);
+tep_downward20:array[0..136] of byte=(
+84,69,65,49,35,15,0,0,0,20,0,0,0,255,0,0,120,0,0,0,1,255,0,0,13,0,0,0,3,255,0,0,11,0,0,0,2,255,0,0,1,0,0,0,2,255,0,0,9,0,0,0,2,255,0,0,3,0,0,0,2,255,0,0,7,0,0,0,2,255,0,0,5,0,0,0,2,255,0,0,5,0,0,0,2,255,0,0,7,0,0,0,2,255,0,0,3,0,0,0,2,255,0,0,9,0,0,0,2,255,0,0,1,0,0,0,2,255,0,0,11,0,0,0,3,255,0,0,13,0,0,0,1,255,0,0,52);
 tep_hide20:array[0..224] of byte=(
 84,69,65,49,35,13,0,0,0,20,0,0,0,255,255,255,46,0,128,255,1,255,255,255,11,0,128,255,1,255,255,0,1,0,128,255,1,255,255,255,9,0,128,255,1,255,255,0,2,0,128,255,1,255,255,255,8,0,128,255,1,255,255,0,3,0,128,255,1,255,255,255,7,0,128,255,1,255,255,0,4,0,128,255,4,255,255,255,3,0,128,255,1,255,255,0,8,0,128,255,1,255,255,255,2,0,128,255,1,255,255,0,9,0,128,255,1,255,255,255,2,0,128,255,1,255,255,0,9,0,128,255,1,255,255,255,3,0,128,255,1,255,255,0,8,0,128,255,1,255,255,255,4,0,128,255,1,255,255,0,4,0,128,255,4,255,255,255,5,0,128,255,1,255,255,0,3,0,128,255,1,255,255,255,9,0,128,255,1,255,255,0,2,0,128,255,1,255,255,255,10,0,128,255,1,255,255,0,1,0,128,255,1,255,255,255,11,0,128,255,1,255,255,255,44);
 tep_back20:array[0..224] of byte=(
@@ -6006,6 +6357,21 @@ tep_font20:array[0..328] of byte=(
 252,252,252,7,0,128,255,2,252,252,252,1,0,128,255,2,252,252,252,1,0,128,255,3,252,252,252,91);
 tep_cut20:array[0..232] of byte=(
 84,69,65,49,35,9,0,0,0,20,0,0,0,192,192,192,29,255,128,0,1,192,192,192,3,255,128,0,1,192,192,192,4,255,128,0,1,192,192,192,3,255,128,0,1,192,192,192,4,255,128,0,1,192,192,192,3,255,128,0,1,192,192,192,4,255,128,0,2,192,192,192,1,255,128,0,2,192,192,192,5,255,128,0,1,192,192,192,1,255,128,0,1,192,192,192,6,255,128,0,3,192,192,192,7,255,128,0,1,192,192,192,7,255,128,0,3,192,192,192,6,128,0,255,1,192,192,192,1,128,0,255,3,192,192,192,2,128,0,255,3,192,192,192,1,128,0,255,1,192,192,192,2,128,0,255,2,192,192,192,2,128,0,255,1,192,192,192,1,128,0,255,1,192,192,192,2,128,0,255,2,192,192,192,2,128,0,255,1,192,192,192,1,128,0,255,1,192,192,192,2,128,0,255,2,192,192,192,2,128,0,255,1,192,192,192,2,128,0,255,2,192,192,192,2,128,0,255,2,192,192,192,33);
+tep_github20:array[0..436] of byte=(
+84,69,65,49,35,18,0,0,0,20,0,0,0,255,0,0,42,122,125,128,2,2,2,2,2,122,125,128,2,255,0,0,10,122,125,128,1,2,2,2,8,122,125,128,1,255,0,0,7,122,125,128,1,2,2,2,10,122,125,128,1,255,0,0,5,122,125,128,1,2,2,2,1,122,125,128,1,247,247,247,1,122,125,128,1,2,2,2,1,122,125,128,2,2,2,2,1,122,125,128,1,247,247,247,1,122,125,128,1,2,2,2,1,122,125,128,1,255,0,0,4,2,2,2,2,122,125,128,1,247,247,247,8,122,125,128,1,2,2,2,2,255,0,0,3,122,125,128,1,2,2,2,2,122,125,128,1,247,247,247,8,122,125,128,1,2,2,2,2,122,125,128,1,255,0,0,2,122,125,128,1,2,2,2,2,122,125,128,1,247,247,247,8,122,125,128,1,2,2,2,2,74,78,83,1,255,0,0,2,2,2,2,3,247,247,247,10,2,2,2,3,255,0,0,2,2,2,2,3,247,247,247,10,2,2,2,3,255,0,0,2,60,65,70,1,2,2,2,2,122,125,128,1,247,247,247,8,122,125,128,1,2,2,2,2,122,125,128,1,255,0,0,2,122,125,128,1,2,2,2,2,74,78,83,1,122,125,128,1,247,247,247,6,122,125,128,2,2,2,2,2,122,125,128,1,255,0,0,3,2,2,2,1,122,125,128,2,2,2,2,1,122,125,128,2,247,247,247,2,122,125,128,2,2,2,2,4,255,0,0,4,122,125,128,1,2,2,2,1,247,247,
+247,1,122,125,128,3,247,247,247,2,122,125,128,1,2,2,2,4,122,125,128,1,255,0,0,5,2,2,2,2,247,247,247,6,2,2,2,3,122,125,128,1,255,0,0,7,122,125,128,1,2,2,2,2,247,247,247,4,2,2,2,2,122,125,128,1,255,0,0,10,122,125,128,1,247,247,247,4,122,125,128,1,255,0,0,42);
+tep_sourceforge20:array[0..472] of byte=(
+84,69,65,49,35,18,0,0,0,20,0,0,0,255,0,0,44,245,143,64,2,255,0,0,15,249,157,84,1,255,138,35,1,249,249,251,1,245,143,64,1,255,0,0,13,248,149,71,1,255,138,35,1,249,249,251,2,255,138,35,1,245,143,64,1,255,0,0,11,248,150,72,1,255,138,35,1,249,249,251,3,255,138,35,1,251,134,40,1,245,143,64,1,255,0,0,9,249,150,72,1,255,138,35,1,249,249,251,5,255,138,35,1,250,133,39,1,245,143,64,1,255,0,0,7,248,148,69,1,255,138,35,1,249,249,251,3,255,138,35,1,249,249,251,3,255,138,35,1,250,133,40,1,245,143,64,1,255,0,0,5,247,149,72,1,255,138,35,1,249,249,251,2,249,248,250,1,245,143,64,1,255,138,35,2,249,249,251,3,255,138,35,1,251,132,37,1,245,143,64,1,255,0,0,3,245,143,64,1,255,138,35,1,249,249,251,2,249,247,248,1,245,143,64,1,255,138,35,3,249,249,251,4,255,138,35,1,249,134,43,1,245,143,64,1,255,0,0,2,245,143,64,1,255,138,35,1,252,140,50,1,249,249,251,2,245,143,64,1,255,138,35,3,249,249,251,2,249,247,248,1,249,249,251,2,255,138,35,2,255,0,0,3,245,143,64,1,255,138,35,1,251,133,37,1,249,249,251,2,255,138,35,4,249,249,251,
+3,255,138,35,2,245,143,64,1,255,0,0,4,245,143,64,1,255,138,35,1,251,133,37,1,249,249,251,2,255,138,35,2,249,249,251,3,255,138,35,2,245,143,64,1,255,0,0,6,245,143,64,1,255,138,35,1,251,132,37,1,249,249,251,5,255,138,35,2,245,143,64,1,255,0,0,8,245,143,64,1,255,138,35,1,255,133,33,1,249,249,251,3,255,138,35,2,245,143,64,1,255,0,0,10,245,143,64,1,255,138,35,1,249,249,251,2,255,138,35,2,245,143,64,1,255,0,0,12,245,143,64,1,249,249,251,1,255,138,35,2,245,143,64,1,255,0,0,14,245,143,64,3,255,0,0,43);
+tep_instagram20:array[0..644] of byte=(
+84,69,65,49,35,18,0,0,0,20,0,0,0,0,255,64,39,137,62,255,5,160,1,224,5,214,4,216,2,0,255,64,5,137,62,255,3,214,4,216,10,240,2,193,1,0,255,64,3,137,62,255,3,199,85,250,1,254,244,252,8,248,66,213,1,246,4,188,1,250,0,183,1,244,41,180,1,0,255,64,2,199,85,250,3,254,244,252,1,244,80,221,8,254,244,252,1,255,65,197,1,251,1,161,1,248,6,153,1,0,255,64,2,236,26,228,2,254,244,252,1,244,80,221,2,253,0,171,6,244,80,221,2,254,244,252,1,254,0,144,1,251,1,136,1,0,255,64,2,236,26,228,2,254,244,252,1,245,90,209,1,253,0,171,1,254,31,167,1,253,0,171,1,254,244,252,2,253,0,171,3,244,80,221,1,254,244,252,1,254,0,131,1,253,1,120,1,0,255,64,2,236,26,228,2,254,244,252,1,253,62,29,1,253,0,171,2,254,244,252,1,253,53,156,1,253,47,162,1,254,244,252,1,253,0,171,1,254,0,130,1,244,80,221,1,254,244,252,1,254,1,117,1,253,0,105,1,0,255,64,2,253,32,127,1,251,44,121,1,254,244,252,1,253,62,29,2,254,244,252,1,253,64,133,1,252,19,117,1,252,11,126,1,253,59,156,1,254,244,252,1,254,0,130,1,244,80,221,1,254,244,252,1,255,2,106,1,252,0,98,1,0,
+255,64,2,254,108,17,2,254,244,252,1,253,62,29,2,254,244,252,1,253,83,116,1,252,37,92,1,252,27,101,1,253,70,137,1,254,244,252,1,254,0,130,1,244,80,221,1,254,244,252,1,254,3,99,1,251,0,96,1,0,255,64,2,254,108,17,2,254,244,252,1,253,62,29,2,253,0,171,1,254,244,252,1,253,94,110,1,253,90,121,1,254,244,252,1,253,0,171,1,254,0,130,1,244,80,221,1,254,244,252,1,253,2,95,1,251,0,101,1,0,255,64,2,254,108,17,2,254,244,252,1,253,62,29,3,253,0,171,1,254,244,252,2,253,0,171,1,253,62,29,1,254,0,130,1,244,80,221,1,254,244,252,1,252,8,96,1,251,1,112,1,0,255,64,2,254,108,17,2,254,244,252,1,253,62,29,8,254,0,130,1,253,21,93,1,254,244,252,1,251,7,88,1,252,7,128,1,0,255,64,2,254,108,17,2,255,201,48,1,254,244,252,1,253,62,29,1,255,201,48,5,253,21,93,2,254,244,252,1,253,21,93,2,253,20,139,1,0,255,64,2,254,108,17,2,255,201,48,2,254,244,252,8,253,21,93,2,255,44,106,1,254,67,157,1,0,255,64,3,254,108,17,1,255,201,48,7,254,108,17,3,253,85,31,1,255,75,63,1,254,56,98,1,0,255,64,5,255,201,48,9,254,108,17,2,255,114,93,1,0,255,64,
+39);
+tep_facebook20:array[0..240] of byte=(
+84,69,65,49,35,18,0,0,0,20,0,0,0,255,0,0,42,14,138,240,6,255,0,0,10,14,138,240,10,255,0,0,7,14,138,240,12,255,0,0,5,14,138,240,7,252,252,252,3,14,138,240,4,255,0,0,4,14,138,240,6,252,252,252,4,14,138,240,4,255,0,0,3,14,138,240,7,252,252,252,2,14,138,240,7,255,0,0,2,14,138,240,7,252,252,252,2,14,138,240,7,255,0,0,2,14,138,240,7,252,252,252,2,14,138,240,7,255,0,0,2,14,138,240,5,252,252,252,6,14,138,240,5,255,0,0,2,14,138,240,5,252,252,252,6,14,138,240,5,255,0,0,2,14,138,240,7,252,252,252,2,14,138,240,7,255,0,0,3,14,138,240,6,252,252,252,2,14,138,240,6,255,0,0,4,14,138,240,6,252,252,252,2,14,138,240,6,255,0,0,5,14,138,240,5,252,252,252,2,14,138,240,5,255,0,0,7,14,138,240,4,252,252,252,2,14,138,240,4,255,0,0,10,14,138,240,6,255,0,0,42);
+tep_twitter20:array[0..424] of byte=(
+84,69,65,49,35,19,0,0,0,20,0,0,0,255,0,0,20,2,2,2,17,255,0,0,2,2,2,2,17,255,0,0,2,2,2,2,17,255,0,0,2,2,2,2,1,252,252,252,4,2,2,2,9,252,252,252,1,2,2,2,2,255,0,0,2,2,2,2,2,252,252,252,1,2,2,2,2,252,252,252,1,2,2,2,7,252,252,252,1,2,2,2,3,255,0,0,2,2,2,2,3,252,252,252,1,2,2,2,2,252,252,252,1,2,2,2,5,252,252,252,1,2,2,2,4,255,0,0,2,2,2,2,3,252,252,252,1,2,2,2,3,252,252,252,1,2,2,2,3,252,252,252,1,2,2,2,5,255,0,0,2,2,2,2,4,252,252,252,1,2,2,2,3,252,252,252,1,2,2,2,1,252,252,252,1,2,2,2,6,255,0,0,2,2,2,2,5,252,252,252,1,2,2,2,3,252,252,252,1,2,2,2,7,255,0,0,2,2,2,2,6,252,252,252,1,2,2,2,2,252,252,252,1,2,2,2,7,255,0,0,2,2,2,2,7,252,252,252,2,2,2,2,1,252,252,252,1,2,2,2,6,255,0,0,2,2,2,2,7,252,252,252,2,2,2,2,2,252,252,252,1,2,2,2,5,255,0,0,2,2,2,2,6,252,252,252,1,2,2,2,2,252,252,252,1,2,2,2,2,252,252,252,1,2,2,2,4,255,0,0,2,2,2,2,5,252,252,252,1,2,2,2,4,252,252,252,1,2,2,2,2,252,252,252,1,2,2,2,3,255,0,0,2,2,2,2,4,252,252,252,1,2,2,2,6,252,252,252,1,2,2,2,2,252,252,252,1,2,2,2,2,255,0,0,2,2,2,2,3,252,
+252,252,1,2,2,2,8,252,252,252,4,2,2,2,1,255,0,0,2,2,2,2,17,255,0,0,2,2,2,2,17,255,0,0,20);
 tep_copy20:array[0..320] of byte=(
 84,69,65,49,35,15,0,0,0,20,0,0,0,255,0,0,46,64,138,213,5,255,0,0,9,64,138,213,1,217,235,255,4,64,138,213,2,255,0,0,8,64,138,213,1,217,235,255,4,64,138,213,1,217,235,255,1,64,138,213,1,255,0,0,7,64,138,213,1,217,235,255,1,64,138,213,2,217,235,255,1,64,138,213,7,255,0,0,3,64,138,213,1,217,235,255,5,64,138,213,1,217,235,255,4,64,138,213,2,255,0,0,2,64,138,213,1,217,235,255,1,64,138,213,5,217,235,255,4,64,138,213,1,217,235,255,1,64,138,213,1,255,0,0,1,64,138,213,1,217,235,255,5,64,138,213,1,217,235,255,1,64,138,213,2,217,235,255,1,64,138,213,5,217,235,255,1,64,138,213,5,217,235,255,7,64,138,213,2,217,235,255,5,64,138,213,1,217,235,255,1,64,138,213,5,217,235,255,1,64,138,213,2,217,235,255,1,64,138,213,5,217,235,255,7,64,138,213,2,217,235,255,5,64,138,213,1,217,235,255,1,64,138,213,5,217,235,255,1,64,138,213,1,255,0,0,1,64,138,213,6,217,235,255,7,64,138,213,1,255,0,0,6,64,138,213,1,217,235,255,1,64,138,213,5,217,235,255,1,64,138,213,1,255,0,0,6,64,138,213,1,217,235,
 255,7,64,138,213,1,255,0,0,7,64,138,213,7,255,0,0,31);
@@ -6194,6 +6560,9 @@ tep_screen20:array[0..200] of byte=(
 tep_wrap20:array[0..168] of byte=(
 84,69,65,49,35,17,0,0,0,20,0,0,0,232,232,232,86,115,115,255,14,232,232,232,3,115,115,255,15,232,232,232,2,255,255,201,13,115,115,255,2,232,232,232,2,255,255,201,13,115,115,255,2,232,232,232,2,255,255,201,13,115,115,255,2,232,232,232,2,255,255,201,3,115,115,255,1,255,255,201,9,115,115,255,2,232,232,232,2,255,255,201,2,115,115,255,2,255,255,201,9,115,115,255,2,232,232,232,2,255,255,201,1,115,115,255,3,255,255,201,9,115,115,255,2,232,232,232,2,115,115,255,15,232,232,232,2,115,115,255,14,232,232,232,4,115,115,255,3,232,232,232,15,115,115,255,2,232,232,232,16,115,115,255,1,232,232,232,46);
 //file format teps -------------------------------------------------------------
+tep_Quoter20:array[0..400] of byte=(
+84,69,65,49,35,19,0,0,0,20,0,0,0,252,252,252,78,50,88,106,5,252,252,252,5,50,88,106,5,252,252,252,4,50,88,106,1,158,189,204,4,50,88,106,1,252,252,252,4,50,88,106,1,158,189,204,4,50,88,106,1,252,252,252,2,50,88,106,1,158,189,204,5,50,88,106,1,252,252,252,3,50,88,106,1,158,189,204,6,50,88,106,1,252,252,252,2,50,88,106,1,158,189,204,5,50,88,106,1,252,252,252,3,50,88,106,1,158,189,204,5,50,88,106,1,252,252,252,3,50,88,106,1,158,189,204,3,50,88,106,1,252,252,252,5,50,88,106,1,158,189,204,4,50,88,106,1,252,252,252,4,50,88,106,1,158,189,204,2,50,88,106,1,252,252,252,6,50,88,106,1,158,189,204,2,50,88,106,1,252,252,252,5,50,88,106,1,158,189,204,2,50,88,106,1,252,252,252,6,50,88,106,1,158,189,204,2,50,88,106,1,252,252,252,5,50,88,106,1,158,189,204,2,50,88,106,1,252,252,252,6,50,88,106,1,158,189,204,2,50,88,106,1,252,252,252,5,50,88,106,1,158,189,204,1,50,88,106,1,252,252,252,7,50,88,106,1,158,189,204,1,50,88,106,1,252,252,252,5,50,88,106,1,158,189,204,1,50,88,106,1,252,252,252,7,50,88,106,1,158,189,204,1,
+50,88,106,1,252,252,252,6,50,88,106,2,252,252,252,8,50,88,106,1,158,189,204,1,50,88,106,1,252,252,252,5,50,88,106,2,252,252,252,8,50,88,106,1,158,189,204,1,50,88,106,1,252,252,252,5,50,88,106,2,252,252,252,8,50,88,106,3,252,252,252,5,50,88,106,2,252,252,252,8,50,88,106,2,252,252,252,45);
 tep_sfef20:array[0..500] of byte=(
 84,69,65,49,35,20,0,0,0,20,0,0,0,255,0,0,9,112,143,116,2,255,0,0,17,106,135,110,1,107,215,0,2,106,135,110,1,255,0,0,15,101,128,104,1,101,204,0,4,101,128,104,1,255,0,0,13,95,120,98,1,96,192,0,6,95,120,98,1,255,0,0,11,89,113,92,1,90,181,0,8,89,113,92,1,255,0,0,9,83,105,86,1,84,170,0,4,119,180,29,1,122,181,31,1,84,170,0,4,83,105,86,1,255,0,0,7,77,98,80,1,78,158,0,4,108,168,23,1,213,213,106,2,108,168,24,1,78,158,0,4,77,98,80,1,255,0,0,5,71,90,73,1,73,146,0,5,119,169,35,1,213,213,106,2,119,169,35,1,73,146,0,5,71,90,73,1,255,0,0,3,65,82,67,1,67,134,0,4,96,152,20,1,120,165,37,1,143,177,54,1,213,213,106,2,138,174,50,1,122,166,39,1,104,156,25,1,67,134,0,4,65,82,67,1,255,0,0,1,59,75,61,1,61,123,0,4,91,142,21,1,213,213,106,8,92,142,21,1,61,123,0,4,59,75,61,1,53,68,55,1,55,112,0,4,86,131,21,1,213,213,106,8,86,131,21,1,55,112,0,4,53,68,55,1,255,0,0,1,47,60,49,1,50,100,0,4,81,119,21,1,101,133,35,1,126,150,50,1,213,213,106,2,121,147,47,1,104,135,36,1,89,125,26,1,50,100,0,4,47,60,49,1,255,0,0,3,41,52,42,1,44,88,
 0,5,104,131,39,1,213,213,106,2,104,131,39,1,44,88,0,5,41,52,42,1,255,0,0,5,35,45,37,1,38,77,0,4,83,112,27,1,213,213,106,2,83,112,27,1,38,77,0,4,35,45,37,1,255,0,0,7,29,37,30,1,32,65,0,4,87,110,31,1,92,114,34,1,32,65,0,4,29,37,30,1,255,0,0,9,23,30,24,1,27,54,0,8,23,30,24,1,255,0,0,11,17,22,18,1,21,42,0,6,17,22,18,1,255,0,0,13,11,14,12,1,15,30,0,4,11,14,12,1,255,0,0,15,6,7,6,1,9,19,0,2,6,7,6,1,255,0,0,17,9,19,0,2,255,0,0,9);
@@ -6269,6 +6638,7 @@ tep_folderimage32:array[0..476] of byte=(
 tep_newfolder32:array[0..536] of byte=(
 84,69,65,49,35,32,0,0,0,32,0,0,0,252,252,252,85,255,191,191,4,252,252,252,27,255,191,191,6,252,252,252,25,255,191,191,2,255,0,0,4,255,191,191,2,252,252,252,23,255,191,191,3,255,0,0,4,255,191,191,3,252,252,252,19,255,191,191,6,255,0,0,4,255,191,191,6,252,252,252,15,255,191,191,6,255,0,0,6,255,191,191,5,252,252,252,4,160,130,35,6,252,252,252,4,255,191,191,2,255,0,0,16,255,191,191,1,252,252,252,2,160,130,35,8,252,252,252,3,255,191,191,2,255,0,0,16,255,191,191,1,252,252,252,1,160,130,35,3,255,255,128,4,160,130,35,7,255,191,191,3,255,0,0,10,255,191,191,3,252,252,252,2,160,130,35,2,255,255,128,6,160,130,35,8,255,191,191,2,255,0,0,8,255,191,191,4,252,252,252,2,160,130,35,2,255,255,128,14,255,191,191,2,255,0,0,8,255,191,191,3,252,252,252,3,160,130,35,2,255,255,128,13,255,191,191,3,255,0,0,9,255,191,191,1,252,252,252,4,160,130,35,2,255,255,128,12,255,191,191,2,255,0,0,5,255,191,191,2,255,0,0,5,255,191,191,2,252,252,252,2,160,130,35,2,255,255,128,12,255,191,191,2,255,0,0,4,255,191,191,4,255,0,0,4,255,191,
 191,2,252,252,252,2,160,130,35,2,255,255,128,13,255,191,191,2,255,0,0,3,255,191,191,4,255,0,0,3,255,191,191,2,252,252,252,3,160,130,35,2,255,255,128,14,255,191,191,2,255,0,0,2,255,191,191,4,255,0,0,2,255,191,191,2,252,252,252,4,160,130,35,2,255,255,128,15,255,191,191,4,255,255,128,3,255,191,191,2,252,252,252,6,160,130,35,2,255,255,128,16,255,191,191,2,255,255,128,4,160,130,35,2,252,252,252,6,160,130,35,2,255,255,128,22,160,130,35,2,252,252,252,6,160,130,35,2,255,255,128,22,160,130,35,2,252,252,252,6,160,130,35,2,255,255,128,22,160,130,35,2,252,252,252,6,160,130,35,2,255,255,128,22,160,130,35,2,252,252,252,6,160,130,35,3,255,255,128,21,160,130,35,2,252,252,252,6,160,130,35,4,255,255,128,19,160,130,35,3,252,252,252,7,160,130,35,25,252,252,252,8,160,130,35,23,252,252,252,134);
+
 //system color schemes ---------------------------------------------------------
 //new built-in colors - 09may2021
 cols_BurntYellow:array[0..83] of byte=(99,111,108,50,1,0,0,0,2,35,32,3,50,25,23,2,51,0,0,0,52,176,162,14,53,176,162,14,54,190,175,16,55,25,23,2,56,89,82,8,57,25,23,2,58,0,0,0,100,25,23,2,101,0,0,0,102,176,162,14,103,176,162,14,104,190,175,16,105,210,200,92,106,89,82,8,107,53,49,4,108,0,0,0);
@@ -6325,6 +6695,7 @@ cols_Tangy_Tangerine:array[0..83] of byte=(99,111,108,50,1,255,183,157,2,255,122
 cols_Wild_White:array[0..83] of byte=(99,111,108,50,1,255,254,253,2,229,229,217,50,253,251,252,51,223,221,222,52,143,141,142,53,143,141,142,54,133,131,132,55,223,221,222,56,173,171,172,57,213,211,212,58,203,201,202,100,250,250,238,101,220,220,208,102,140,140,128,103,140,140,128,104,130,130,118,105,220,220,208,106,170,170,158,107,210,210,198,108,200,200,188);
 cols_Wild_Thing:array[0..83] of byte=(99,111,108,50,1,0,106,118,2,70,206,218,50,122,221,122,51,92,191,92,52,12,111,12,53,12,111,12,54,2,101,2,55,152,251,152,56,42,141,42,57,82,181,82,58,72,171,72,100,255,192,0,101,225,162,0,102,145,82,10,103,145,82,10,104,135,72,0,105,225,162,0,106,175,112,0,107,215,152,0,108,205,142,0);
 cols_black:array[0..83] of byte=(99,111,108,50,1,0,0,0,2,27,27,27,50,27,27,27,51,0,0,0,52,157,157,157,53,157,157,157,54,147,147,147,55,57,57,57,56,107,107,107,57,0,0,0,58,0,0,0,100,27,27,27,101,0,0,0,102,157,157,157,103,157,157,157,104,147,147,147,105,57,57,57,106,107,107,107,107,0,0,0,108,0,0,0);
+cols_black3:array[0..83] of byte=(99,111,108,50,1,0,0,0,2,27,27,27,50,27,27,27,51,0,0,0,52,52,119,156,53,52,119,156,54,147,147,147,55,57,57,57,56,107,107,107,57,0,0,0,58,0,0,0,100,27,27,27,101,0,0,0,102,52,119,156,103,52,119,156,104,147,147,147,105,57,57,57,106,107,107,107,107,0,0,0,108,0,0,0);
 cols_blue:array[0..83] of byte=(99,111,108,50,1,17,64,175,2,77,124,235,50,166,192,255,51,136,162,225,52,56,82,145,53,56,82,145,54,46,72,135,55,136,162,225,56,86,112,175,57,126,152,215,58,116,142,205,100,97,144,255,101,67,114,225,102,10,34,145,103,10,34,145,104,0,24,135,105,67,114,225,106,17,64,175,107,57,104,215,108,47,94,205);
 cols_royal_blue:array[0..83] of byte=(99,111,108,50,1,8,0,180,2,69,105,255,50,110,138,255,51,80,108,225,52,10,28,145,53,10,28,145,54,0,18,135,55,80,108,225,56,30,58,175,57,70,98,215,58,60,88,205,100,69,105,255,101,39,75,225,102,10,10,145,103,10,10,145,104,0,0,135,105,39,75,225,106,0,25,175,107,29,65,215,108,19,55,205);
 cols_pink:array[0..83] of byte=(99,111,108,50,1,209,129,196,2,255,186,244,50,255,223,252,51,224,196,221,52,255,179,243,53,255,179,243,54,122,86,117,55,255,179,243,56,186,162,177,57,255,222,243,58,186,162,177,100,255,223,252,101,224,196,221,102,0,0,0,103,255,158,240,104,122,86,117,105,123,79,147,106,185,166,183,107,255,222,243,108,0,33,12);
@@ -6532,10 +6903,14 @@ var
    vi32bit               :boolean=true;//09may2021
    vicoloriseimages      :boolean=false;
    vishadeglow           :boolean=false;//true=Win7 style shading - 12jun2022
+   viemboss              :boolean=false;//19nov2023
    vishaderound          :boolean=true;
    vishadestyle          :string='g-50';
    vistartlink           :boolean=false;
    videsktoplink         :boolean=false;
+   vistartuplink         :boolean=false;//09dec2023
+   vistartstyle          :longint=0;//0=window, 1=min, 2=max
+   vistartstyleONCE      :boolean=true;
    vienhanced            :boolean=true;
    vispecialcolors       :boolean=true;
    vicolorname           :string='';//default
@@ -6548,7 +6923,8 @@ var
    viWinemode            :longint=0;//02feb2022
    viWine                :boolean=false;//determines whether or not the system should use wine
    viminimal__scrollbar  :boolean=false;//08feb2022
-   viSplashdone          :boolean=false;//system changes value to TRUE when splash has finished displaying OR it wasn't set to display on program stratup - 15mar2022
+   viStartupdone         :boolean=false;//changes to TRUE when system has finished starting, e.g. loaded vars, aligned atleast once and displayed splash(if set)- 15nov2023
+   viMaster              :boolean=true;//set in siIint() proc - FALSE=means program does not write settings to folder - read only mode
    //.midi device
    vimididevice          :longint=0;//05mar2022
    vimidideviceNEW       :longint=-1;//used to trigger an update to support controls etc - 05mar2022
@@ -6702,6 +7078,11 @@ var
    sysstatus_blaizfolder            :longint=-1;//07oct2022
    sysstatus_blaizfolder_setpert    :boolean=false;
    sysstatus_painttime  :longint=350;//every 350ms
+   //system find support ------------------------------------------------------- 18feb2023
+   sysfind_handler       :longint=0;//none -> use to instruct "find" capable handlers whether they're able to find or if the task belongs to another
+   sysfind_text          :string='';//text to find
+   sysfind_cmd           :string='';//action to take -> 'find' (find forward)
+   sysfind_dlgshowing    :boolean=false;
    //system debug support ------------------------------------------------------
    system_debugPaintcount:comp=0;
    system_debugPainttime :comp=0;
@@ -6719,6 +7100,8 @@ var
    systrack_ptrcount     :longint=0;
    systrack_ptr          :array[0..9999] of pointer;
    systrack_ptrbytes     :comp=0;//total memory allocated for pointers
+   //.other trackers
+   systrack_backupcount  :longint=0;//12feb2023
 
    //system thread support -----------------------------------------------------
    //.core
@@ -6821,6 +7204,16 @@ var
    //system settings -----------------------------------------------------------
    syssettings           :tvars8=nil;
    prgsettings           :tvars8=nil;
+
+   //EXE system storage --------------------------------------------------------
+   //Streams are set when EXE has data packed behind it, which switches it to
+   //slave mode with "viMaster=false"
+   usrdata               :tstr8=nil;
+   sysmore               :tvars8=nil;
+
+   //sysbox
+   sysbox                :tbasicbwp=nil;//tracks last active text box - 14nov2023
+
    //system cursor support -----------------------------------------------------
    syscursor_sizeref     :string='';//tracks change in Windows cursor size - 28may2022
    syscursor_name        :string='';
@@ -6829,9 +7222,19 @@ var
    syscursor_loadname    :string='';
    syscursor_loadid      :longint=0;
 
+   //system dictionary support -------------------------------------------------
+   sysdic_main           :tspell=nil;
+   sysdic_sup1           :tspell=nil;
+   sysdic_sup2           :tspell=nil;
+   sysdic_main_use       :boolean=true;
+   sysdic_sup1_use       :boolean=true;
+   sysdic_sup2_use       :boolean=true;
+   sysdic_idref          :longint=0;
+   sysdic_id             :longint=-1;
+
    //system timer --------------------------------------------------------------
    //.normal timer control - 30sep2021
-   systimer_nomax64       :comp=0;//for checking D3's blank black form during program execution - 14may2022 
+   systimer_nomax64       :comp=0;//for checking D3's blank black form during program execution - 14may2022
    systimer64             :comp=0;//normal timer - (16ms/turbo) or (30-500ms/normal)
    systimer_turbo64       :comp=0;//turbo booster option for normal timer
    systimer1000           :comp=0;
@@ -6867,7 +7270,6 @@ var
    sysfasttimer3         :tnotifyevent=nil;
    //.high speed timer in use status - for all subsystems that adapt to higher speed timing cycles - 30sep2021
    sysfasttiminginuse    :boolean=false;
-
 
    //system dlg value caching --------------------------------------------------
    sysdlg_popcolor_color :longint=0;
@@ -6908,6 +7310,7 @@ var
    syslink1_DEADPUSHref64   :comp=0;
    syslink1_DEADPULLref64   :comp=0;
    syslink1_pushbusy        :boolean=false;
+
 
 
 //system status support --------------------------------------------------------
@@ -6963,7 +7366,7 @@ procedure viSyncandsave;//24jul2021
 procedure viSync;
 procedure vicopy(var s,d:tvirtualinfo);
 //.security
-procedure xcodecheck;//11oct2022
+procedure xcodecheck;//14nov2023, 11oct2022
 //procedure low__makecodecheck;
 
 
@@ -7015,14 +7418,15 @@ procedure low__resetmovetime;
 procedure low__resetdowntime;
 procedure low__resetwheeltime;
 //.universial object destructor
-procedure low__showhelp(dshow:boolean);
+function freeobj(x:pobject):boolean;//02feb2021, 05DEC2011, 14JAN2011, 15OCT2004
+//.other
+function stableobj(x:tobject):boolean;//07mar2021
+procedure low__showhelp(dshow:boolean);//03nov2023
 procedure low__createlink(df,sf,dswitches,iconfilename:string);//10apr2019, 14NOV2010
-procedure runLOW(fDOC,fPARMS:string);//stress tested on Win98/WinXP - 27NOV2011, 06JAN2011, low__run(
+procedure runLOW(fDOC,fPARMS:string);//stress tested on Win98/WinXP - 27NOV2011, 06JAN2011, low__run(   \\showfile \\runfile
 function low__vol(var xfilename:string):boolean;//check once only - 10OCT2010
 function low__canshowvol:boolean;//07mar2022
 procedure low__showvol;
-function stableobj(x:tobject):boolean;//07mar2021
-function freeobj(x:pobject):boolean;//02feb2021, 05DEC2011, 14JAN2011, 15OCT2004
 //.64bit timing
 //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 function ms64FAST:comp;//64bit millisecond system timer, 01-SEP-2006
@@ -7095,7 +7499,7 @@ function low__teatoimg(xtea:tlistptr;d:tbasicimage;var xw,xh:longint):boolean;//
 function low__teatobmp(sdata:tstr8;d:tbmp;var xw,xh:longint):boolean;//12apr2021, 21aug2020
 
 
-//.gif support - 14may2022, 22sep2021, 28jul2021 ------------------------------------------------------
+//.gif support - 31dec2022, 14may2022, 22sep2021, 28jul2021 ------------------------------------------------------
 //compiler tag: "gif" check with need_gif
 //cost: ?
 function low__fromgif(x:tbmp;y:tstr8;var e:string):boolean;//28jul2021, 20JAN2012, 22SEP2009
@@ -7104,7 +7508,14 @@ function low__fromgif2(x:tbmp;y:tstr8;var xcellcount,xcellwidth,xcellheight,xdel
 function low__fromgif3(x:tbmp;y:tstr8;var xcellcount,xcellwidth,xcellheight,xdelay,xbpp:longint;xuse32:boolean;var xtransparent:boolean;var e:string):boolean;//28jul2021, 20JAN2012, 22SEP2009
 function low__togif(x:tobject;y:tstr8;var e:string):boolean;//11SEP2007
 function low__togif2(x:tobject;xtranscol:longint;y:tstr8;var e:string):boolean;//permit transparent color override - 09sep2021, 11SEP2007
-function low__togif3(x:tobject;xtranscol:longint;xlocalpalettes,xuse32:boolean;y:tstr8;var e:string):boolean;//14may2022 - now supports 32bit mask channel for transparency, 22sep2021 (now supports localpalettes - each cell of an animation has it's own separate color palette), 11SEP2007
+function low__togif3(x:tobject;xtranscol:longint;xlocalpalettes,xuse32:boolean;y:tstr8;var e:string):boolean;//31dec2022 - fixed bad [0,59] terminator, 14may2022 - now supports 32bit mask channel for transparency, 22sep2021 (now supports localpalettes - each cell of an animation has it's own separate color palette), 11SEP2007
+//.gif2 support - 31dec2022 - v1.00.130
+function gif_start(dcore:tstr8;dw,dh:longint;dloop:boolean;xsmartwrite24:tbasicimage):boolean;
+function gif_stop(dcore:tstr8):boolean;
+function gif_add(dcore:tstr8;s:tbasicimage;sdelay,strancol2:longint;xoverwrite:boolean):boolean;
+function gif_add2(dcore:tstr8;s:tbasicimage;sdelay,strancol2:longint;xoverwrite:boolean;xsmartwrite24:tbasicimage):boolean;
+function gif_add3(dcore:tstr8;s:tbasicimage;sdelay,strancol2:longint;xoverwrite,xwritefullframe:boolean;xsmartwrite24:tbasicimage):boolean;
+
 {$ifdef gif}//these procs only enable when GIF is enabled for the program
 procedure gif_decompress(x:tstr8);//28jul2021, 11SEP2007
 procedure gif_decompressex(var xlenpos1:integer;x,imgdata:tstr8;_width,_height:integer;interlaced:boolean);//11SEP2007
@@ -7112,9 +7523,43 @@ function gif_compress(x:tstr8;var e:string):boolean;//12SEP2007
 function gif_compressex(x,imgdata:tstr8;e:string):boolean;//12SEP2007
 {$endif}
 
+
+//.master support --------------------------------------------------------------
+procedure master__storevars(xvars:tvars8;xsyssettings,xprgsettings,xwidth,xheight,xcursor:boolean;xtitle:string);
+procedure master__size(swidth,sheight:longint;var dwidth,dheight:longint);
+procedure master__title;
+procedure master__cursor;//uses smore: "cursor"
+procedure master__cursorCLEAN;
+
+//.PkZIP Archive Support - 10feb2023 - v1.00.033 --------------------------------------------------------
+function zip_refOK(xdata,xlist:tstr8):boolean;
+function zip_start(xdata,xlist:tstr8):boolean;
+function zip_stop(xdata,xlist:tstr8):boolean;
+function zip_add(xdata,xlist:tstr8;sname:string;sdata:tstr8):boolean;
+function zip_add2(xdata,xlist:tstr8;sname:string;var sdata:string):boolean;
+function zip_add3(xdata,xlist:tstr8;sname,sdata:string):boolean;
+function zip_addfromfile(xdata,xlist:tstr8;sfilename:string):boolean;
+function zip_addfromfolder(xdata,xlist:tstr8;xfolder,xmasklist,xemasklist:string):boolean;
+
+//.system dictionary support - 04feb2023 ----------------------------------------------------------------
+procedure dic_shut;
+procedure dic_init;
+procedure dic_newid;
+function dic_id:longint;
+function dic_inuse:boolean;
+procedure dic_reload(xdicindex:longint);
+procedure dic_edit(xdicindex:longint);
+function dic_wordcount(xdicindex:longint):longint;
+function dic_extractwordfromdoc(var x:twordcore;xcursorpos:longint;xsplitdash:boolean;var xfrom,xto:longint):string;
+function dic_misspelt(x:string):boolean;
+function dic_findword(x:string):boolean;
+function dic_findword2(x:string;var xdicindex,xindex:longint):boolean;
+function dic_addword(x:string;xdicindex:longint):boolean;
+
 //.encryption support - 13jun2022 -----------------------------------------------------------------------
 function low__encrypt(s:tstr8;xpass:string;xpower:longint;xencrypt:boolean;var e:string):boolean;
 function low__encrypt2(s,d:tstr8;xpass:string;xpower:longint;xencrypt:boolean;var e:string):boolean;
+function low__encryptRETAINONFAIL(s:tstr8;xpass:string;xpower:longint;xencrypt:boolean;var e:string):boolean;//14nov20223
 
 //.system tab support -> use "tbXXX" codes for "xtab" to define which tab to use - 23feb2021
 function low__tab(xtab,xcolindex,xfontheight:longint;var xcolalign,xcolcount,xcoltrim,xcolwidth,xtotalwidth,x1,x2:longint):boolean;//23feb2021
@@ -7135,16 +7580,16 @@ function low__fromLGF_textwidth2(x:tobject;xtext:string):longint;
 function low__fromLGF_textwidthTAB2(xtab:longint;x:tobject;xtext:string):longint;
 procedure low__fromLGF_avew(x:tobject;var xave,xmin,xmax:longint);//11apr2020
 //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//tttttttttttttttttttttttttttt
-function low__fromLGF_drawchar2432(x:tobject;xindex,ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xround:boolean;xroundstyle:longint):boolean;//27feb2021, 23jan2020
-function low__fromLGF_drawtext2432(x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xround:boolean;xroundstyle:longint):boolean;
-function low__fromLGF_drawtext2432TAB(xtab:longint;x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xround:boolean;xroundstyle:longint):boolean;//23feb2021
-function low__fromLGF_drawtext2432TAB2(xtab:longint;x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;s:tobject;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xround:boolean;xroundstyle:longint):boolean;//23feb2021
+function low__fromLGF_drawchar2432(x:tobject;xindex,ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround:boolean;xroundstyle:longint):boolean;//04feb2023 - spell indicator underline, 27feb2021, 23jan2020
+function low__fromLGF_drawtext2432(x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround:boolean;xroundstyle:longint):boolean;
+function low__fromLGF_drawtext2432TAB(xtab:longint;x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround:boolean;xroundstyle:longint):boolean;//23feb2021
+function low__fromLGF_drawtext2432TAB2(xtab:longint;x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;s:tobject;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround:boolean;xroundstyle:longint):boolean;//23feb2021
 
 
 //.system font support ---------------------------------------------------------
 function low__haveprinter:boolean;//03DEC2009 - safely check if we have a default printer, raises no error or "SPOOL32 error" on a Win98 machine
 procedure low__fontlist(x:tstr8);//26mar2022
-procedure low__fontlist2(x:tstr8;xscreen,xprinter:boolean);//26mar2022
+procedure low__fontlist2(x:tstr8;xscreen,xprinter,xspecial:boolean);//26mar2022
 function low__findfontname2(xname,xsysname,xsysname2:string;var xoutname:string):boolean;
 function low__findfontname(xname:string;var xoutname:string):boolean;
 function low__findfontnameb(xname:string):string;
@@ -7187,6 +7632,7 @@ function createstringlist:tstringlist;//02feb2021
 function createbitmap:tbitmap;
 function createfilestream(x:string;xmode:word):tfilestream;
 function low__programname:string;
+function low__statictempname(dpre,dpost,dpost2,dext:string):string;//static temp filenames - 30nov2023
 function low__newtempname(dpre,dext:string):string;//temp filenames - 25jun2022
 function low__newnameid(dpre,dext:string):string;//for temp filenames - 25jun2022
 function low__newid:longint;
@@ -7318,16 +7764,19 @@ procedure low__minwh(var a:trect;aminwidth,aminheight:longint);//25feb2021
 function nilrect:trect;
 function nilarea:trect;//25jul2021
 function maxarea:trect;//27jul2021
+function noarea:trect;//sets area to maximum inverse values - 19nov2023
 function validrect(x:trect):boolean;
 function validarea(x:trect):boolean;//26jul2021
 function low__shiftarea(xarea:trect;xshiftx,xshifty:longint):trect;
+function low__shiftarea2(xarea:trect;xshiftx,xshifty:longint;xvalidcheck:boolean):trect;//xvalidcheck=true=shift only if valid area, false=shift always
 function low__withinrect(x,y:longint;z:trect):boolean;
 function low__withinrect2(xy:tpoint;z:trect):boolean;
 function low__withinrect2LR(xy:tpoint;z:trect):boolean;
 function low__rect(xleft,xtop,xright,xbottom:longint):trect;
+function low__rectclip(clip_rect,s:trect):trect;//21nov2023
 function low__rectgrow(x:trect;xby:longint):trect;//07apr2021
 function low__rectstr(x:trect):string;
-function low__ref32u(x:string):longint;{1..32}
+function low__ref32u(x:string):longint;//1..32 - 04feb2023
 function low__ref256(x:string):currency;
 function low__ref256U(x:string):currency;
 function low__cap2432(xpos,ypos,dw,dh:longint;d:tobject):boolean;//low version - 07mar2020, 30may2019, 21jan2015, 17-JAN-2007
@@ -7364,6 +7813,7 @@ function nozero_cmp(xdebugID:longint;x:comp):comp;
 function low__plat(xcmd,xprgname:string;xrunaction:boolean):string;
 function low__platroot:string;
 function low__platfolder(xname:string):string;
+function low__platfolder2(xname:string;xcreate:boolean):string;//10feb2023
 function low__platsyssettings:string;//system settings
 function low__platprgsettings:string;//prorgam settings - 05oct2020
 function low__platimages:string;//images folder - 12feb2022
@@ -7380,6 +7830,7 @@ procedure need_chimes;//02mar2022
 procedure need_mm;
 procedure need_jpeg;
 procedure need_gif;//cost: 13k - 31may2022
+procedure need_gif2;//27dec2022
 procedure need_ico;//cost: 6k - 07feb2022
 function have_ico:boolean;//22may2022
 procedure need_tbt;//13jun2022
@@ -7393,10 +7844,14 @@ function low__rgb24(r,g,b:byte):tcolor24;
 function low__rgb32to24(var x:tcolor32):tcolor24;//21jun2022
 function low__rgb24to32(var x:tcolor24;xa:byte):tcolor32;//21jun2022
 function low__rgba(r,g,b,a:byte):longint;
+function low__rgba32(r,g,b,a:byte):tcolor32;//25nov2023
+function ppBlend32(var s,snew:tcolor32):boolean;//color / pixel processor - 30nov2023
+function ppBlendColor32(var s,snew:tcolor32):boolean;//color blending / pixel processor - 01dec2023
 function low__colbright(x:longint):longint;
 function low__colsplice(x,c1,c2:longint):longint;
 function low__colsplice1(xpert:extended;s,d:longint):longint;//13nov2022
 function low__rgbsplice24(xpert:extended;s,d:tcolor24):tcolor24;//17may2022
+function low__rgbsplice32(xpert:extended;s,d:tcolor32):tcolor32;//06dec2023
 function low__sc(sc,dc,pert:longint):longint;//shift color
 function low__sc1(xpert:extended;sc,dc:longint):longint;//shift color
 function low__dc(x,y:longint):longint;//differential color
@@ -7414,11 +7869,12 @@ procedure low__int3toRGB(x:longint;var r,g,b:byte);
 function low__intrgb(x:longint):tcolor24;
 function low__intrgb32(x:longint;aval:byte):tcolor32;
 function low__intrgba32(x:longint):tcolor32;
-procedure low__blendcolor32(var f,b:tcolor32);//7,703ms -> 6,047ms -> 5,782ms -> 5,234 -> 3,781ms -> 3,875ms
 function low__iseven(x:longint):boolean;
+function low__even(x:longint):boolean;
 procedure low__msb16(var s:word);//most significant bit first - 22JAN2011
 procedure low__msb32(var s:longint);//most significant bit first - 22JAN2011
 function low__compare24(s,d:tcolor24):boolean;
+function low__compare32(s,d:tcolor32):boolean;
 
 
 //.system timer support --------------------------------------------------------
@@ -7456,9 +7912,12 @@ function low__fireevent(xsender:tobject;x:tnotifyevent):boolean;
 procedure low__swapbol(var x,y:boolean);//05oct2018
 procedure low__swapbyt(var x,y:byte);//22jan2011
 procedure low__swapint(var x,y:longint);
+procedure low__swapstr(var x,y:string);//20nov2023
 procedure low__swapcomp(var x,y:comp);//07apr2016
 procedure low__swapcur(var x,y:currency);
 procedure low__swapext(var x,y:extended);//06jun2007
+procedure low__swapstr8(var x,y:tstr8);//07dec2023
+procedure low__swapvars8(var x,y:tvars8);//07dec2023
 function low__setobj(var xdata:tobject;xnewvalue:tobject):boolean;//15mar2021
 function low__setbc(var xdata:tbasiccontrol;xnewvalue:tbasiccontrol):boolean;//15mar2021
 function low__setstr(var xdata:string;xnewvalue:string):boolean;
@@ -7473,11 +7932,12 @@ function low__greyscale2(var x:tcolor24):byte;
 function low__greyscale2b(x:tcolor24):byte;
 function low__greyscale3(x:longint):longint;
 function low__greyscale4(x:longint):longint;
+function low__greyval(x:longint):longint;//18nov2023
 function low__focus3(x:longint):longint;
 function low__rgbtohex(xrgb:longint):string;//ultra-fast int->hex color converter - 15aug2019
-function low__hextorgb(sx:string;xdef:longint):longint;//12jan2022, 27feb2021
 function low__rgbatohex(xrgba:longint;xhash:boolean):string;//ultra-fast int->hex color converter - 22jul2021
-function low__hextorgba(sx:string;xdef:longint):longint;//27feb2021
+function low__hextorgb(sx:string;xdef:longint):longint;//12jan2022, 27feb2021
+function low__hextorgba(sx:string;xdef:longint):longint;//17nov2023, 27feb2021
 function low__vifontscale(xwidth:longint):longint;//use to scale width of columns and height of other items according to current "vifontheight" setting based on a default value of "16"
 function low__t(x:boolean):longint;
 function low__maplist(const x:array of byte):tlistptr;
@@ -7508,6 +7968,7 @@ function low__ownname:string;
 function low__paramstr1:string;
 function low__limitlines(x:string;xlimit:longint):string;//14apr2021
 function low__insstr(x:string;y:boolean):string;
+function low__useonce(var x:string):string;//return value of x and clear x - 28dec2022
 function low__repeatstr(x:string;xcount:longint):string;//15nov2022
 function low__swapvals0(x,v0:string):string;
 function low__swapvals01(x,v0,v1:string):string;
@@ -7737,12 +8198,18 @@ function low__glseEDK:tstr8;
 function low__ecapk:tstr8;
 function low__ecap(x:tstr8;e:boolean):boolean;
 function low__ecapbin(x:tstr8;e,bin:boolean):boolean;
+procedure low__toggle(var x:boolean);//05feb2023
 function low__aorb(a,b:longint;xuseb:boolean):longint;
+function low__aorbrect(a,b:trect;xuseb:boolean):trect;//25nov2023
+function low__aorbbyte(a,b:byte;xuseb:boolean):byte;
 function low__aorbcur(a,b:currency;xuseb:boolean):currency;//07oct2022
 function low__yes(x:boolean):string;//16sep2022
 function low__aorbstr(a,b:string;xuseb:boolean):string;
 function low__aorbchar(a,b:char;xuseb:boolean):char;
 function low__aorbbol(a,b:boolean;xuseb:boolean):boolean;
+function low__aorbimg(a,b:tbasicimage;xuseb:boolean):tbasicimage;//30nov2023
+function low__aorbstr8(a,b:tstr8;xuseb:boolean):tstr8;//06dec2023
+function low__aorbvars8(a,b:tvars8;xuseb:boolean):tvars8;//06dec2023
 //special unlock support for Ethan Ashman Electronic Book - 19aug2020, 05mar2018
 function low__xysort(xstyle:longint;xdata,x:tstr8):boolean;
 function low__xysort2(xstyle:array of byte;xdata,x:tstr8):boolean;
@@ -7908,7 +8375,10 @@ function missize(s:tobject;dw,dh:longint):boolean;
 function missize2(s:tobject;dw,dh:longint;xoverridelock:boolean):boolean;
 function miscountcolors(i:tobject):longint;//full color count - uses dynamic memory (2mb) - 15OCT2009
 function miscountcolors2(da_clip:trect;i,xsel:tobject):longint;//full color count - uses dynamic memory (2mb) - 19sep2018, 15OCT2009
+function miscountcolors3(da_clip:trect;i,xsel:tobject;var xcolorcount,xmaskcount:longint):boolean;//full color count - uses dynamic memory (2mb) - 19sep2018, 15OCT2009
 function mismove82432(s:tobject;xmove,ymove:longint):boolean;//19jun2021
+function mismove82432b(s:tobject;sa:trect;xmove,ymove:longint):boolean;//18nov2023, 19jun2021
+function mismove82432c(s:tobject;sa:trect;xmove,ymove:longint;xdestructive:boolean):boolean;//18nov2023, 19jun2021
 function mismatch82432(s,d:tobject;xtol,xfailrate:longint):boolean;//10jul2021
 function mismatcharea82432(s,d:tobject;sa,da:trect;xtol,xfailrate:longint):boolean;//10jul2021
 function misclean(s:tobject;scol,stol:longint):boolean;//19sep2022
@@ -7937,6 +8407,7 @@ function miscopyareaxx9(xcolorise1,xcolorise2:longint;da_clip:trect;ddx,ddy,ddw,
 function miscopyareaxx10(xcolorise1,xcolorise2:longint;da_clip:trect;ddx,ddy,ddw,ddh:currency;sa:trect;d,s,dm,dm2,sm,sm2,sselshow:tobject;dmask:tmask8;dmaskval:longint;xselshowSTRIDE:longint;xselshowEVENINIT:boolean;xpower255,xtrans,xtc,xwriteShadesofcolor:longint;xoptions:currency;xscroll,yscroll:longint;refOP,refRGB,refR,refG,refB,refX,refY:tstr8;xusealpha:boolean):boolean;//xinvert put last for better results - 05jun2021, "round()" instead of "trunc()" - 16mar2021, dsysinfo support - 10mar2021, 32bit alpha channel support - 29jan2021, 27jan2021, 30aug2020, 25apr2020, 15may2019, 22aug2018, 27sep2017, 26sep2017, 25sep2017, 25jul2017
 //.full 32bit RGBA support - 15feb2022
 function miscopyarea32(ddx,ddy,ddw,ddh:currency;sa:trect;d,s:tobject):boolean;//can copy ALL 32bits of color
+function miscopyarea321(da,sa:trect;d,s:tobject):boolean;//can copy ALL 32bits of color
 function miscopyarea322(da_clip:trect;ddx,ddy,ddw,ddh:currency;sa:trect;d,s:tobject;xscroll,yscroll:longint):boolean;//can copy ALL 32bits of color
 function misscreenw:longint;
 function misscreenh:longint;
@@ -7971,6 +8442,7 @@ function misfromdata2(s:tobject;xdata:array of byte;var e:string):boolean;//02ju
 function misblur82432(s:tobject):boolean;//03sep2021
 function misblur82432b(s:tobject;xwraprange:boolean;xpower255,xtranscol:longint):boolean;//11sep2021, 03sep2021
 function misblur82432c(s:tobject;scliparea:trect;xwraprange:boolean;xpower255,xtranscol:longint):boolean;//17may2022 - cell-based clipping, 27apr2022, 11sep2021, 03sep2021
+function misblur82432d(s:tobject;scliparea:trect;xwraprange:boolean;xpower255,xtranscol,xstage:longint):boolean;//30dec2022 - stage support (-1 to 2), 17may2022 - cell-based clipping, 27apr2022, 11sep2021, 03sep2021
 function misIconArt82432(s,s2:tobject;xzoom,xbackcolor,xtranscolor:longint;xpadding:boolean):boolean;//17sep2022 - fixed integer overflow error, 27apr2022
 function miscrop82432(s:tobject):boolean;
 function miscrop82432b(s:tobject;t32:tcolor32;var l,t,r,b:longint;xcalonly,xusealpha,xretainT32:boolean):boolean;//21jun20221
@@ -8090,20 +8562,21 @@ function misframe82432ex(s:tobject;da_cliparea,xouterarea:trect;xautoouterarea:b
 procedure low__framecols(xback,xframe,xframe2:longint;var xminsize,xcol1,xcol2:longint);//24feb2022
 function low__frameset(var xpos:longint;xdata:tstr8;var sremsize:longint;sframesize,scolor,scolor2:longint;var dminsize,dsize,dcolor,dcolor2:longint):boolean;
 function mislimitcolors82432(x:tobject;xtranscolor,colorlimit:longint;fast:boolean;var a:array of tcolor24;var acount:longint;var e:string):boolean;//01aug2021, 15SEP2007
-function mislimitcolors82432ex(x:tobject;sx,xcellw,xtranscolor,colorlimit:longint;fast,xreducetofit:boolean;var a:array of tcolor24;var acount:longint;var e:string):boolean;//01aug2021, 15SEP2007
+function mislimitcolors82432ex(x:tobject;sx,xcellw,xtranscolor,colorlimit:longint;fast,xreducetofit:boolean;var a:array of tcolor24;var acount:longint;var e:string):boolean;//25dec2022, 01aug2021, 15SEP2007
 function misreduce82432(s:tobject;stranscol,slessdata:longint;var e:string):boolean;
 //.sparkle support - rapid random pixels - upto 4x faster - 27feb2022
 procedure low__sparklefill(xrichlevel:longint);
 function low__sparklestart:longint;
 procedure low__sparklestop(xpos:longint);
+function low__sparkleuniquestart:longint;
 //.brush curves - low level support
 function degtorad2(deg:extended):extended;//20OCT2009
 function miscurveAirbrush2(var x:array of longint;xcount,valmin,valmax:longint;xflip,yflip:boolean):boolean;//20jan2021, 29jul2016
 //.other
 function low__mask8_drawto(s:tmask8;x:tbmp):boolean;
-function low__draw(xdynamicCorners:boolean;xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xrich:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround:boolean):boolean;
-function low__draw2(xdynamicCorners:boolean;xtab,xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xval4,xval5,xrich:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround,xbol1,xbol2,xbol3,xbol4:boolean):boolean;
-function low__draw3(xdynamicCorners:boolean;xcolorise,xsyszoom:boolean;xtab,xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xval4,xval5,xrich:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround,xbol1,xbol2,xbol3,xbol4:boolean):boolean;//12jun2022, 22may2022, 01mar2022
+function low__draw(xdynamicCorners:boolean;xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xrich,xrichid:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround:boolean):boolean;
+function low__draw2(xbackref:longint;xdynamicCorners:boolean;xtab,xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xval4,xval5,xrich,xrichid:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround,xbol1,xbol2,xbol3,xbol4:boolean):boolean;
+function low__draw3(xbackref:longint;xdynamicCorners:boolean;xcolorise,xsyszoom:boolean;xtab,xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xval4,xval5,xrich,xrichid:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround,xbol1,xbol2,xbol3,xbol4:boolean):boolean;//extended "predictable randomness" via "control.xrichid" and feedback loop - 03dec2023, 22may2022, 01mar2022
 function low__cornerMaxwidth:longint;//used by some patch systems to work around corner restrictions such as "statusbar.cellpert.round/square" - 07ul2021
 function low__cornersolid(xdynamicCorners:boolean;var a:trect;amin,ay,xmin,xmax,xroundstyle:longint;xround:boolean;var lx,rx:longint):boolean;//29mar2021
 procedure low__cornerhollow(xdynamicCorners:boolean;var a:trect;amin,ay,xroundstyle:longint;xround:boolean;var lx,lx2,rx,rx2:longint);//29mar2021, compensates for missed corner pixels -> hollow fits snugly over solid without any missed pixels now - 12apr2020
@@ -8232,17 +8705,28 @@ procedure low__filesetattr(x:string;xval:longint);
 function low__folderexists(x:string):boolean;//15mar2020, 14dec2016
 function low__makefolder(x:string):boolean;//15mar2020, 19may2019
 function low__copyfile(sf,df:string;var e:string):boolean;
+function low__backupfilename(dname:string):string;//12feb2023
 function low__tofile(x:string;xdata:tstr8;var e:string):boolean;//fast and basic low-level
 function low__tofilestr(x,xdata:string;var e:string):boolean;//fast and basic low-level
 function low__tofileappend(x:string;xdata:tstr8;var xpersistenthandler:tfilestream;var e:string):boolean;//20jun2021 - fast and basic low-level
 function low__tofileappend2(x:string;xpos:longint;xdata:tstr8;var xpersistenthandler:tfilestream;var e:string):boolean;//20jun2021 - fast and basic low-level
 function low__tofileappend3(x:string;xpos:longint;xdata:tstr8;var e:string):boolean;//19feb2022
+function low__exemarker(x:tstr8):boolean;//14nov2023
+function low__exereadFROMFILE(xfilename:string;xexedata,xsysdata,xprgdata,xusrdata:tstr8;xsysmore:tvars8;var e:string):boolean;//14nov2023
+function low__exeread(s,xexedata,xsysdata,xprgdata,xusrdata:tstr8;xsysmore:tvars8):boolean;//14nov2023
+function low__exewriteTOFILE(xfilename:string;xexedata,xsysdata,xprgdata,xusrdata:tstr8;xsysmore:tvars8;var e:string):boolean;//14nov2023
+function low__exewrite(d,xexedata,xsysdata,xprgdata,xusrdata:tstr8;xsysmore:tvars8):boolean;//14nov2023
+
 function low__fromfile(x:string;xdata:tstr8;var e:string):boolean;
 function low__fromfileb(x:string;xdata:tstr8;var e:string;var _filesize,_from:longint;_size:longint):boolean;//20-OCT-2006
 function low__fromfilestr(x:string;var xdata,e:string):boolean;
 function low__fromfilestrb(x:string;var e:string):string;//30mar2022
 function low__fromfiletime(x:tfiletime):tdatetime;
 function low__drivelist:tdrivelist;
+function low__dhmslabel(xms:comp):string;//days hours minutes and seconds from milliseconds - 06feb2023
+function low__datetimename(x:tdatetime):string;//05feb2023
+function low__datename(x:tdatetime):string;//12feb2023
+function low__datetimename2(x:tdatetime):string;//10feb2023
 function low__safedate(x:tdatetime):tdatetime;
 procedure low__decodedate2(x:tdatetime;var y,m,d:word);//safe range
 procedure low__decodetime2(x:tdatetime;var h,min,s,ms:word);//safe range
@@ -8304,6 +8788,15 @@ procedure system_sizenow;
 //.debug support
 procedure showerror(e:string);//01jan2020
 procedure showbasic(x:string);
+procedure pop_junk(x:string);
+function pop_error(x:string):boolean;//10feb2023
+function pop_query(x:string):boolean;//05feb2023
+function pop_query2(x,xcancelcap,xokcap:string):boolean;//11feb2023
+function pop_info(xtitle,x:string):boolean;//05feb2023
+function pop_txt2(var x:string;xwrap:longint;xreadonly:boolean;xcap,xhelp:string):boolean;
+function pop_save(var xfilename:string;xfilterlist,xcommonfolder:string):boolean;
+function pop_save2(var xfilename:string;xfilterlist,xcommonfolder,xtitle2:string):boolean;
+function pop_find(xhandler:longint;var xtext,xcmd:string):boolean;
 procedure showa(x:longint);
 procedure showa1;
 procedure showa2;
@@ -8337,6 +8830,7 @@ function winstartmenu:string;
 procedure dbRGBA(x:longint);//26jun2021
 procedure dbimage(s:tobject;szoom:longint;susealpha:boolean);//strictly debug purposes only - 21dec2021, 07jun2021 -> misshow/low__show/imageshow
 procedure dbimage2(s,s2:tobject;szoom:longint);//strictly debug purposes only
+procedure dbimage3(s,s2:tobject;szoom:longint;xcap:string);//strictly debug purposes only - 30dec2022
 procedure dbstatus(p:longint;x:string);
 procedure dbstart;
 procedure dbstop;
@@ -8374,27 +8868,33 @@ procedure systhread__synclag(xslot:longint;xms64:comp);
 
 
 //-- low level support for "twordcore" -----------------------------------------
-//Version: 1.00.4967 - 27sep2022 (multi-format clipboard support), 05jul2022 (multi-undo support), 29jun2022, 22apr2022, 09mar2022, 05feb2022, 11jan2022, 27aug2021, 25jul2021, 19apr2021, 31mar2021, 12mar2021 - added wwsNone/wwsWindow/wwsPage and PaperSize support, 11oct2020 - fixed slow longlines wrapper, 26aug2020, 29feb2020
+//Version: 1.00.5380 - 02may2023 (fixed redo list flush failure), 25feb2023, 25dec2022, 27sep2022 (multi-format clipboard support), 05jul2022 (multi-undo support), 29jun2022, 22apr2022, 09mar2022, 05feb2022, 11jan2022, 27aug2021, 25jul2021, 19apr2021, 31mar2021, 12mar2021 - added wwsNone/wwsWindow/wwsPage and PaperSize support, 11oct2020 - fixed slow longlines wrapper, 26aug2020, 29feb2020
 //Notes: Converted from "string" based data structures to full binary
 //       on 28aug2021, 21-22aug2020.
 //Notes: Upgraded to support "pageoverride2" which uses system colors and system colorise settings to color the contents of the text box in system colors/styles - 19apr2021
 function low__wordcore__inited(var x:twordcore):boolean;
 procedure low__wordcore__lgfFILL(var x:twordcore;lgfINDEX:longint;xwine_remake:boolean);
+procedure low__wordcore__fontonevals(var x:twordcore;var xfontname:string;var xfontsize:longint);//04feb2023
 function low__wordcore__style(x:char):char;
 function low__wordcore__transform(var x:twordcore;xstyle:string;xshowerrors:boolean):boolean;//30mar2022, 25jul2021
 function low__wordcore__transform2(var x:twordcore;xstyle,xappTitle,xappWebname,xappVersion:string;xappStoreAPP,xappPaid,xclaudeTAGs,xshowerrors:boolean):boolean;//13nov2022, 30mar2022, 07jan2022
 procedure low__wordcore__filtertext(x:tstr8);
 function low__wordcore__isplaintext(var x:twordcore):boolean;//19jun2022
 function low__wordcore__findformatlevel(var x:twordcore):longint;//19jun2022
-function low__wordcore__charinfo(var x:twordcore;xpos:longint;var xout:twordcharinfo):boolean;
-function low__wordcore__charinfo2(var x:twordcore;d1,d2,d3:tstr8;xpos:longint;var xout:twordcharinfo):boolean;
-function low__wordcore__charinfoULTRA(var x:twordcore;xpos:longint;var xout:twordcharinfo;var xlastWID,xlastWID2:longint):boolean;//12jun2022 (7.30pm), 22apr2022
-function low__wordcore__charinfoFAST(var x:twordcore;xpos:longint;var xout:twordcharinfo):boolean;
+function low__wordcore__charinfo(var x:twordcore;xpos,xlinespacing:longint;var xout:twordcharinfo):boolean;
+function low__wordcore__charinfo2(var x:twordcore;d1,d2,d3:tstr8;xpos,xlinespacing:longint;var xout:twordcharinfo):boolean;
+function low__wordcore__charinfoULTRA(var x:twordcore;xpos,xlinespacing:longint;var xout:twordcharinfo;var xlastWID,xlastWID2:longint):boolean;//12jun2022 (7.30pm), 22apr2022
+function low__wordcore__charinfoFAST(var x:twordcore;xpos,xlinespacing:longint;var xout:twordcharinfo):boolean;
 function low__wordcore__findalignFAST(var x:twordcore;xpos1:longint):longint;//22apr2022, 28dec2021
-function low__wordcore__paint2432(var x:twordcore;aw,ah:longint;xcliparea,xpaintarea:trect;ar24:pcolorrows24;ar32:pcolorrows32;xdebug:tbmp;xmask:tmask8;xmaskval:longint;xround:boolean;xroundstyle,xrowcolor:longint):boolean;//19apr2021
+function low__wordcore__paint2432(var x:twordcore;aw,ah:longint;xcliparea,xpaintarea:trect;ar24:pcolorrows24;ar32:pcolorrows32;xdebug:tbmp;xmask:tmask8;xmaskval:longint;xround:boolean;xroundstyle,xrowcolor:longint):boolean;//04feb2023, 19apr2021
 procedure low__wordcore__keyboard(var x:twordcore;xctrl,xalt,xshift,xkeyX:boolean;xkey:byte);
 procedure low__wordcore__keyboard2(var x:twordcore;akcode:longint);
 procedure low__wordcore__mouse(var x:twordcore;xmousex,xmousey:longint;xmousedown,xmouseright:boolean);
+procedure low__wordcore_backup(var s:twordcore;xcap:string);
+function low__wordcore_find(var s:twordcore;xtext,xcmd:string):boolean;
+function low__wordcore_docchar(var s:twordcore;i:longint):byte;//slow, mainly for dic support - 05feb2023
+function low__wordcore_docsep(var s:twordcore;i:longint):boolean;//slow, mainly for dic support - 26feb2023, 05feb2023
+function low__wordcore_docsep2(var s:twordcore;i:longint;xsplitdash:boolean):boolean;//slow, mainly for dic support - 26feb2023, 05feb2023
 function low__wordcore(var x:twordcore;xcmd:string;xval:tstr8):boolean;//return result: true/false
 function low__wordcore_str(var x:twordcore;xcmd,xval:string):boolean;
 function low__wordcore2(var x:twordcore;xcmd:string;xval:tstr8):longint;//return result: longint
@@ -8591,6 +9091,7 @@ function low__minsertslotREDO(x:tstr8):longint;//02jul2022
 function low__mcanundo(x:tstr8):boolean;
 function low__mundo(x:tstr8;var xslot:longint):boolean;
 function low__mcanredo(x:tstr8):boolean;
+function low__mredoflush(x:tstr8):boolean;//true=did something, false=nothing changed - 02may2023
 function low__mredo(x:tstr8;var xslot:longint):boolean;
 function low__mdebug(x:tstr8):string;
 //.redo support
@@ -8602,8 +9103,9 @@ function low__mundofind(x:tstr8;xindex:longint;var xslot:longint):boolean;//
 
 
 //app support ------------------------------------------------------------------
+procedure app__setwindowstyle(gui:tbasicsystem;xcmd:string);
 procedure app__nomax;//hide D3's blank black window if it happens to show for whatever reason - 14may2022
-procedure app__init;//20feb2202
+procedure app__init;//09dec2023, 20feb2202
 function app__processmessages:boolean;
 function app__processallmessages:boolean;
 procedure app__timer;
@@ -8781,7 +9283,7 @@ function ScreenToClient(hWnd: HWND; var lpPoint: TPoint): BOOL; stdcall; externa
 
 implementation
 
-uses Harmony1, Harmony2;
+uses Harmony1;
 
 const
    //security checkid 2 of 2 -> put it here to space it out inside the EXE - harder to track - 11oct2022
@@ -9239,7 +9741,7 @@ if ((ws_maximize and v)<>0) then showwindow(application.Handle, sw_shownormal);
 except;end;
 end;
 //## app__init ##
-procedure app__init;//20feb2202
+procedure app__init;//09dec2023, 20feb2202
 label
    redo;
 var
@@ -9259,7 +9761,18 @@ syscursor_sizeref64:=ms64+5000;
 //AddExitProc(DoneApplication);//?????????????????????????????????
 if (application.mainform<>nil) then
    begin
+   //.show the app's main form
    application.mainform.visible:=true;
+   //.start style
+   if (sysprogram<>nil) then
+      begin
+      case vistartstyle of
+      1:app__setwindowstyle(sysprogram.gui,'-');//min
+      2:app__setwindowstyle(sysprogram.gui,'+');//max
+      //not in use: 3:app__setwindowstyle(gui,'f');
+      end;//case
+      end;//if
+
 {//was:
    case cmdshow of
    SW_SHOWMINNOACTIVE:application.mainform.windowstate:=wsminimized;
@@ -9278,6 +9791,8 @@ if app__running then goto redo;
 
 //close main form - fixed 20feb2022
 if (application.mainform<>nil) then freeobj(@application.mainform);
+//halt
+sihalt;
 except;end;
 end;
 //## app__processmessages ##
@@ -9378,6 +9893,7 @@ if siclosing and (not sicloseviapostDONE) and (low__closecount<=0) then
    begin
    sicloseviapostDONE:=true;//do only once - 30sep2021
    systimer_enabled:=false;
+   app__running:=false;//stop the message loop - 17nov2023
    postmessage(application.handle,wm_quit,0,0);//thread friendly shutdown signal - 26may2021
    exit;
    end;
@@ -9837,6 +10353,7 @@ xname:='default';
 bol1:=false;
 //get
 if (syscursor_name<>'') and (syscursor_ref64>=ms64) then xname:=syscursor_name else low__fromfilestr(low__platsysext('cur.inf'),xname,e);
+//.name
 if (xname='') then xname:='default';
 xname:=low__lowercase(xname);
 if xloadcursor then xcursorsize:=reg__readval(0,'Control Panel\Cursors\CursorBaseSize',true) else xcursorsize:='';
@@ -11306,6 +11823,23 @@ if low__mstartsplit(x,u,r,f) and (r.len>=1) and (xindex>=0) then
 except;end;
 try;low__mfinish(x,u,r,f);except;end;
 end;
+//## low__mredoflush ##
+function low__mredoflush(x:tstr8):boolean;//true=did something, false=nothing changed - 02may2023
+var
+   u,r,f:tstr8;
+begin
+try
+result:=false;
+if low__mstartsplit(x,u,r,f) and (r.len>=1) then
+   begin
+   result:=true;
+   f.add(r);//take slot numbers from the "redo list" and add them to the "free list"
+   r.clear;//wipe the "redo list"
+   low__mmake(x,u,r,f);//rebuild undo/redo/free list data stream - 02may20223
+   end;
+except;end;
+try;low__mfinish(x,u,r,f);except;end;
+end;
 //## low__mundocount ##
 function low__mundocount(x:tstr8):longint;
 var
@@ -11735,6 +12269,8 @@ n:=low__lowercase(n);
 if        (n='colorname')      then result:=vicolorname
 else if   (n='startlink')      then result:=bnc(vistartlink)
 else if   (n='desktoplink')    then result:=bnc(videsktoplink)
+else if   (n='startuplink')    then result:=bnc(vistartuplink)
+else if   (n='startstyle')     then result:=inttostr(vistartstyle)//09dec2023
 else if   (n='round')          then result:=bnc(viround)
 else if   (n='minimalscroll')  then result:=bnc(viminimal__scrollbar)
 else if   (n='softclose')      then result:=bnc(visoftclose)
@@ -11761,6 +12297,7 @@ else if   (n='specialcolors')  then result:=bnc(vispecialcolors)
 else if   (n='enhanced')       then result:=bnc(vienhanced)
 else if   (n='shaderound')     then result:=bnc(vishaderound)
 else if   (n='shadeglow')      then result:=bnc(vishadeglow)//12jun2022
+else if   (n='emboss')         then result:=bnc(viemboss)//19nov2023
 else if   (n='sparkle')        then result:=inttostr(visparkle)//09mar2021
 else if   (n='bordersize')     then result:=inttostr(vibordersize__root)
 else if   (n='scrollsize')     then result:=inttostr(viscrollsize__root)
@@ -12474,7 +13011,7 @@ else if (strcopy1(n,1,1)='?') then
          goto redo;
          end
       else if (sizeof(cols__default)>=2) then aset(cols__default,'')
-      else                                    aset(cols_black,'')//15mar2022 - was: glowing_grey)//10mar2021
+      else                                    aset(cols_black3,'')//103nov20223, 5mar2022 - was: glowing_grey)//10mar2021
       end
    //.newer built-in colors - 22jul2021
    else aset([0],low__findbuiltincolor(n,false,xadjBrightness100));//brightness MUST be handled by "aset()"
@@ -12716,6 +13253,8 @@ else if m('?Wild Thing 3')       then aset2(cols_Wild_Thing,20)//31may2021
 else if m('?Wild Thing 4')       then aset2(cols_Wild_Thing,40)//31may2021
 else if m('?Black')              then aset(cols_Black)//26aug2021
 else if m('?Black 2')            then aset2(cols_Black,20)//26aug2021
+else if m('?Black 3')            then aset(cols_Black3)//03nov2023
+else if m('?Black 4')            then aset2(cols_Black3,20)//03nov2023
 else if m('?White')              then aset(cols_White)//26aug2021
 else if m('?White 2')            then aset2(cols_White,10)//26aug2021
 else if m('?Wild Mix')           then aset(cols_Wild_Mix)//26aug2021
@@ -12767,7 +13306,7 @@ else if m('?brown 9')            then aset2(cols_brown6,30)//21jun2022
 
 else
    begin
-   if (sizeof(cols__default)>=2) then aset(cols__default) else aset(cols_black);
+   if (sizeof(cols__default)>=2) then aset(cols__default) else aset(cols_black3);//03nov2023
    end;
 except;end;
 end;
@@ -12848,7 +13387,7 @@ end;
 //## low__ver ##
 function low__ver:longint;//low__gossver, low__sysver etc//low__ver
 begin
-try;result:=40032446;except;end;
+try;result:=40033775;except;end;
 end;
 //## low__verstr ##
 function low__verstr:string;//low__sysver etc//low__ver
@@ -13003,6 +13542,8 @@ const
    xfacebook:array[0..111] of byte=(52,0,0,0,159,214,17,48,48,177,74,58,89,15,121,35,234,93,197,240,107,83,233,137,48,71,183,36,133,78,215,33,29,62,118,54,115,84,41,178,197,222,248,163,170,38,210,247,24,2,197,27,214,122,180,31,250,226,210,249,163,5,35,128,198,36,127,34,15,5,151,82,216,73,243,49,251,165,196,17,230,125,142,145,173,196,173,43,10,151,197,52,47,52,254,177,169,62,172,46,146,75,21,87,12,164,126,104,117,254,159,255);
    xtwitter:array[0..99] of byte=(46,0,0,0,159,214,17,48,48,177,74,58,89,15,121,35,234,93,197,240,107,83,233,137,48,71,183,36,133,78,215,33,29,62,118,54,115,84,41,118,197,222,248,238,188,38,210,254,94,2,197,41,218,122,180,46,195,226,210,250,163,5,35,126,198,36,127,86,11,5,151,68,212,73,243,46,240,165,196,19,249,125,142,154,160,52,173,54,14,151,197,55,60,164,254,169,70,209,159,255);
    xinstagram:array[0..113] of byte=(53,0,0,0,159,214,17,48,48,177,74,58,89,15,121,35,234,93,197,240,107,83,233,137,48,71,183,36,133,78,215,33,29,62,118,54,115,84,41,168,197,222,248,225,188,38,210,12,24,2,197,30,227,122,180,47,9,226,210,248,155,5,35,131,198,36,127,97,7,5,151,70,218,73,243,49,245,165,196,7,241,125,142,92,160,196,173,64,1,151,197,1,45,52,254,160,171,62,172,61,198,75,21,96,26,164,126,90,136,224,99,115,213,255);
+   xsourceforge:array[0..149] of byte=(71,0,0,0,136,17,162,151,45,138,229,12,13,245,160,115,143,116,210,33,45,109,146,183,158,2,157,89,155,249,95,250,131,224,115,156,28,122,245,250,43,58,200,158,21,18,3,252,104,63,14,246,104,213,79,178,95,226,166,45,71,152,180,242,252,175,32,78,220,145,196,163,89,218,162,43,252,180,135,79,149,133,207,234,185,7,97,111,128,92,72,28,110,200,63,88,4,133,111,189,170,39,251,176,255,214,217,60,90,72,206,208,194,96,177,226,165,253,143,29,54,47,86,18,119,161,227,3,7,137,64,145,133,150,28,182,215,190,227,240,63,35,154,117,36,55,103,214,138,255);
+   xgithub:array[0..159] of byte=(76,0,0,0,93,55,129,129,253,89,91,29,6,29,224,68,98,155,122,215,127,42,192,218,90,39,146,51,169,253,116,214,169,163,212,53,81,93,51,217,228,34,72,177,139,117,108,24,38,206,208,59,184,13,114,23,121,193,227,22,97,97,38,214,160,248,85,13,209,254,117,132,42,25,181,242,9,122,19,234,205,235,158,249,215,35,190,50,198,105,88,118,25,242,118,193,117,153,25,249,130,222,83,190,77,62,132,205,46,118,26,237,82,201,72,27,121,86,106,49,126,38,90,125,152,8,13,241,248,133,224,232,105,155,190,232,37,111,144,162,86,137,32,176,125,36,1,178,220,154,125,23,191,159,195,6,14,54,207,255);
    xbyBEcom:array[0..75] of byte=(34,0,0,0,159,214,17,48,48,177,74,58,94,15,121,35,234,93,197,240,107,83,233,91,48,71,183,30,133,78,215,108,29,62,118,47,154,84,41,117,113,222,248,255,10,38,210,9,79,73,127,39,229,122,125,46,254,226,210,179,87,5,35,132,0,151,197,153,80,5,36,157,6,129,184,255);
 var
    xprgnameORG,str1,v,v2,xval:string;
@@ -13045,7 +13586,7 @@ try
 result:='';
 //init
 xcmd:=low__lowercase(xcmd);
-xval:='';  
+xval:='';
 xprgnameORG:=xprgname;
 if (xprgname='') then
    begin
@@ -13085,13 +13626,13 @@ else if (xcmd='folder') then
       result:=asfolder(result+xprgname);
       end;
    //get
-   if xrunaction and (not directoryexists(result)) then forcedirectories(result);
+   if xrunaction and viMaster and (not directoryexists(result)) then forcedirectories(result);
    end
 //.folderbe
 else if (xcmd='folderbe') then
    begin
    result:=asfolder(asfolder(low__extractfilepath(low__exename))+platfoldername);//this folder and up we own
-   if xrunaction and (not directoryexists(result)) then forcedirectories(result);
+   if xrunaction and viMaster and (not directoryexists(result)) then forcedirectories(result);
    end
 else if (xcmd='root') then result:=asfolder(low__extractfilepath(low__exename))
 else if (xcmd='showroot') then
@@ -13103,6 +13644,7 @@ else if (xcmd='showhelp') then low__showhelp(not vihelp_show)
 //.visit
 //xxxxxxxxxxxelse if (xcmd='splash') then result:=low__cdstr(xportal)//leave the "ecap()" encryption in place -> splash screen expects the url to be encrypted with ecap - 07mar2020
 else if (xcmd='portal') then result:=xvisit(xportal,'')
+else if (xcmd='contact') then result:=xvisit(xportal,'/contact.html')
 else if (xcmd='software') then result:=xvisit(xsoftware,'')
 else if (xcmd='vintage') then result:=xvisit(xvintage,'')
 //was: else if (xcmd='nprogram') then result:=xvisit(xsoftware,low__insstr('/'+low__lowercase(safename(xnospaces(xprgname))+'.html'),xprgname<>''))//new program
@@ -13114,6 +13656,10 @@ else if (xcmd='vprogramzip') then result:=xvisit(xvintage,low__insstr('/'+low__l
 else if (xcmd='instagram') then result:=xvisit(xinstagram,'')
 else if (xcmd='facebook') then result:=xvisit(xfacebook,'')
 else if (xcmd='twitter') then result:=xvisit(xtwitter,'')
+else if (xcmd='sourceforge') then result:=xvisit(xsourceforge,'')
+else if (xcmd='github') then result:=xvisit(xgithub,'')//02dec2023
+
+
 //.start menu
 else if (xcmd='startmenu') then
    begin
@@ -13193,6 +13739,33 @@ else if (xcmd='desktop') then
    //.error
    else showerror('Unknown directive "'+xcmd+'.'+xval+'" [006]');
    end
+//.startup (auto startup) link
+else if (xcmd='startup') then
+   begin
+   result:=winstartup+safefilename(low__exename,false)+'.lnk';
+   //.create
+   if      (xval='') or (xval='create') then
+      begin
+      if xrunaction and (not low__fileexists(result)) then low__createlink(result,low__exename,'','');
+      end
+   //.del
+   else if (xval='del') then
+      begin
+      if xrunaction then low__remfile(result);
+      end
+   //.exists
+   else if (xval='exists') then result:=bnc(low__fileexists(result))
+   //.toggle
+   else if (xval='toggle') then
+      begin
+      case low__fileexists(result) of
+      true:low__plat(xcmd+'.del',xprgname,xrunaction);//delete existing
+      false:low__plat(xcmd,xprgname,xrunaction);//create new
+      end;//case
+      end
+   //.error
+   else showerror('Unknown directive "'+xcmd+'.'+xval+'" [007]');
+   end
 else showerror('Unknown directive "'+xcmd+'" [007]');
 except;end;
 end;
@@ -13208,6 +13781,16 @@ try
 case (xname<>'') of
 true:result:=low__plat('folder',xname,true);
 false:result:=low__plat('folderbe','',true);
+end;
+except;end;
+end;
+//## low__platfolder2 ##
+function low__platfolder2(xname:string;xcreate:boolean):string;//10feb2023
+begin
+try
+case (xname<>'') of
+true:result:=low__plat('folder',xname,xcreate);
+false:result:=low__plat('folderbe','',xcreate);
 end;
 except;end;
 end;
@@ -13251,7 +13834,10 @@ function low__platsysext(xext:string):string;//29aug2021
 begin
 try
 xext:=low__lowercase(xext);
-result:=low__platfolder('settings')+'sys-'+low__ownname+low__insstr('.',xext<>'')+xext;
+case viMaster of
+true:result:=low__platfolder('settings')+'sys-'+low__ownname+low__insstr('.',xext<>'')+xext;
+false:result:=wintemp+'sys-'+inttostr(system_instanceid)+low__insstr('.',xext<>'')+xext;
+end;
 except;end;
 end;
 //## low__platprgext ##
@@ -13259,7 +13845,10 @@ function low__platprgext(xext:string):string;//29aug2021
 begin
 try
 xext:=low__lowercase(xext);
-result:=low__platfolder('settings')+'prg-'+low__ownname+low__insstr('.',xext<>'')+xext;
+case viMaster of
+true:result:=low__platfolder('settings')+'prg-'+low__ownname+low__insstr('.',xext<>'')+xext;
+false:result:=wintemp+'prg-'+inttostr(system_instanceid)+low__insstr('.',xext<>'')+xext;
+end;
 except;end;
 end;
 //## need_chimes ##
@@ -13281,6 +13870,23 @@ end;
 procedure need_gif;
 begin
 try;{$ifdef gif} {$else}showerror('GIF support required');{$endif}except;end;
+end;
+//## need_gif2 ##
+procedure need_gif2;
+var
+   ok,ok2:boolean;
+begin
+try
+ok:=false;
+ok2:=false;
+{$ifdef gif}
+ok:=true;
+{$endif}
+{$ifdef gif2}
+ok2:=true;
+{$endif}
+if (not ok) or (not ok2) then showerror('GIF2 requires both GIF and GIF2 support');
+except;end;
 end;
 //## need_ico ##
 procedure need_ico;
@@ -13811,7 +14417,7 @@ if zzok(xfromimg,1022) then
    a:=misimg32(xw,xh);
    if (xw<>misw(a)) or (xh<>mish(a)) then goto skipend;
    if mishasai(xfromimg) and (not misaicopy(xfromimg,a)) then goto skipend;
-   if not miscopyareaxx(rect(0,0,maxint,maxint),0,0,xw,xh,rect(0,0,xw-1,xh-1),a,xfromimg,255,0,clnone,0) then goto skipend;//fixed - 14apr2021
+   if not miscopyareaxx(maxarea,0,0,xw,xh,rect(0,0,xw-1,xh-1),a,xfromimg,255,0,clnone,0) then goto skipend;//fixed - 14apr2021
    end
 //.clipoard -> a
 else
@@ -13853,7 +14459,7 @@ if zzok(xfromimg,1023) and xfit then
 //set
 if (ddw<=0) or (ddh<=0) then goto skipend;
 if ((ddw<>misw(d)) or (ddh<>mish(d))) and (not d.sizeto(ddw,ddh)) then goto skipend;
-if not miscopyareaxx(rect(0,0,maxint,maxint),0,0,ddw,ddh,rect(0,0,aw-1,ah-1),d,a,255,0,clnone,0) then goto skipend;
+if not miscopyareaxx(maxarea,0,0,ddw,ddh,rect(0,0,aw-1,ah-1),d,a,255,0,clnone,0) then goto skipend;
 //Note: Any change in cellwidth/cellheight has to be modified
 if mishasai(a) and mishasai(d) and (not misaicopy(a,d)) then goto skipend;
 //successful
@@ -13903,7 +14509,7 @@ a.lock;
 //.cls -> Note: CLS and DRAW.TRANS required to CUT the image out properly so ALPHA maker and function correctly - 07jun2021
 if (xtc<>clnone) then miscls(a,xtc);
 //.draw
-if not miscopyareaxx(rect(0,0,maxint,maxint),0,0,a.width*low__aorb(1,-1,xmirror),a.height*low__aorb(1,-1,xflip),misarea(d),a,d,255,low__aorb(0,1,xtc<>clnone),xtc,xoptions) then goto skipend;
+if not miscopyareaxx(maxarea,0,0,a.width*low__aorb(1,-1,xmirror),a.height*low__aorb(1,-1,xflip),misarea(d),a,d,255,low__aorb(0,1,xtc<>clnone),xtc,xoptions) then goto skipend;
 //.magic feather -> xtransframe -> draw 1px frame at outer edge of image using "transparentcolor" so feather can penetrate from the edge even if the image has NOT been
 //                                 cropped to do so -> fixes the "STAR" problem with the tips of a croppped image touching it's outer edge there is nothing for the
 //                                 feather system to work in from with
@@ -13967,7 +14573,7 @@ if not misaicopy(d,s) then goto skipend;
 //.cls -> Note: CLS and DRAW.TRANS required to CUT the image out properly so ALPHA maker and function correctly - 07jun2021
 if (xtc<>clnone) then miscls(d,xtc);
 //.draw
-if not miscopyareaxx(rect(0,0,maxint,maxint),0,0,d.width*low__aorb(1,-1,xmirror),d.height*low__aorb(1,-1,xflip),misarea(s),d,s,255,low__aorb(0,1,xtc<>clnone),xtc,xoptions) then goto skipend;
+if not miscopyareaxx(maxarea,0,0,d.width*low__aorb(1,-1,xmirror),d.height*low__aorb(1,-1,xflip),misarea(s),d,s,255,low__aorb(0,1,xtc<>clnone),xtc,xoptions) then goto skipend;
 //.alpha - supports feather and transparent color - 07jun2021
 if (misb(d)=32) then
    begin
@@ -15805,7 +16411,7 @@ end;
 //## chm_buzzerlabel ##
 function chm_buzzerlabel(x:longint):string;
 begin
-try;result:=inttostr(p);except;end;
+try;result:=inttostr(x);except;end;
 end;
 //## chm_vol ##
 function chm_vol:longint;//chimes volume, not buzzer
@@ -17408,30 +18014,40 @@ if scheck(xtext,xcode) then result:=xtext;
 except;end;
 end;
 //## xcodecheck ##
-procedure xcodecheck;//11oct2022
+procedure xcodecheck;//14nov2023, 11oct2022
 label
    redo,skipone,skipdone,skipend;
 var
    z1,z2:tint4;
    i1,i2,aid,bid,ap,bp,a1,a2,a3,b1,b2,b3,v,p:longint;
-   x:tstr8;
-   aonce,bonce:boolean;
+   s,x:tstr8;
+   xshowerror,aonce,bonce:boolean;
    e:string;
 begin
 try
 //defaults
+s:=nil;
 x:=nil;
 ap:=0;
 bp:=0;
 aid:=0;
 bid:=0;
+xshowerror:=false;
+
+//init - load data streams for client/slave mode - 14nov2023
+s:=bnew;
+x:=bnew;
+if not low__fromfile(low__exename,s,e) then goto skipend;//failed to load file -> skip security check - 14nov2023, 11oct2022
+if not low__exeread(s,x,nil,nil,usrdata,sysmore) then
+   begin
+   xshowerror:=true;
+   goto skipdone;//failed split at marker -> raise error - 14nov2023, 11oct2022
+   end;
+
 //check
-if (programcheck_mode=(-91234351-5)) then exit;//use -91234356 to disable security check - 11oct2022
+if (programcheck_mode=(-91234351-5)) then goto skipend;//use -91234356 to disable security check - 11oct2022
 //check
 if (programcheck_mode<>(234876+21)) then goto skipdone;//must use "234897" for a security check - 11oct2022
-//init
-x:=bnew;
-if not low__fromfile(low__exename,x,e) then goto skipend;//fail to load file -> skip security check - 11oct2022
 //.a
 aonce:=true;
 a1:=programcode_checkid[0];
@@ -17549,7 +18165,8 @@ inttostr(bid)+'<<B>>'+rcode+
 {}//yyy
 
 if (z1.bytes[0]<>programcode_checkid[i1])  or (z1.bytes[1]<>programcode_checkid[i1+1])  or (z1.bytes[2]<>programcode_checkid[i1+2])  or (z1.bytes[3]<>programcode_checkid[i1+3]) or
-   (z2.bytes[0]<>programcode_checkid2[i2]) or (z2.bytes[1]<>programcode_checkid2[i2+1]) or (z2.bytes[2]<>programcode_checkid2[i2+2]) or (z2.bytes[3]<>programcode_checkid2[i2+3]) then
+   (z2.bytes[0]<>programcode_checkid2[i2]) or (z2.bytes[1]<>programcode_checkid2[i2+1]) or (z2.bytes[2]<>programcode_checkid2[i2+2]) or (z2.bytes[3]<>programcode_checkid2[i2+3]) or
+   xshowerror then
    begin
    //Note: Message below is same for other content checkers BUT this one is
    //      encrypted via "low__cemix()" and thus cannot be patterned matched
@@ -17563,7 +18180,10 @@ if (z1.bytes[0]<>programcode_checkid[i1])  or (z1.bytes[1]<>programcode_checkid[
    end;
 skipend:
 except;end;
-try;bfree(x);except;end;//28jan2021
+try;
+bfree(s);
+bfree(x);
+except;end;//28jan2021
 end;
 {//!!!! Exclude this code from release versions of programs !!!!!!/
 //## low__makecodecheck ##
@@ -17705,7 +18325,7 @@ try;bfree(x);except;end;//28jan2021
 end;
 {}//!!!!
 //## low__showhelp ##
-procedure low__showhelp(dshow:boolean);
+procedure low__showhelp(dshow:boolean);//03nov2023
 var
    a:tbasicprg2;
    dx,dy,dw,dh:longint;
@@ -17728,6 +18348,9 @@ if zznil(programhelpviewer,2040) then
 programhelpviewer.center;
 programhelpviewer.show;
 {}
+
+//filter
+if (sizeof(programhelp)<2) or (not viMaster) then dshow:=false;
 
 //now:
 if (system_program<>nil) and (system_program is tbasicprg2) then
@@ -18194,6 +18817,7 @@ satInfo             :r('info');
 satMenu             :r('menu');
 satCols             :r('columns');
 satSetcolor         :r('setcolor');
+satOther            :r('other');//16nov2023
 else                 r('');//nil
 end;//case
 except;end;
@@ -18680,6 +19304,7 @@ procedure siInit;//low level version - 12sep2021, 10mar2020
 var
    v,p2,p:longint;
    cmp1:comp;
+   cur1:currency;
    str1,str2,x,e:string;
    xdatetime:tdatetime;
    //## xerrLR ##
@@ -18719,19 +19344,62 @@ if siInited then exit else siInited:=true;
 
 //xxxxxxxxxxxxxxxxxxxxx clipboard.astext:=low__cemixc('Plus Multi-Panel',true);
 
-//.needed support - 31may2022, 24may2022
-need_ico;
-need_gif;
 
+//ref arrays -------------------------------------------------------------------
+try
+//.int32
+for p:=0 to high(p4INT32) do p4INT32[p]:=p*p*p*p;
+//.cur256
+for p:=0 to high(p4CUR256) do
+begin
+p4CUR256[p]:=p*p;
+p4CUR256[p]:=p4CUR256[p]*p4CUR256[p];
+end;//p
+//.ref65025_div_255 - 06apr2017
+for p:=0 to high(ref65025_div_255) do ref65025_div_255[p]:=p div 255;
+//.fb255
+for p:=low(fb255) to high(fb255) do
+begin
+v:=p;
+if (v<0) then v:=0 else if (v>255) then v:=255;
+fb255[p]:=byte(v);
+end;//p
+//.fbwrap255
+for p:=low(fbwrap255) to high(fbwrap255) do
+begin
+v:=p;
+ repeat
+ if (v>255) then dec(v,255)
+ else if (v<0) then inc(v,255)
+ until (v>=0) and (v<=255);
+fbwrap255[p]:=byte(v);
+end;//p
 
-//.start the randomiser sub-system - 12sep2021
-randomize;
+except;end;
 
-//check processing via compiler is set to LEFT-to-RIGHT processing only - some procs will raise error or fail if this is NOT the mode - 01jul2021
-if true or xerrLR then
-   begin
-   //nil
-   end;
+//system stats -----------------------------------------------------------------
+//.resource level tracking
+for p:=0 to high(sysstats_active) do
+begin
+sysstats_active[p]   :=0;
+sysstats_create[p]   :=0;
+sysstats_destroy[p]  :=0;
+sysstats_ratec[p]    :=0;
+sysstats_rated[p]    :=0;
+end;//p
+
+//.leak tracking
+sysleak_show:=false;
+for p:=0 to high(sysleak_start) do
+begin
+for p2:=0 to high(sysleak_start[0]) do//range error fixed - 20apr2021
+begin
+sysleak_start[p][p2]:=0;
+sysleak_stop[p][p2] :=0;
+end;//p2
+sysleak_label[p]    :='';
+sysleak_counter[p]  :=0;
+end;//p
 
 //debug init
 system_debugPaintcount:=0;
@@ -18742,6 +19410,19 @@ for p:=0 to high(systrack_obj) do systrack_obj[p]:=nil;
 
 //system_debug_pointerlist__SLOW
 for p:=0 to high(systrack_ptr) do systrack_ptr[p]:=nil;
+
+//.needed support - these can be disabled - 31may2022, 24may2022
+need_ico;
+need_gif;
+
+//.start the randomiser sub-system - 12sep2021
+randomize;
+
+//check processing via compiler is set to LEFT-to-RIGHT processing only - some procs will raise error or fail if this is NOT the mode - 01jul2021
+if true or xerrLR then
+   begin
+   //nil
+   end;
 
 //system id -> unique for each running copy of program - 19feb2022
 system_instanceid:=application.handle;
@@ -18807,9 +19488,6 @@ acheck(programbanner,programbanner_check);//28may2021
 acheck(programbanner2,programbanner2_check);//31may2021
 if not system_debug then acheck(programhelp,programhelp_check);
 
-//.program code checker - use code "-1745" to disable - 27sep2022, 28aug2021
-xcodecheck;
-
 //init system vars
 //.idle trackers - 03apr2021
 syskeytime:=ms64;//keyboard key press/stroke up or down
@@ -18818,6 +19496,17 @@ sysmovetime:=ms64;//mouse move
 sysmovetime_global:=ms64;//global mouse move
 sysdowntime:=ms64;//moue down
 syswheeltime:=ms64;//mouse wheel
+
+//system storage handlers ------------------------------------------------------
+usrdata:=bnew;
+sysmore:=vnew;
+
+
+//.program code checker - use code "-1745" to disable - 27sep2022, 28aug2021
+xcodecheck;
+
+//.viMaster - FALSE=means code is not connected to a folder - all settings strictly in RAM - e.g. a EXE Document
+if (sysmore.len>=1) or (blen(usrdata)>=1) then viMaster:=false;
 
 //WINE Support - 02feb2022 -----------------------------------------------------
 system_winepresent:=low__driveexists('z:\');
@@ -18846,31 +19535,6 @@ cf_bwd:=registerclipboardformat('Blaiz Writer Document');
 cf_bwp:=registerclipboardformat('Blaiz Word Processor Document');
 except;end;
 
-//system stats -----------------------------------------------------------------
-//.resource level tracking
-for p:=0 to high(sysstats_active) do
-begin
-sysstats_active[p]   :=0;
-sysstats_create[p]   :=0;
-sysstats_destroy[p]  :=0;
-sysstats_ratec[p]    :=0;
-sysstats_rated[p]    :=0;
-end;//p
-
-//.leak tracking
-sysleak_show:=false;
-for p:=0 to high(sysleak_start) do
-begin
-for p2:=0 to high(sysleak_start[0]) do//range error fixed - 20apr2021
-begin
-sysleak_start[p][p2]:=0;
-sysleak_stop[p][p2] :=0;
-end;//p2
-sysleak_label[p]    :='';
-sysleak_counter[p]  :=0;
-end;//p
-
-
 //OS Code ----------------------------------------------------------------------
 {$ifdef D3}
 syscode:=osW32;
@@ -18894,14 +19558,12 @@ x:='abc';
 stroffset:=low(x);//D10
 {$endif}
 
-
 //debug support ----------------------------------------------------------------
 for p:=0 to high(debug_form) do
 begin
 debug_form[p]:=nil;
 debug_info[p]:='';
 end;//p
-
 
 //string support ---------------------------------------------------------------
 //translated strings
@@ -18910,8 +19572,6 @@ tsB:=low__uppercase(translate('b'));//single byte - 24feb2016
 tsKB:=low__uppercase(translate('kb'));
 tsMB:=low__uppercase(translate('mb'));
 tsGB:=low__uppercase(translate('gb'));
-
-
 
 //sysarrays --------------------------------------------------------------------
 //.system menu
@@ -18924,38 +19584,6 @@ sysmenu_selstart[p]:=0;
 sysmenu_selcount[p]:=0;
 sysmenu_ref64[p]:=0;
 end;//p
-
-try
-//.int32
-for p:=0 to high(p4INT32) do p4INT32[p]:=p*p*p*p;
-//.cur256
-for p:=0 to high(p4CUR256) do
-begin
-p4CUR256[p]:=p*p;
-p4CUR256[p]:=p4CUR256[p]*p4CUR256[p];
-end;//p
-//.ref65025_div_255 - 06apr2017
-for p:=0 to high(ref65025_div_255) do ref65025_div_255[p]:=p div 255;
-//.fb255
-for p:=low(fb255) to high(fb255) do
-begin
-v:=p;
-if (v<0) then v:=0 else if (v>255) then v:=255;
-fb255[p]:=byte(v);
-end;//p
-//.fbwrap255
-for p:=low(fbwrap255) to high(fbwrap255) do
-begin
-v:=p;
- repeat
- if (v>255) then dec(v,255)
- else if (v<0) then inc(v,255)
- until (v>=0) and (v<=255);
-fbwrap255[p]:=byte(v);
-end;//p
-
-except;end;
-
 
 //temp support -----------------------------------------------------------------
 //.temp buffer support
@@ -18986,7 +19614,6 @@ sysbytetime[p]:=0;
 sysbyteobj[p]:=nil;
 end;//p
 
-
 //system font slots ------------------------------------------------------------
 for p:=0 to high(sysfont_dref) do
 begin
@@ -18997,7 +19624,6 @@ sysfont_avew[p]        :=0;
 sysfont_minw[p]        :=0;
 sysfont_maxw[p]        :=0;
 end;//p
-
 
 //system -----------------------------------------------------------------------
 //root font
@@ -19024,7 +19650,6 @@ if not low__fileexists(low__platonce) then
 //load mm system ---------------------------------------------------------------
 mm_init;//29mar2021
 
-
 //system fast vars - 06apr2021
 low__reloadfastvars;
 
@@ -19032,6 +19657,7 @@ low__reloadfastvars;
 siLoadsyssettings;
 siLoadprgsettings;
 
+master__cursor;
 
 //system sync ------------------------------------------------------------------
 viSync;
@@ -19039,7 +19665,6 @@ viSync;
 
 //system links -----------------------------------------------------------------
 program__init;//primarily for testing purposes generally
-
 except;end;
 end;
 //## siCloseprompt ##
@@ -19095,6 +19720,7 @@ program__close;
 //system hubs ------------------------------------------------------------------
 mm_shut;//29mar2021
 drop_shut;//26jul2021
+dic_shut;//04feb2023
 
 //system threads stopall - 16oct2021 -------------------------------------------
 systhread__stopall(true);
@@ -19124,19 +19750,9 @@ end;//p
 //debug support ----------------------------------------------------------------
 for p:=0 to high(debug_form) do freeobj(@debug_form[p]);
 
-
-//system font slots ------------------------------------------------------------
-for p:=0 to high(sysfont_dref) do
-begin
-freeobj(@sysfont_data[p]);
-freeobj(@sysfont_dref[p]);
-end;
-
-
 //system settings handlers -----------------------------------------------------
 siSavesyssettings;
 siSaveprgsettings;
-
 
 //system disk support ----------------------------------------------------------
 for p:=0 to high(sysdisk_name) do
@@ -19146,15 +19762,27 @@ bfree(sysdisk_data[p]);
 sysdisk_readonly[p]:=false;
 end;//p
 
-
 //system dynamic tep support ---------------------------------------------------
 bfree(syslist_tep20);
-
 
 //system settings handlers #2 --------------------------------------------------
 freeobj(@syssettings);
 freeobj(@prgsettings);
 freeobj(@viframecode);//23feb2022
+
+//system storage handlers ------------------------------------------------------
+bfree(usrdata);
+freeobj(@sysmore);
+
+//master support cleanup -------------------------------------------------------
+master__cursorCLEAN;//15nov2023
+
+//system font slots ------------------------------------------------------------
+for p:=0 to high(sysfont_dref) do
+begin
+freeobj(@sysfont_data[p]);
+freeobj(@sysfont_dref[p]);
+end;
 
 //wait a short moment for ALL threads to shutdown - 26may2021
 xref64:=ms64+20000;
@@ -19164,7 +19792,6 @@ if (ms64>=xref64) or (sysstats_active[satThread]<=0) then break;
 sleep(50);
 app__processallmessages;
 end;//loop
-
 except;end;
 try
 //terminate
@@ -19181,7 +19808,7 @@ try
 result:=false;
 a:=nil;
 a:=bnew;
-result:=low__fromfile(low__platsyssettings,a,e);
+if viMaster then result:=low__fromfile(low__platsyssettings,a,e) else result:=a.addb(sysmore.d['_syssettings']);
 if zzok(syssettings,1041) then
    begin
    siLoadsyssettingsfrom(a);
@@ -19200,7 +19827,7 @@ try
 result:=false;
 a:=nil;
 a:=bnew;
-result:=low__fromfile(low__platprgsettings,a,e);
+if viMaster then result:=low__fromfile(low__platprgsettings,a,e) else result:=a.addb(sysmore.d['_prgsettings']);
 if zzok(prgsettings,1042) then
    begin
    zzvars(prgsettings,110);
@@ -19255,14 +19882,14 @@ function siSavesyssettings:boolean;
 var
    e:string;
 begin
-try;result:=zzok(syssettings,1046) and zzok(syssettings,1047) and low__tofile(low__platsyssettings,syssettings.data,e);except;end;
+try;result:=zzok(syssettings,1046) and zzok(syssettings,1047) and viMaster and low__tofile(low__platsyssettings,syssettings.data,e);except;end;
 end;
 //## siSaveprgsettings ##
 function siSaveprgsettings:boolean;
 var
    e:string;
 begin
-try;result:=zzok(prgsettings,1048) and zzok(prgsettings,1049) and low__tofile(low__platprgsettings,prgsettings.data,e);except;end;
+try;result:=zzok(prgsettings,1048) and zzok(prgsettings,1049) and viMaster and low__tofile(low__platprgsettings,prgsettings.data,e);except;end;
 end;
 //## siSaveallsettings ##
 procedure siSaveallsettings;//23mar2022
@@ -19384,6 +20011,8 @@ if (viframecode=nil) then viframecode:=bnew;
 //other
 bset('startlink',false,a.b['startlink']);//def=OFF - 24aug2020
 bset('desktoplink',false,a.b['desktoplink']);//def=OFF
+bset('startuplink',false,a.b['startuplink']);//def=OFF
+iset('startstyle',0,2,0,a.i['startstyle']);//09dec2023
 bset('touch',false,a.b['touch']);
 bset('headlarge',true,a.b['headlarge']);//01mar2022
 bset('headcenter',false,a.b['headcenter']);//11oct2022
@@ -19418,6 +20047,7 @@ iset('fontfeather',0,4,1,a.i['fontfeather']);//0=none, 1=low, 2=medium, 3=high, 
 iset('fontfeatherf',0,3,0,a.i['fontfeatherf']);//0=none, 1=low, 2=medium, 3=high
 bset('shaderound',true,a.b['shaderound']);//0=flat, 1=round
 bset('shadeglow',programinit_shadeglow,a.b['shadeglow']);//12jun2022
+bset('emboss',programinit_emboss,a.b['emboss']);//19nov2023
 bset('safearea',true,a.b['safearea']);
 bset('splash',true,a.b['splash']);
 for p:=0 to (cnCustomLimit-1) do
@@ -19642,6 +20272,7 @@ visafearea            :=s.b['safearea'];
 visplash              :=s.b['splash'];//29aug2020
 vishaderound          :=s.b['shaderound'];
 vishadeglow           :=s.b['shadeglow'];//12jun2022
+viemboss              :=s.b['emboss'];//19nov2023
 vishadestyle          :=low__aorbstr('g50','g-50',vishaderound);//19aug2020
 vihelp                :=s.b['realtimehelp'];
 vienhanced            :=s.b['enhanced'];
@@ -19671,6 +20302,8 @@ vifontsize            :=xfontsize;
 vifontsize2           :=xfontsize2;
 vistartlink           :=s.b['startlink'];
 videsktoplink         :=s.b['desktoplink'];
+vistartuplink         :=s.b['startuplink'];
+vistartstyle          :=frcrange(s.i['startstyle'],0,2);
 viontop               :=s.b['ontop'];
 vicoloriseimages      :=s.b['coloriseimages'];
 vihelp_bw             :=s.b['help.bw'];
@@ -19706,6 +20339,7 @@ if not system_storeapp then
    begin
    low__plat('startmenu.'+low__aorbstr('del','create',vistartlink),'',true);
    low__plat('desktop.'+low__aorbstr('del','create',videsktoplink),'',true);
+   low__plat('startup.'+low__aorbstr('del','create',vistartuplink),'',true);//09dec2023
    end;
 
 //sync mainhelp
@@ -21600,10 +22234,17 @@ end;
 //## miscountcolors ##
 function miscountcolors(i:tobject):longint;//full color count - uses dynamic memory (2mb) - 15OCT2009
 begin
-try;result:=miscountcolors2(rect(0,0,maxint,maxint),i,nil);except;end;
+try;result:=miscountcolors2(maxarea,i,nil);except;end;
 end;
 //## miscountcolors2 ##
 function miscountcolors2(da_clip:trect;i,xsel:tobject):longint;//full color count - uses dynamic memory (2mb) - 19sep2018, 15OCT2009
+var
+   int1:longint;
+begin
+try;result:=0;miscountcolors3(da_clip,i,xsel,result,int1);except;end;
+end;
+//## miscountcolors3 ##
+function miscountcolors3(da_clip:trect;i,xsel:tobject;var xcolorcount,xmaskcount:longint):boolean;//full color count - uses dynamic memory (2mb) - 19sep2018, 15OCT2009
 label
    skipend;
 const
@@ -21622,11 +22263,14 @@ var//~580ms for a 1152x864 [24bit] with 362,724 colors
    z24:tcolor24;
    ics:pcs;
    c2:set of 0..7;
+   a:array[0..255] of boolean;
    xselok:boolean;
 begin
 try
 //defaults
-result:=0;
+result:=false;
+xcolorcount:=0;
+xmaskcount:=0;
 b:=nil;
 //check
 if not misok82432(i,ibits,iw,ih) then exit;
@@ -21634,6 +22278,7 @@ if not misok82432(i,ibits,iw,ih) then exit;
 b:=tdynamicbyte.create;
 b.setparams(maxp+1,maxp+1,0);
 ics:=b.core;
+fillchar(a,sizeof(a),#0);
 //.x range
 da_clip.left:=frcrange(da_clip.left,0,iw-1);
 da_clip.right:=frcrange(da_clip.right,0,iw-1);
@@ -21655,13 +22300,16 @@ if (ibits=32) then
    begin
    for rx:=da_clip.left to da_clip.right do if (xselbits=0) or ((xselbits=8) and (xselr8[rx]>=1)) or ((xselbits=24) and (xselr24[rx].r>=1)) then
    begin
+   //colorcount
    //.get
    z32:=a32[rx];
-   p:=z32.r+z32.g*256+z32.b*65536;//0..16,777,215 -> 0..2,097,152
+   p:=z32.r+(z32.g*256)+(z32.b*65536);//0..16,777,215 -> 0..2,097,152
    ip:=p div 8;
    ci:=p-ip*8;
    //.set
    if not (ci in ics[ip]) then include(ics[ip],ci);
+   //maskcount
+   a[z32.a]:=true;
    end;//rx
    end
 //.24
@@ -21683,6 +22331,7 @@ else if (ibits=8) then
    begin
    for rx:=da_clip.left to da_clip.right do if (xselbits=0) or ((xselbits=8) and (xselr8[rx]>=1)) or ((xselbits=24) and (xselr24[rx].r>=1)) then
    begin
+   //colorcount
    //.get
    z24.r:=a8[rx];
    p:=z24.r+z24.r*256+z24.r*65536;//0..16,777,215 -> 0..2,097,152
@@ -21690,32 +22339,48 @@ else if (ibits=8) then
    ci:=p-ip*8;
    //.set
    if not (ci in ics[ip]) then include(ics[ip],ci);
+   //maskcount
+   a[z32.a]:=true;
    end;//rx
    end;
 end;//ry
 
-//return result
+//.colorcount
 for rx:=0 to maxp do
 begin
 c2:=ics[rx];
 if (byte(c2)>=1) then//25ms faster than "(c2<>[])"
    begin
-   if (0 in c2) then result:=result+1;//faster than a loop
-   if (1 in c2) then result:=result+1;
-   if (2 in c2) then result:=result+1;
-   if (3 in c2) then result:=result+1;
-   if (4 in c2) then result:=result+1;
-   if (5 in c2) then result:=result+1;
-   if (6 in c2) then result:=result+1;
-   if (7 in c2) then result:=result+1;
+   if (0 in c2) then xcolorcount:=xcolorcount+1;//faster than a loop
+   if (1 in c2) then xcolorcount:=xcolorcount+1;
+   if (2 in c2) then xcolorcount:=xcolorcount+1;
+   if (3 in c2) then xcolorcount:=xcolorcount+1;
+   if (4 in c2) then xcolorcount:=xcolorcount+1;
+   if (5 in c2) then xcolorcount:=xcolorcount+1;
+   if (6 in c2) then xcolorcount:=xcolorcount+1;
+   if (7 in c2) then xcolorcount:=xcolorcount+1;
    end;//end of if
 end;//end of loop
+//.maskcount
+for p:=0 to high(a) do if a[p] then xmaskcount:=xmaskcount+1;
+//successful
+result:=true;
 skipend:
 except;end;
 try;freeobj(@b);except;end;
 end;
 //## mismove82432 ##
 function mismove82432(s:tobject;xmove,ymove:longint):boolean;//19jun2021
+begin
+try;result:=mismove82432b(s,misarea(s),xmove,ymove);except;end;
+end;
+//## mismove82432b ##
+function mismove82432b(s:tobject;sa:trect;xmove,ymove:longint):boolean;//18nov2023, 19jun2021
+begin
+try;result:=mismove82432c(s,sa,xmove,ymove,false);except;end;
+end;
+//## mismove82432c ##
+function mismove82432c(s:tobject;sa:trect;xmove,ymove:longint;xdestructive:boolean):boolean;//18nov2023, 19jun2021
 label
    skipend;
 var
@@ -21726,19 +22391,29 @@ var
    sc8:tcolor8;
    sc24:tcolor24;
    sc32:tcolor32;
-   sbits,sw,sh,dx,dy,sx,sy:longint;
+   int1,int2,_xmove,_ymove,dw,dh,sbits,sw,sh,dx,dy,sx,sy:longint;
 begin
 try
 //defaults
 result:=false;
 a:=nil;
 //check
-if not misok82432(s,sbits,sw,sh) then exit;
+if not misok82432(s,sbits,dw,dh) then exit;
+if (sa.left>sa.right) or (sa.top>sa.bottom) then exit;
+//range
+sa.left:=frcrange(sa.left,0,dw-1);
+sa.right:=frcrange(sa.right,0,dw-1);
+sa.top:=frcrange(sa.top,0,dh-1);
+sa.bottom:=frcrange(sa.bottom,0,dh-1);
+sw:=sa.right-sa.left+1;
+sh:=sa.bottom-sa.top+1;
 //init
 xmove:=frcrange(-xmove,-sw,sw);
-if (xmove<0) then xmove:=sw+xmove;
 ymove:=frcrange(-ymove,-sh,sh);
-if (ymove<0) then ymove:=sh+ymove;
+_xmove:=xmove;
+_ymove:=ymove;
+if (xmove<0) then xmove:=sw+xmove else if (xmove>=sw) then xmove:=xmove-sw;//fixed - 18nov2023
+if (ymove<0) then ymove:=sh+ymove else if (ymove>=sh) then ymove:=ymove-sh;
 //check
 if ((xmove<=0) or (xmove>=sw)) and ((ymove<=0) or (ymove>=sh)) then
    begin
@@ -21747,10 +22422,11 @@ if ((xmove<=0) or (xmove>=sw)) and ((ymove<=0) or (ymove>=sh)) then
    end;
 //take a copy
 a:=misimg(sbits,sw,sh);
-if not miscopyareaxx1(0,0,sw,sh,misarea(s),a,s) then goto skipend;
+//was: if not miscopyareaxx1(0,0,sw,sh,misarea(s),a,s) then goto skipend;
+if not miscopyarea32(0,0,sw,sh,sa,a,s) then goto skipend;
 //get
 sy:=ymove;
-for dy:=0 to (sh-1) do
+for dy:=sa.top to sa.bottom do
 begin
 sx:=xmove;
 if not misscan82432(a,sy,sr8,sr24,sr32) then goto skipend;
@@ -21758,7 +22434,7 @@ if not misscan82432(s,dy,dr8,dr24,dr32) then goto skipend;
 //.32
 if (sbits=32) then
    begin
-   for dx:=0 to (sw-1) do
+   for dx:=sa.left to sa.right do
    begin
    sc32:=sr32[sx];
    dr32[dx]:=sc32;
@@ -21770,7 +22446,7 @@ if (sbits=32) then
 //.24
 else if (sbits=24) then
    begin
-   for dx:=0 to (sw-1) do
+   for dx:=sa.left to sa.right do
    begin
    sc24:=sr24[sx];
    dr24[dx]:=sc24;
@@ -21781,7 +22457,7 @@ else if (sbits=24) then
    end
 else if (sbits=8) then
    begin
-   for dx:=0 to (sw-1) do
+   for dx:=sa.left to sa.right do
    begin
    sc8:=sr8[sx];
    dr8[dx]:=sc8;
@@ -21794,6 +22470,20 @@ else if (sbits=8) then
 inc(sy);
 if (sy>=sh) then sy:=0;
 end;//p
+
+//.xdestructive
+if xdestructive and (sbits=32) then
+   begin
+   int1:=0;
+   int2:=0;
+   //.h
+   if (_xmove>=1) then misclsarea3(s,low__rect(sw-1-_xmove,0,sw-1,sh-1),int1,int1,int2,int2)
+   else if (_xmove<=-1) then misclsarea3(s,low__rect(0,0,-_xmove,sh-1),int1,int1,int2,int2);
+   //.v
+   if (_ymove<-1) then misclsarea3(s,low__rect(0,0,sw-1,1-_ymove),int1,int1,int2,int2)
+   else if (_ymove>=1) then misclsarea3(s,low__rect(0,sh-1-_ymove,sw-1,sh-1),int1,int1,int2,int2);
+   end;
+
 //successful
 result:=true;
 skipend:
@@ -21989,7 +22679,7 @@ end;
 //## miscls ##
 function miscls(s:tobject;xcolor:longint):boolean;
 begin
-try;result:=misclsarea2(s,rect(0,0,maxint,maxint),xcolor,xcolor);except;end;
+try;result:=misclsarea2(s,maxarea,xcolor,xcolor);except;end;
 end;
 //## misclsarea ##
 function misclsarea(s:tobject;sarea:trect;xcolor:longint):boolean;
@@ -22333,17 +23023,17 @@ end;
 //## miscopyareaxx1 ##
 function miscopyareaxx1(ddx,ddy,ddw,ddh:currency;sa:trect;d,s:tobject):boolean;//01jun2019
 begin
-try;result:=miscopyareaxx5(rect(0,0,maxint,maxint),ddx,ddy,ddw,ddh,sa,d,s,nil,nil,nil,nil,255,0,clnone,0,0,0,nil,nil,nil,nil,nil,nil,nil);except;end;
+try;result:=miscopyareaxx5(maxarea,ddx,ddy,ddw,ddh,sa,d,s,nil,nil,nil,nil,255,0,clnone,0,0,0,nil,nil,nil,nil,nil,nil,nil);except;end;
 end;
 //## miscopyareaxx1A ##
 function miscopyareaxx1A(ddx,ddy,ddw,ddh:currency;sa:trect;d,s:tobject;xusealpha:boolean):boolean;//support 32bit alpha channel - 27jan2021
 begin
-try;result:=miscopyareaxx8(rect(0,0,maxint,maxint),ddx,ddy,ddw,ddh,sa,d,s,nil,nil,nil,nil,nil,nil,0,0,false,255,0,clnone,0,0,0,nil,nil,nil,nil,nil,nil,nil,xusealpha);except;end;
+try;result:=miscopyareaxx8(maxarea,ddx,ddy,ddw,ddh,sa,d,s,nil,nil,nil,nil,nil,nil,0,0,false,255,0,clnone,0,0,0,nil,nil,nil,nil,nil,nil,nil,xusealpha);except;end;
 end;
 //## miscopyareaxx1B ##
 function miscopyareaxx1B(ddx,ddy,ddw,ddh:currency;sa:trect;d,s:tobject;xpower255:longint;xusealpha:boolean):boolean;//support 32bit alpha channel - 27jan2021
 begin
-try;result:=miscopyareaxx8(rect(0,0,maxint,maxint),ddx,ddy,ddw,ddh,sa,d,s,nil,nil,nil,nil,nil,nil,0,0,false,xpower255,0,clnone,0,0,0,nil,nil,nil,nil,nil,nil,nil,xusealpha);except;end;
+try;result:=miscopyareaxx8(maxarea,ddx,ddy,ddw,ddh,sa,d,s,nil,nil,nil,nil,nil,nil,0,0,false,xpower255,0,clnone,0,0,0,nil,nil,nil,nil,nil,nil,nil,xusealpha);except;end;
 end;
 //## miscopyareaxx2 ##
 function miscopyareaxx2(da_clip:trect;ddx,ddy,ddw,ddh:currency;sa:trect;d,s:tobject;xpower255,xtrans,xtc:longint;xoptions:currency;xscroll,yscroll:longint):boolean;//27sep2017, 26sep2017, 25sep2017, 25jul2017
@@ -23458,6 +24148,11 @@ end;
 function miscopyarea32(ddx,ddy,ddw,ddh:currency;sa:trect;d,s:tobject):boolean;//can copy ALL 32bits of color
 begin
 try;result:=miscopyarea322(maxarea,ddx,ddy,ddw,ddh,sa,d,s,0,0);except;end;
+end;
+//## miscopyarea321 ##
+function miscopyarea321(da,sa:trect;d,s:tobject):boolean;//can copy ALL 32bits of color
+begin
+try;result:=miscopyarea32(da.left,da.top,da.right-da.left+1,da.bottom-da.top+1,sa,d,s);except;end;
 end;
 //## miscopyarea322 ##
 function miscopyarea322(da_clip:trect;ddx,ddy,ddw,ddh:currency;sa:trect;d,s:tobject;xscroll,yscroll:longint):boolean;//can copy ALL 32bits of color
@@ -27583,6 +28278,11 @@ try;result:=misblur82432c(s,maxarea,xwraprange,xpower255,xtranscol);except;end;
 end;
 //## misblur82432c ##
 function misblur82432c(s:tobject;scliparea:trect;xwraprange:boolean;xpower255,xtranscol:longint):boolean;//17may2022 - cell-based clipping, 27apr2022, 11sep2021, 03sep2021
+begin
+try;result:=misblur82432d(s,scliparea,xwraprange,xpower255,xtranscol,-1);except;end;
+end;
+//## misblur82432d ##
+function misblur82432d(s:tobject;scliparea:trect;xwraprange:boolean;xpower255,xtranscol,xstage:longint):boolean;//30dec2022 - stage support (-1 to 2), 17may2022 - cell-based clipping, 27apr2022, 11sep2021, 03sep2021
 label
    skipend;
 var
@@ -27664,15 +28364,27 @@ var
    xadd32(sx,sy);
    if (c=0) then exit;
 
+   //stage output: -1=rough1+rough2 (system default), 0=rough1, 1=rough1+fine1, 2=rough1+fine1+rough2
+   //rough1
    xadd32(sx-1,sy);
    xadd32(sx+1,sy);
    xadd32(sx,sy-1);
    xadd32(sx,sy+1);
 
-   xadd32(sx-2,sy);
-   xadd32(sx+2,sy);
-   xadd32(sx,sy-2);
-   xadd32(sx,sy+2);
+   if (xstage=-1) or (xstage=2) then//add rough2
+      begin
+      xadd32(sx-2,sy);
+      xadd32(sx+2,sy);
+      xadd32(sx,sy-2);
+      xadd32(sx,sy+2);
+      end;
+   if (xstage>=1) then//add fine1
+      begin
+      xadd32(sx-1,sy-1);
+      xadd32(sx+1,sy-1);
+      xadd32(sx-1,sy+1);
+      xadd32(sx+1,sy+1);
+      end;
 
    //set
    sc32.r:=trunc(r div c);
@@ -27693,15 +28405,27 @@ var
    xadd24(sx,sy);
    if (c=0) then exit;
 
+   //stage output: -1=rough1+rough2 (system default), 0=rough1, 1=rough1+fine1, 2=rough1+fine1+rough2
+   //rough1
    xadd24(sx-1,sy);
    xadd24(sx+1,sy);
    xadd24(sx,sy-1);
    xadd24(sx,sy+1);
 
-   xadd24(sx-2,sy);
-   xadd24(sx+2,sy);
-   xadd24(sx,sy-2);
-   xadd24(sx,sy+2);
+   if (xstage=-1) or (xstage=2) then//add rough2
+      begin
+      xadd24(sx-2,sy);
+      xadd24(sx+2,sy);
+      xadd24(sx,sy-2);
+      xadd24(sx,sy+2);
+      end;
+   if (xstage>=1) then//add fine1
+      begin
+      xadd24(sx-1,sy-1);
+      xadd24(sx+1,sy-1);
+      xadd24(sx-1,sy+1);
+      xadd24(sx+1,sy+1);
+      end;
 
    //set
    sc24.r:=trunc(r div c);
@@ -27721,15 +28445,27 @@ var
    xadd8(sx,sy);
    if (c=0) then exit;
 
+   //stage output: -1=rough1+rough2 (system default), 0=rough1, 1=rough1+fine1, 2=rough1+fine1+rough2
+   //rough1
    xadd8(sx-1,sy);
    xadd8(sx+1,sy);
    xadd8(sx,sy-1);
    xadd8(sx,sy+1);
 
-   xadd8(sx-2,sy);
-   xadd8(sx+2,sy);
-   xadd8(sx,sy-2);
-   xadd8(sx,sy+2);
+   if (xstage=-1) or (xstage=2) then//add rough2
+      begin
+      xadd8(sx-2,sy);
+      xadd8(sx+2,sy);
+      xadd8(sx,sy-2);
+      xadd8(sx,sy+2);
+      end;
+   if (xstage>=1) then//add fine1
+      begin
+      xadd8(sx-1,sy-1);
+      xadd8(sx+1,sy-1);
+      xadd8(sx-1,sy+1);
+      xadd8(sx+1,sy+1);
+      end;
 
    //set
    sc8:=trunc(r div c);
@@ -28460,7 +29196,7 @@ missize(a,2+flW,2+flH);
 aw:=misw(a);
 ah:=mish(a);
 miscls(a,0);
-low__fromLGF_drawtext2432(sysfont_data[fl],b,1,1,aw,ah,xtitle,misarea(a),misarea(a),a.prows24,nil,nil,0,nil,0,false,false,false,false,false,false,corNone);
+low__fromLGF_drawtext2432(sysfont_data[fl],b,1,1,aw,ah,xtitle,misarea(a),misarea(a),a.prows24,nil,nil,0,nil,0,false,false,false,false,false,false,false,corNone);
 dx:=xcol2-(cr*5);
 dy:=xpad;
 dw:=sw-xcol2-round(1.5*xpad);
@@ -28503,8 +29239,8 @@ dec(dy,fsH);
 if (dy<titley) then break;
 b.text:=str1;
 case sbits of
-24:low__fromLGF_drawtext2432(sysfont_data[fs],b,dx,dy,misw(s),mish(s),xtext,misarea(s),misarea(s),sr24,nil,nil,0,xfc,vifeather,false,false,false,false,false,false,corNone);//27apr2022
-32:low__fromLGF_drawtext2432(sysfont_data[fs],b,dx,dy,misw(s),mish(s),xtext,misarea(s),misarea(s),nil,sr32,nil,0,xfc,vifeather,false,false,false,false,false,false,corNone);//27apr2022
+24:low__fromLGF_drawtext2432(sysfont_data[fs],b,dx,dy,misw(s),mish(s),xtext,misarea(s),misarea(s),sr24,nil,nil,0,xfc,vifeather,false,false,false,false,false,false,false,corNone);//27apr2022
+32:low__fromLGF_drawtext2432(sysfont_data[fs],b,dx,dy,misw(s),mish(s),xtext,misarea(s),misarea(s),nil,sr32,nil,0,xfc,vifeather,false,false,false,false,false,false,false,corNone);//27apr2022
 end;//case
 end;//p
 //border
@@ -32518,6 +33254,11 @@ if (xpos<0) then xpos:=0 else if (xpos>high(system_sparklelist)) then xpos:=0;
 system_sparklepos:=xpos;
 except;end;
 end;
+//## low__sparkleuniquestart ##
+function low__sparkleuniquestart:longint;
+begin
+try;result:=random(high(system_sparklelist));except;end;
+end;
 //## mistobmp82432 ##
 function mistobmp82432(s:tobject;dbits:longint;xdata:tstr8;var e:string):boolean;//28jan2021
 label
@@ -33376,7 +34117,7 @@ begin
 try;result:=mislimitcolors82432ex(x,0,maxint,xtranscolor,colorlimit,fast,true,a,acount,e);except;end;
 end;
 //## mislimitcolors82432ex ##
-function mislimitcolors82432ex(x:tobject;sx,xcellw,xtranscolor,colorlimit:longint;fast,xreducetofit:boolean;var a:array of tcolor24;var acount:longint;var e:string):boolean;//01aug2021, 15SEP2007
+function mislimitcolors82432ex(x:tobject;sx,xcellw,xtranscolor,colorlimit:longint;fast,xreducetofit:boolean;var a:array of tcolor24;var acount:longint;var e:string):boolean;//25dec2022, 01aug2021, 15SEP2007
 label//colorlimit=2..1024
    redo,skipdone,skipend;
 const
@@ -33476,7 +34217,7 @@ if (xbits=8) then
       //.palette full - retry at a higher DV rate
       else if (dv<dvLIMIT) then
          begin
-         dv:=frcmax(dv+10,dvLIMIT);
+         dv:=frcmax(dv+low__aorb(1,10,dv>30),dvLIMIT);//smoother and faster - 25dec2022
          goto redo;
          end
       //.palette full and DV is maxed out - change color into first noh-transparent "a[1]" color and be done with it - 18JAN2012
@@ -33514,7 +34255,7 @@ else if (xbits=24) then
       //.palette full - retry at a higher DV rate
       else if (dv<dvLIMIT) then
          begin
-         dv:=frcmax(dv+10,dvLIMIT);
+         dv:=frcmax(dv+low__aorb(1,10,dv>30),dvLIMIT);//smoother and faster - 25dec2022
          goto redo;
          end
       //.palette full and DV is maxed out - change color into first non-transparent "a[1]" color and be done with it - 18JAN2012
@@ -33555,7 +34296,8 @@ else if (xbits=32) then
       //.palette full - retry at a higher DV rate
       else if (dv<dvLIMIT) then
          begin
-         dv:=frcmax(dv+10,dvLIMIT);
+         //was: dv:=frcmax(dv+10,dvLIMIT);
+         dv:=frcmax(dv+low__aorb(1,10,dv>30),dvLIMIT);//smoother and faster - 25dec2022
          goto redo;
          end
       //.palette full and DV is maxed out - change color into first non-transparent "a[1]" color and be done with it - 18JAN2012
@@ -34434,7 +35176,7 @@ tmp:=round(maxp*sin(degtorad2(deg)));
 deg:=90*(tmp/(1+maxp));
 v:=round(
  valmag*
- power(cos(degtorad2(deg)),2)//4 or 5 increases the steepness, 1..3 decreases steepness, 3=middle ground and is 98% same as Adobe's aribrush curve
+ power(cos(degtorad2(deg)),2)//4 or 5 increases the steepness, 1..3 decreases steepness, 3=middle ground and is 98% same as Adobe's airbrush curve
  );
 v:=frcrange(v,0,valmag);
 //.support X and Y flipping - 20jan2021
@@ -34695,17 +35437,17 @@ bunlockautofree(xdata);
 except;end;
 end;
 //## low__draw ##
-function low__draw(xdynamicCorners:boolean;xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xrich:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround:boolean):boolean;
+function low__draw(xdynamicCorners:boolean;xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xrich,xrichid:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround:boolean):boolean;
 begin
-try;result:=low__draw2(xdynamicCorners,tbnone,xbits,xw,xh,xrows,xmask,xmaskval,xstyle,xclip,xclip2,xarea,xcol,xcol2,xcol3,xval1,xval2,xval3,0,0,xrich,xdata,xoptions,xroundstyle,xround,false,false,false,false);except;end;
+try;result:=low__draw2(clnone,xdynamicCorners,tbnone,xbits,xw,xh,xrows,xmask,xmaskval,xstyle,xclip,xclip2,xarea,xcol,xcol2,xcol3,xval1,xval2,xval3,0,0,xrich,xrichid,xdata,xoptions,xroundstyle,xround,false,false,false,false);except;end;
 end;
 //## low__draw2 ##
-function low__draw2(xdynamicCorners:boolean;xtab,xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xval4,xval5,xrich:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround,xbol1,xbol2,xbol3,xbol4:boolean):boolean;
+function low__draw2(xbackref:longint;xdynamicCorners:boolean;xtab,xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xval4,xval5,xrich,xrichid:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround,xbol1,xbol2,xbol3,xbol4:boolean):boolean;
 begin
-try;result:=low__draw3(xdynamicCorners,false,false,xtab,xbits,xw,xh,xrows,xmask,xmaskval,xstyle,xclip,xclip2,xarea,xcol,xcol2,xcol3,xval1,xval2,xval3,xval4,xval5,xrich,xdata,xoptions,xroundstyle,xround,xbol1,xbol2,xbol3,xbol4);except;end;
+try;result:=low__draw3(xbackref,xdynamicCorners,false,false,xtab,xbits,xw,xh,xrows,xmask,xmaskval,xstyle,xclip,xclip2,xarea,xcol,xcol2,xcol3,xval1,xval2,xval3,xval4,xval5,xrich,xrichid,xdata,xoptions,xroundstyle,xround,xbol1,xbol2,xbol3,xbol4);except;end;
 end;
 //## low__draw3 ##
-function low__draw3(xdynamicCorners:boolean;xcolorise,xsyszoom:boolean;xtab,xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xval4,xval5,xrich:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround,xbol1,xbol2,xbol3,xbol4:boolean):boolean;//22may2022, 01mar2022
+function low__draw3(xbackref:longint;xdynamicCorners:boolean;xcolorise,xsyszoom:boolean;xtab,xbits,xw,xh:longint;xrows:tstr8;xmask:tmask8;xmaskval:longint;xstyle:char;xclip,xclip2,xarea:trect;xcol,xcol2,xcol3,xval1,xval2,xval3,xval4,xval5,xrich,xrichid:longint;xdata,xoptions:tstr8;xroundstyle:longint;xround,xbol1,xbol2,xbol3,xbol4:boolean):boolean;//extended "predictable randomness" via "control.xrichid" and feedback loop - 03dec2023, 22may2022, 01mar2022
 label
    fredo,skipdone,skipend;
 var//Note: dclip=master cliparea and dclip2=sub cliparea within master
@@ -34899,7 +35641,9 @@ if (xrich>=1) then
    xrich:=visparkle;
    low__sparklefill(xrich);
    end;
-xsystem_sparklepos:=low__sparklestart;
+
+//.set sparkle start point - 03dec2023
+if (xrichid>=0) then xsystem_sparklepos:=xrichid else xsystem_sparklepos:=low__sparklestart;
 //.roundstyle
 if (xroundstyle=corNone) then xround:=false;
 //.maskval
@@ -35235,9 +35979,9 @@ else if (xstyle='o') then//now supports corner "gap" patching -> no pixels misse
          if bol1 then
             begin
             //.left outside corner
-            if (lx>xarea.left) and (lx<=xarea.right) then for dx:=xarea.left to (lx-1) do if ((xrich<=0) or xrich24) then sr24[dx]:=dc24;
+            if (lx>xarea.left) and (lx<=xarea.right) then for dx:=xarea.left to (lx-1) do if ((xrich<=0) or xrich24) then sr24[dx]:=ac24;//fixed - 20nov2023
             //.right outside corner
-            if (rx>=xarea.left) and (rx<xarea.right) then for dx:=(rx+1) to xarea.right do if ((xrich<=0) or xrich24) then sr24[dx]:=dc24;
+            if (rx>=xarea.left) and (rx<xarea.right) then for dx:=(rx+1) to xarea.right do if ((xrich<=0) or xrich24) then sr24[dx]:=ac24;//fixed - 20nov2023
             end;
          end
       //use mask
@@ -35286,9 +36030,9 @@ else if (xstyle='o') then//now supports corner "gap" patching -> no pixels misse
          if bol1 then
             begin
             //.left outside corner
-            if (lx>xarea.left) and (lx<=xarea.right) then for dx:=xarea.left to (lx-1) do if (mr8[dx]=xmaskval) and ((xrich<=0) or xrich24) then sr24[dx]:=dc24;
+            if (lx>xarea.left) and (lx<=xarea.right) then for dx:=xarea.left to (lx-1) do if (mr8[dx]=xmaskval) and ((xrich<=0) or xrich24) then sr24[dx]:=ac24;//fixed - 20nov2023
             //.right outside corner
-            if (rx>=xarea.left) and (rx<xarea.right) then for dx:=(rx+1) to xarea.right do if (mr8[dx]=xmaskval) and ((xrich<=0) or xrich24) then sr24[dx]:=dc24;
+            if (rx>=xarea.left) and (rx<xarea.right) then for dx:=(rx+1) to xarea.right do if (mr8[dx]=xmaskval) and ((xrich<=0) or xrich24) then sr24[dx]:=ac24;//fixed - 20nov2023
             end;
          end;
       end;//begin 24
@@ -35339,9 +36083,9 @@ else if (xstyle='o') then//now supports corner "gap" patching -> no pixels misse
          if bol1 then
             begin
             //.left outside corner
-            if (lx>xarea.left) and (lx<=xarea.right) then for dx:=xarea.left to (lx-1) do if ((xrich<=0) or xrich32) then sr32[dx]:=dc32;
+            if (lx>xarea.left) and (lx<=xarea.right) then for dx:=xarea.left to (lx-1) do if ((xrich<=0) or xrich32) then sr32[dx]:=ac32;//fixed - 20nov2023
             //.right outside corner
-            if (rx>=xarea.left) and (rx<xarea.right) then for dx:=(rx+1) to xarea.right do if ((xrich<=0) or xrich32) then sr32[dx]:=dc32;
+            if (rx>=xarea.left) and (rx<xarea.right) then for dx:=(rx+1) to xarea.right do if ((xrich<=0) or xrich32) then sr32[dx]:=ac32;//fixed - 20nov2023
             end;
          end
       //use mask
@@ -35390,9 +36134,9 @@ else if (xstyle='o') then//now supports corner "gap" patching -> no pixels misse
          if bol1 then
             begin
             //.left outside corner
-            if (lx>xarea.left) and (lx<=xarea.right) then for dx:=xarea.left to (lx-1) do if (mr8[dx]=xmaskval) and ((xrich<=0) or xrich32) then sr32[dx]:=dc32;
+            if (lx>xarea.left) and (lx<=xarea.right) then for dx:=xarea.left to (lx-1) do if (mr8[dx]=xmaskval) and ((xrich<=0) or xrich32) then sr32[dx]:=ac32;//fixed - 20nov2023
             //.right outside corner
-            if (rx>=xarea.left) and (rx<xarea.right) then for dx:=(rx+1) to xarea.right do if (mr8[dx]=xmaskval) and ((xrich<=0) or xrich32) then sr32[dx]:=dc32;
+            if (rx>=xarea.left) and (rx<xarea.right) then for dx:=(rx+1) to xarea.right do if (mr8[dx]=xmaskval) and ((xrich<=0) or xrich32) then sr32[dx]:=ac32;//fixed - 20nov2023
             end;
          end;
       end;//begin 32
@@ -35529,7 +36273,8 @@ fredo:
       //.Switch from "slight corner" to "slight2 corner" on last frame layer -> inner area ends up as a perfect rectangle - 05aug2020
       int2:=xroundstyle;
       if (int2=corToSquare) and ((p+1)=xval1) then int2:=corSlight2;
-      low__draw(xdynamicCorners,xbits,xw,xh,xrows,xmask,xmaskval,'o',xclip,xclip2,atmp,int1,clnone,low__aorb(clnone,xcol3,p=0),0,0,0,xrich,nil,xoptions,int2,xround);
+      low__draw(xdynamicCorners,xbits,xw,xh,xrows,xmask,xmaskval,'o',xclip,xclip2,atmp,int1,clnone,low__aorb(clnone,xcol3,p=0),0,0,0,xrich,xsystem_sparklepos,nil,xoptions,int2,xround);
+      xsystem_sparklepos:=system_sparklepos;//.feedback to us over multiple similar tasks -> maintains predictable randomness
       //loop
       inc(p);
       if (p<xval1) then goto fredo;
@@ -35569,7 +36314,8 @@ else if (xstyle='g') then//now supports code based frames - 23feb2022
          //.Switch from "slight corner" to "slight2 corner" on last frame layer -> inner area ends up as a perfect rectangle - 05aug2020
          int2:=xroundstyle;
          if (int2=corToSquare) and (sremsize<=0) and (p=(dsize-1)) then int2:=corSlight2;//switch frame styles to match a square corner - 23feb2022
-         low__draw(xdynamicCorners,xbits,xw,xh,xrows,xmask,xmaskval,'o',xclip,xclip2,atmp,int1,clnone,low__aorb(clnone,int1,xonce and (xcol3<>clnone)),0,0,0,xrich,nil,xoptions,int2,xround);
+         low__draw(xdynamicCorners,xbits,xw,xh,xrows,xmask,xmaskval,'o',xclip,xclip2,atmp,int1,clnone,low__aorb(clnone,int1,xonce and (xcol3<>clnone)),0,0,0,xrich,xsystem_sparklepos,nil,xoptions,int2,xround);
+         xsystem_sparklepos:=system_sparklepos;//.feedback to us over multiple similar tasks -> maintains predictable randomness
          xonce:=false;                                                                                          //was: xcol3
          end
       else break;
@@ -35878,9 +36624,20 @@ else if (xstyle='t') then
 
    //get - note: xval3=feather: 0=off, 1=mild, 2=strong
    if (xval3>=1) then xfc:=bnew;
+   //.emboss layer
+   if (xbackref<>clnone) then
+      begin
+      int1:=low__dc(xbackref,-20);
+      int2:=1;//frcmin(low__fromLGF_height(xdata) div 20,1);
+      case xbits of
+      24:low__fromLGF_drawtext2432TAB(xtab,xdata,xoptions,xval1-int2,xval2-int2,xw,xh,int1,xclip2,xarea,xrows.prows24,nil,xmask,xmaskval,xfc,xval3,xbol1,xbol2,xbol3,false,xbol4,false,xround,xroundstyle);//xitalic,xunderline,xstrikeout
+      32:low__fromLGF_drawtext2432TAB(xtab,xdata,xoptions,xval1-int2,xval2-int2,xw,xh,int1,xclip2,xarea,nil,xrows.prows32,xmask,xmaskval,xfc,xval3,xbol1,xbol2,xbol3,false,xbol4,false,xround,xroundstyle);
+      end;
+      end;
+   //.normal text
    case xbits of
-   24:low__fromLGF_drawtext2432TAB(xtab,xdata,xoptions,xval1,xval2,xw,xh,xcol,xclip2,xarea,xrows.prows24,nil,xmask,xmaskval,xfc,xval3,xbol1,xbol2,xbol3,false,xbol4,xround,xroundstyle);//xitalic,xunderline,xstrikeout
-   32:low__fromLGF_drawtext2432TAB(xtab,xdata,xoptions,xval1,xval2,xw,xh,xcol,xclip2,xarea,nil,xrows.prows32,xmask,xmaskval,xfc,xval3,xbol1,xbol2,xbol3,false,xbol4,xround,xroundstyle);
+   24:low__fromLGF_drawtext2432TAB(xtab,xdata,xoptions,xval1,xval2,xw,xh,xcol,xclip2,xarea,xrows.prows24,nil,xmask,xmaskval,xfc,xval3,xbol1,xbol2,xbol3,false,xbol4,false,xround,xroundstyle);//xitalic,xunderline,xstrikeout
+   32:low__fromLGF_drawtext2432TAB(xtab,xdata,xoptions,xval1,xval2,xw,xh,xcol,xclip2,xarea,nil,xrows.prows32,xmask,xmaskval,xfc,xval3,xbol1,xbol2,xbol3,false,xbol4,false,xround,xroundstyle);
    end;
    end;
 //successful
@@ -37351,6 +38108,26 @@ skipend:
 except;end;
 try;bfree(xdata);except;end;
 end;
+//## low__backupfilename ##
+function low__backupfilename(dname:string):string;//12feb2023
+var
+   p:longint;
+   d:tdatetime;
+begin
+try
+//defaults
+result:='';
+d:=now;
+//.name
+if (dname<>'') then dname:=safename(dname);
+//try upto 100 times
+for p:=1 to 100 do
+begin
+result:=low__platfolder('backups\'+low__datename(d))+low__datetimename(d)+dname;
+if low__fileexists(result) then sleep(20+random(40)) else break;
+end;//p
+except;end;
+end;
 //## low__tofilestr ##
 function low__tofilestr(x,xdata:string;var e:string):boolean;//fast and basic low-level
 var
@@ -37595,6 +38372,267 @@ end;//case
 except;end;
 try;freeobj(@a);except;end;
 end;
+//## low__exemarker ##
+function low__exemarker(x:tstr8):boolean;//14nov2023
+var
+   z:string;
+begin
+try
+//defaults
+result:=false;
+//check
+if not block(x) then exit;
+z:='';
+//set - dynamically create the header, so that no complete trace is formed in the final EXE data stream, we can then search for this header without fear of it being repeated in the code by mistake! - 18MAY2010
+x.sadd('[packed');
+x.sadd('-marker]');
+x.sadd('[id--');
+//.id
+z:=z+'1398435432908435908';
+z:='__12435897'+z;
+z:=z+'0-9132487211239084%%__';
+z:=z+'~12@__Z';
+//finalise
+x.sadd(z);
+x.sadd('--]');
+//successful
+result:=true;
+except;end;
+try;bunlockautofree(x);except;end;
+end;
+//## low__exereadFROMFILE ##
+function low__exereadFROMFILE(xfilename:string;xexedata,xsysdata,xprgdata,xusrdata:tstr8;xsysmore:tvars8;var e:string):boolean;//14nov2023
+label
+   skipend;
+var
+   s:tstr8;
+begin
+try
+//defaults
+result:=false;
+s:=nil;
+e:=gecTaskfailed;
+//check
+block(xexedata);
+block(xsysdata);
+block(xprgdata);
+block(xusrdata);
+//get
+if (xfilename<>'') then
+   begin
+   s:=bnew;
+   if low__fromfile(xfilename,s,e) then
+      begin
+      e:=gecUnknownformat;
+      result:=low__exeread(s,xexedata,xsysdata,xprgdata,xusrdata,xsysmore);
+      end;
+   end;
+skipend:
+except;end;
+try
+bfree(s);
+bunlockautofree(xexedata);
+bunlockautofree(xsysdata);
+bunlockautofree(xprgdata);
+bunlockautofree(xusrdata);
+except;end;
+end;
+//## low__exeread ##
+function low__exeread(s,xexedata,xsysdata,xprgdata,xusrdata:tstr8;xsysmore:tvars8):boolean;//14nov2023
+label
+   skipend;
+var
+   m,xtmp:tstr8;
+   xpos,p:integer;
+   m1:byte;
+   e:string;//xxxxxxxxxxx
+   //## xread ##
+   function xread(x:tstr8):boolean;
+   label
+      skipend;
+   var
+      xlen:longint;
+   begin
+   try
+   //defaults
+   result:=false;
+   //get
+   xlen:=s.int4[xpos];
+   inc(xpos,4);
+   if (x<>nil) then
+      begin
+      x.clear;
+      if (xlen>=1) and (not x.add3(s,xpos,xlen)) then goto skipend;
+      end;
+   inc(xpos,xlen);
+   //successful
+   result:=true;
+   skipend:
+   except;end;
+   end;
+begin
+try
+//defaults
+result:=false;//not found
+m:=nil;
+xtmp:=nil;
+//check
+block(xexedata);
+block(xsysdata);
+block(xprgdata);
+block(xusrdata);
+if not block(s) then goto skipend;
+if (s.len<=0) then goto skipend;
+//init
+if (xexedata<>nil) then xexedata.clear;
+if (xsysdata<>nil) then xsysdata.clear;
+if (xprgdata<>nil) then xprgdata.clear;
+if (xusrdata<>nil) then xusrdata.clear;
+if (xsysmore<>nil) then xsysmore.clear;
+xtmp:=bnew;
+m:=bnew;
+if not low__exemarker(m) then goto skipend;
+m1:=m.pbytes[0];
+//find
+for p:=1 to s.len do if (m1=s.pbytes[p-1]) and s.same2(p-1,m) then
+   begin
+   if (xexedata<>nil) then xexedata.add31(s,1,p-1);
+   //.data slots
+   xpos:=p-1+m.len;
+   if not xread(xsysdata) then goto skipend;
+   if not xread(xprgdata) then goto skipend;
+   if not xread(xusrdata) then goto skipend;
+   //.xsysmore
+   if not xread(xtmp) then goto skipend;
+   if (xsysmore<>nil) then xsysmore.binary['more']:=xtmp;
+   //.done
+   result:=true;
+   break;
+   end;
+//assume all of "s" is the exe
+if not result then
+   begin
+   if (xexedata<>nil) and (not xexedata.add(s)) then goto skipend;
+   result:=true;
+   end;
+skipend:
+except;end;
+try
+bfree(m);
+bunlockautofree(s);
+bunlockautofree(xexedata);
+bunlockautofree(xsysdata);
+bunlockautofree(xprgdata);
+bunlockautofree(xusrdata);
+bfree(xtmp);
+except;end;
+end;
+//## low__exewriteTOFILE ##
+function low__exewriteTOFILE(xfilename:string;xexedata,xsysdata,xprgdata,xusrdata:tstr8;xsysmore:tvars8;var e:string):boolean;//14nov2023
+label
+   skipend;
+var
+   s:tstr8;
+begin
+try
+//defaults
+result:=false;
+s:=nil;
+e:=gecTaskfailed;
+//check
+block(xexedata);
+block(xsysdata);
+block(xprgdata);
+block(xusrdata);
+//get
+if (xfilename<>'') then
+   begin
+   s:=bnew;
+   if not low__exewrite(s,xexedata,xsysdata,xprgdata,xusrdata,xsysmore) then goto skipend;
+   if not low__tofile(xfilename,s,e) then goto skipend;
+   //successful
+   result:=true;
+   end;
+skipend:
+except;end;
+try
+bfree(s);
+bunlockautofree(xexedata);
+bunlockautofree(xsysdata);
+bunlockautofree(xprgdata);
+bunlockautofree(xusrdata);
+except;end;
+end;
+//## low__exewrite ##
+function low__exewrite(d,xexedata,xsysdata,xprgdata,xusrdata:tstr8;xsysmore:tvars8):boolean;//14nov2023
+label
+   skipend;
+var
+   m:tstr8;
+   p:integer;
+   m1:byte;
+   //## xadd ##
+   function xadd(x:tstr8):boolean;
+   label
+      skipend;
+   var
+      int1:longint;
+   begin
+   try
+   //defaults
+   result:=false;
+   block(x);
+   int1:=blen(x);
+   if not d.addint4(int1) then goto skipend;
+   if (int1>=1) and (not d.add(x)) then goto skipend;
+   //successful
+   result:=true;
+   skipend:
+   except;end;
+   try;bunlockautofree(x);except;end;
+   end;
+begin
+try
+//defaults
+result:=false;//not found
+m:=nil;
+//check
+block(xexedata);
+block(xsysdata);
+block(xprgdata);
+block(xusrdata);
+if not low__true2(block(d),block(xexedata)) then goto skipend;
+if (xexedata.len<=0) then goto skipend;
+//init
+m:=bnew;
+if not low__exemarker(m) then goto skipend;
+//get
+//.exe header
+if not d.add(xexedata) then goto skipend;
+//.marker
+if not d.add(m) then goto skipend;//always include the marker, so EXE knows it is a child/client of a parent
+//.sysdata
+if not xadd(xsysdata) then goto skipend;
+//.prgdata
+if not xadd(xprgdata) then goto skipend;
+//.usrdata
+if not xadd(xusrdata) then goto skipend;
+//.sysmore
+if (xsysmore=nil) then xadd(nil)
+else                   xadd(xsysmore.binary['more']);
+//successful
+result:=true;
+skipend:
+except;end;
+try
+bfree(m);
+bunlockautofree(d);
+bunlockautofree(xexedata);
+bunlockautofree(xsysdata);
+bunlockautofree(xprgdata);
+bunlockautofree(xusrdata);
+except;end;
+end;
 //## low__fromfile ##
 function low__fromfile(x:string;xdata:tstr8;var e:string):boolean;
 var
@@ -37636,6 +38674,93 @@ for p:=0 to high(tdrivelist) do result[p]:=false;
 //get
 longint(xdrivelist):=getlogicaldrives;
 for p:=0 to 25 do if (p in xdrivelist) then result[p]:=true;
+except;end;
+end;
+//## low__dhmslabel ##
+function low__dhmslabel(xms:comp):string;//days hours minutes and seconds from milliseconds - 06feb2023
+var
+   xok:boolean;
+   y:comp;
+   v:string;
+begin
+try
+//defaults
+result:='0s';
+//check
+if (xms<0) then exit;
+//init
+xms:=low__div64(xms,1000);//ms -> seconds
+xok:=false;
+v:='';
+//get
+if xok or (xms>=86400) then
+   begin
+   y:=low__div64(xms,86400);
+   xms:=low__sub64(xms,low__mult64(y,86400));
+   xok:=true;
+   v:=v+intstr64(y)+'d ';
+   end;
+if xok or (xms>=3600) then
+   begin
+   y:=low__div64(xms,3600);
+   xms:=low__sub64(xms,low__mult64(y,3600));
+   xok:=true;
+   v:=v+low__insstr('0',(y<=9) and (v<>''))+intstr64(y)+'h ';//19may20223
+   end;
+if xok or (xms>=60) then
+   begin
+   y:=low__div64(xms,60);
+   xms:=low__sub64(xms,low__mult64(y,60));
+   xok:=true;
+   v:=v+low__insstr('0',(y<=9) and (v<>''))+intstr64(y)+'m ';//19may20223
+   end;
+v:=v+intstr64(xms)+'s';
+//set
+result:=v;
+except;end;
+end;
+//## low__datetimename ##
+function low__datetimename(x:tdatetime):string;//12feb2023
+var
+   y,m,d:word;
+   h,min,s,ms:word;
+begin
+try
+//defaults
+result:='';
+//init
+low__decodedate2(x,y,m,d);
+low__decodetime2(x,h,min,s,ms);
+//get
+result:=low__digpad11(y,4)+'-'+low__digpad11(m,2)+'-'+low__digpad11(d,2)+'--'+low__digpad11(h,2)+'-'+low__digpad11(min,2)+'-'+low__digpad11(s,2)+'-'+low__digpad11(ms,4);
+except;end;
+end;
+//## low__datename ##
+function low__datename(x:tdatetime):string;
+var
+   y,m,d:word;
+begin
+try
+//defaults
+result:='';
+low__decodedate2(x,y,m,d);
+result:=low__digpad11(y,4)+'-'+low__digpad11(m,2)+'-'+low__digpad11(d,2);
+except;end;
+end;
+//## low__datetimename2 ##
+function low__datetimename2(x:tdatetime):string;//10feb2023
+var
+   y,m,d:word;
+   h,min,s,ms:word;
+begin
+try
+//defaults
+result:='';
+//init
+low__decodedate2(x,y,m,d);
+low__decodetime2(x,h,min,s,ms);
+//get
+result:=low__digpad11(y,4)+low__digpad11(m,2)+low__digpad11(d,2)+'_'+low__digpad11(h,2)+low__digpad11(min,2)+low__digpad11(s,2)+low__digpad11(ms,4);
 except;end;
 end;
 //## low__safedate ##
@@ -38231,6 +39356,7 @@ var
    xaddfolder(low__platfolder(''),'');
    xaddfolder(low__platfolder('Schemes'),'');
    xaddfolder(low__platfolder('Settings'),'');
+   if low__folderexists(low__platfolder2('Backups',false)) then xaddfolder(low__platfolder('Backups'),'');//10feb2023
    xaddfolder(windesktop,'');
    xaddfolder(winstartmenu,'');
    xaddfolder(winprograms,'');
@@ -39392,7 +40518,7 @@ x.show;
 app__processallmessages;
 b.lock;
 miscls(b,0);
-miscopyareaxx8(rect(0,0,maxint,maxint),0,0,misw(b),mish(b),misarea(sptr),b,sptr,nil,nil,nil,nil,nil,nil,0,0,false,255,0,clnone,0,0,0,nil,nil,nil,nil,nil,nil,nil,susealpha);
+miscopyareaxx8(maxarea,0,0,misw(b),mish(b),misarea(sptr),b,sptr,nil,nil,nil,nil,nil,nil,0,0,false,255,0,clnone,0,0,0,nil,nil,nil,nil,nil,nil,nil,susealpha);
 x.canvas.draw(0,0,b.core);
 b.unlock;
 showbasic('dbimage');
@@ -39405,6 +40531,11 @@ except;end;
 end;
 //## dbimage2 ##
 procedure dbimage2(s,s2:tobject;szoom:longint);//strictly debug purposes only
+begin
+try;dbimage3(s,s2,szoom,'');except;end;
+end;
+//## dbimage3 ##
+procedure dbimage3(s,s2:tobject;szoom:longint;xcap:string);//30dec2022, strictly debug purposes only
 var
    x:tform;
    b:tbmp;
@@ -39435,12 +40566,12 @@ x.show;
 app__processallmessages;
 b.lock;
 //.s
-miscopyareaxx(rect(0,0,maxint,maxint),0,0,misw(b),mish(b),misarea(s),b,s,255,0,clnone,0);
+miscopyareaxx(maxarea,0,0,misw(b),mish(b),misarea(s),b,s,255,0,clnone,0);
 //.s2
-miscopyareaxx(rect(0,0,maxint,maxint),0,0,misw(b),mish(b),misarea(s),b,s2,150,1,mispixel24VAL(s2,0,0),0);
+miscopyareaxx(maxarea,0,0,misw(b),mish(b),misarea(s),b,s2,150,1,mispixel24VAL(s2,0,0),0);
 x.canvas.draw(0,0,b.core);
 b.unlock;
-showbasic('dbimage2');
+showbasic(low__udv(xcap,'dbimage'));
 except;end;
 try
 freeobj(@b);
@@ -39548,6 +40679,53 @@ messagebox(application.handle,pchar(e),'Error!',$00000000+$10);
 except;end;
 try;low__closeunlock;except;end;
 {$endif}
+end;
+//## pop_junk ##
+procedure pop_junk(x:string);
+begin
+try;if (sysprogram<>nil) and (sysprogram.rootwin<>nil) then sysprogram.rootwin.xhead.caption:=x+'<<'+ms64str;except;end;
+end;
+//## pop_error ##
+function pop_error(x:string):boolean;//10feb2023
+begin
+try;result:=false;if (sysprogram<>nil) and (sysprogram.sys<>nil) then result:=sysprogram.sys.poperror(x) else showerror(x);except;end;
+end;
+//## pop_query ##
+function pop_query(x:string):boolean;//05feb2023
+begin
+try;result:=false;if (sysprogram<>nil) and (sysprogram.sys<>nil) then result:=sysprogram.sys.popquery(x) else showbasic(x);except;end;
+end;
+//## pop_query2 ##
+function pop_query2(x,xcancelcap,xokcap:string):boolean;//11feb2023
+begin
+try;result:=false;if (sysprogram<>nil) and (sysprogram.sys<>nil) then result:=sysprogram.sys.popqueryex(x,xcancelcap,xokcap,450,200,60,0) else showbasic(x);except;end;
+end;
+//## pop_info ##
+function pop_info(xtitle,x:string):boolean;//05feb2023
+begin//pass-thru
+try;result:=true;if (sysprogram<>nil) and (sysprogram.sys<>nil) then sysprogram.sys.popinfo(xtitle,x) else showbasic(x);except;end;
+end;
+//## pop_txt2 ##
+function pop_txt2(var x:string;xwrap:longint;xreadonly:boolean;xcap,xhelp:string):boolean;
+begin
+try;result:=false;if (sysprogram<>nil) and (sysprogram.sys<>nil) then result:=sysprogram.sys.poptxt2(x,xwrap,xreadonly,xcap,xhelp);except;end;
+end;
+//## pop_save ##
+function pop_save(var xfilename:string;xfilterlist,xcommonfolder:string):boolean;
+begin
+try;result:=pop_save2(xfilename,xfilterlist,xcommonfolder,'');except;end;
+end;
+//## pop_save2 ##
+function pop_save2(var xfilename:string;xfilterlist,xcommonfolder,xtitle2:string):boolean;
+var
+   xfilterindex:longint;
+begin
+try;xfilterindex:=0;result:=false;if (sysprogram<>nil) and (sysprogram.sys<>nil) then result:=sysprogram.sys.xpopnav2(xfilename,xfilterindex,xfilterlist,xcommonfolder,'save','','Save'+low__insstr(#32,xtitle2<>'')+xtitle2);except;end;
+end;
+//## pop_find ##
+function pop_find(xhandler:longint;var xtext,xcmd:string):boolean;
+begin//pass-thru
+try;result:=true;if (sysprogram<>nil) and (sysprogram.sys<>nil) then sysprogram.sys.popfind(xhandler,xtext,xcmd);except;end;
 end;
 //## showbasic ##
 procedure showbasic(x:string);
@@ -41406,6 +42584,1159 @@ for p:=0 to high(systimer_event) do if (xowner=systimer_owner[p]) and (@x=@systi
 except;end;
 end;
 
+//## tspell ####################################################################
+//## dic_shut ##
+procedure dic_shut;
+begin
+try
+//save
+if (sysdic_main<>nil) and sysdic_main.mustsave then sysdic_main.save;
+if (sysdic_sup1<>nil) and sysdic_sup1.mustsave then sysdic_sup1.save;
+if (sysdic_sup2<>nil) and sysdic_sup2.mustsave then sysdic_sup2.save;
+//free
+freeobj(@sysdic_main);
+freeobj(@sysdic_sup1);
+freeobj(@sysdic_sup2);
+except;end;
+end;
+//## dic_init ##
+procedure dic_init;
+begin
+try
+if (sysdic_main=nil) then
+   begin
+   sysdic_main:=tspell.create(low__platfolder('settings')+'main.dic');
+   dic_newid;
+   end;
+if (sysdic_sup1=nil) then
+   begin
+   sysdic_sup1:=tspell.create(low__platfolder('settings')+'sup1.dic');
+   dic_newid;
+   end;
+if (sysdic_sup2=nil) then
+   begin
+   sysdic_sup2:=tspell.create(low__platfolder('settings')+'sup2.dic');
+   dic_newid;
+   end;
+except;end;
+end;
+//## dic_newid ##
+procedure dic_newid;
+begin
+try;low__iroll(sysdic_id,1);except;end;
+end;
+//## dic_id ##
+function dic_id:longint;
+var
+   int1:longint;
+begin
+try
+//get
+result:=sysdic_id;
+//check for changes in dic usage
+int1:=0;
+if sysdic_main_use then inc(int1,2);
+if sysdic_sup1_use then inc(int1,4);
+if sysdic_sup2_use then inc(int1,8);
+if low__setint(sysdic_idref,int1) then
+   begin
+   dic_newid;
+   result:=sysdic_id;
+   end;
+except;end;
+end;
+//## dic_inuse ##
+function dic_inuse:boolean;
+begin
+try;result:=(sysdic_main<>nil) or (sysdic_sup1<>nil) or (sysdic_sup2<>nil);except;end;
+end;
+//## dic_reload ##
+procedure dic_reload(xdicindex:longint);
+begin
+try
+if ((xdicindex<0) or (xdicindex=0)) and (sysdic_main<>nil) then sysdic_main.load;
+if ((xdicindex<0) or (xdicindex=1)) and (sysdic_sup1<>nil) then sysdic_sup1.load;
+if ((xdicindex<0) or (xdicindex=2)) and (sysdic_sup2<>nil) then sysdic_sup2.load;
+dic_newid;
+except;end;
+end;
+//## dic_edit ##
+procedure dic_edit(xdicindex:longint);
+var
+   a:tspell;
+   xdata:string;
+begin
+try
+//defaults
+a:=nil;
+//init
+dic_init;
+//decide
+case xdicindex of
+0:a:=sysdic_main;
+1:a:=sysdic_sup1;
+2:a:=sysdic_sup2;
+end;//case
+//get
+if (a<>nil) then
+   begin
+   if a.mustsave then a.save;
+   xdata:=a.text;
+   if pop_txt2(xdata,0,false,'Dictionary Words','Add and/or delete words are required.  One word per line.') then
+      begin
+      a.text:=xdata;
+      a.save;
+      dic_newid;
+      end;
+   end;
+except;end;
+end;
+//## dic_wordcount ##
+function dic_wordcount(xdicindex:longint):longint;
+begin
+try
+//defaults
+result:=0;
+dic_init;
+//get
+if ((xdicindex<0) or (xdicindex=0)) and (sysdic_main<>nil) then inc(result,sysdic_main.count);
+if ((xdicindex<0) or (xdicindex=1)) and (sysdic_sup1<>nil) then inc(result,sysdic_sup1.count);
+if ((xdicindex<0) or (xdicindex=2)) and (sysdic_sup2<>nil) then inc(result,sysdic_sup2.count);
+except;end;
+end;
+//## dic_extractwordfromdoc ##
+function dic_extractwordfromdoc(var x:twordcore;xcursorpos:longint;xsplitdash:boolean;var xfrom,xto:longint):string;
+var
+   p:longint;
+begin
+try
+//defaults
+result:='';
+//check
+if not low__wordcore__inited(x) then exit;
+//range
+xcursorpos:=frcrange(xcursorpos-1,1,blen(x.data));
+//init
+xfrom:=-1;
+xto:=0;
+//.nudge forward if cursor is standing on a word separator - 05feb2023
+if low__wordcore_docsep2(x,xcursorpos,xsplitdash) then inc(xcursorpos);
+//left
+for p:=xcursorpos downto frcmin(xcursorpos-500,1) do
+begin
+if low__wordcore_docsep2(x,p,xsplitdash) then break else xfrom:=p;
+end;
+//right
+for p:=xcursorpos to frcmax(blen(x.data),xcursorpos+500) do
+begin
+if low__wordcore_docsep2(x,p,xsplitdash) then break else xto:=p;
+end;
+//get
+if (x.data<>nil) then result:=x.data.str1[xfrom,xto-xfrom+1];
+except;end;
+end;
+//## dic_spell ##
+procedure dic_spell(var x:twordcore);
+label
+   redo,skipend;
+var
+   p,int1,int2,xlen,xmin:longint;
+   xsplitdash,xinside,dinside:boolean;
+   xaddword,v:string;
+   //## vhasdash ##
+   function vhasdash:boolean;
+   var
+      p:longint;
+   begin
+   result:=false;
+   if (v<>'') then
+      begin
+      for p:=1 to length(v) do if (strbyte1x(v,p)=ssDash) then
+         begin
+         result:=true;
+         break;
+         end;//p
+      end;
+   end;
+begin
+try
+//check
+if not low__wordcore__inited(x) then exit;
+//init
+xsplitdash:=false;
+xaddword:='';
+redo:
+xlen:=blen(x.data);
+xmin:=frcrange(x.cursorpos-1,1,xlen);
+
+//.nudge forward if cursor is standing on a word separator - 05feb2023
+if low__wordcore_docsep2(x,xmin,xsplitdash) then inc(xmin);
+//get
+xinside:=not low__wordcore_docsep2(x,xmin,xsplitdash);
+for p:=(xmin+1) to xlen do
+begin
+dinside:=not low__wordcore_docsep2(x,p,xsplitdash);
+if (xinside<>dinside) then
+   begin
+   xinside:=dinside;
+   if xinside then
+      begin
+      v:=dic_extractwordfromdoc(x,p+1,xsplitdash,int1,int2);
+      if dic_misspelt(v) then
+         begin
+         //.repeat spell check but break words on the dash this time - 05feb2023
+         if (not xsplitdash) and vhasdash then
+            begin
+            xsplitdash:=true;
+            goto redo;
+            end;
+         //.highlight the word
+         low__wordcore_str(x,'cursorpos',inttostr(p));
+         low__wordcore_str(x,'cursorpos2',inttostr(int2+1));
+         //.addword option
+         xaddword:=v;
+         goto skipend;
+         end;
+      end;
+   end;
+end;//p
+//successful
+pop_info('Speller','Spell check complete');
+skipend:
+//finalise
+x.dic_addword:=xaddword;
+except;end;
+end;
+//## dic_misspelt ##
+function dic_misspelt(x:string):boolean;
+   //## xcanfind ##
+   function xcanfind:boolean;
+   var
+      p,int1,int2,xlen:longint;
+      str1,str2:string;
+      bol1:boolean;
+   begin
+   //defaults
+   result:=true;
+   //init
+   xlen:=length(x);
+   //get
+   if (x='')                          then result:=false
+   else if low__comparetext(x,'https') or low__comparetext(x,'http') or low__comparetext(x,'ftps') or low__comparetext(x,'ftp') or low__comparetext(x,'mailto') then result:=false
+   else if (inttostr(strint(x))=x)    then result:=false;
+
+   //1st, 2nd, 3rd and (n)th
+   if result and (xlen>=3) then
+      begin
+      str2:=low__lowercase(strcopy1x(x,length(x)-1,2));
+      if (str2='st') or (str2='nd') or (str2='rd') or (str2='th') then
+         begin
+         str1:=strcopy1x(x,1,length(x)-2);
+         int1:=strint(str1);
+         if (int1<>0) and (inttostr(int1)=str1) then
+            begin
+            int2:=int1-((int1 div 10)*10);
+            if (int1>=4) and (int1<=20) then result:=not (str2='th')
+            else
+               begin
+               case int2 of
+               -1,1:result:=not (str2='st');
+               -2,2:result:=not (str2='nd');
+               -3,3:result:=not (str2='rd');
+               else result:=not (str2='th');
+               end;//case
+               end;//if
+            end;
+         end;
+      end;
+
+   //a pure number  (0-9) - 11feb2023
+   if result and (xlen>=1) then
+      begin
+      //get
+      bol1:=true;
+      for p:=1 to length(x) do
+      begin
+      case strbyte1x(x,p) of
+      nn0..nn9:;
+      else
+         begin
+         bol1:=false;
+         break;
+         end;
+      end;//case
+      end;//p
+      //set
+      if bol1 then result:=false;
+      end;
+   end;
+begin
+result:=false;
+if xcanfind then result:=not dic_findword(x);
+end;
+//## dic_findword ##
+function dic_findword(x:string):boolean;
+var
+   int1,int2:longint;
+begin
+try;result:=dic_findword2(x,int1,int2);except;end;
+end;
+//## dic_findword2 ##
+function dic_findword2(x:string;var xdicindex,xindex:longint):boolean;
+begin
+try
+//defaults
+result:=false;
+xdicindex:=0;
+xindex:=0;
+dic_init;
+//filter
+if low__comparetext(strcopy1x(x,length(x)-1,2),'''s') then x:=strcopy1x(x,1,length(x)-2);//strip trailing "'s" from words - 05feb2023
+
+//get
+if (not result) and sysdic_main_use and (sysdic_main<>nil) and sysdic_main.findword2(x,xindex) then
+   begin
+   result:=true;
+   xdicindex:=0;
+   end;
+if (not result) and sysdic_sup1_use and (sysdic_sup1<>nil) and sysdic_sup1.findword2(x,xindex) then
+   begin
+   result:=true;
+   xdicindex:=1;
+   end;
+if (not result) and sysdic_sup2_use and (sysdic_sup2<>nil) and sysdic_sup2.findword2(x,xindex) then
+   begin
+   result:=true;
+   xdicindex:=2;
+   end;
+except;end;
+end;
+//## dic_findword ##
+function dic_addword(x:string;xdicindex:longint):boolean;
+begin
+try
+//defaults
+result:=false;
+dic_init;
+//get
+case frcrange(xdicindex,0,2) of
+0:if (sysdic_main<>nil) then result:=sysdic_main.addword(x);
+1:if (sysdic_sup1<>nil) then result:=sysdic_sup1.addword(x);
+2:if (sysdic_sup2<>nil) then result:=sysdic_sup2.addword(x);
+end;//case
+//set
+if result then dic_newid;
+except;end;
+end;
+//## create ##
+constructor tspell.create(xstoragefilename:string);
+begin
+//self
+inherited create;
+//range
+if (xstoragefilename='') then xstoragefilename:=low__platfolder('settings')+'main.dic';
+//vars
+iid:=0;
+ifilename:=xstoragefilename;
+imodified:=false;
+icansave:=false;
+//controls
+iwordlist:=tdynamicstring.create;
+iwordrefs:=tdynamicinteger.create;
+//defaults
+load;
+end;
+//## destroy ##
+destructor tspell.destroy;
+begin
+try
+//controls
+freeobj(@iwordlist);
+freeobj(@iwordrefs);
+//self
+inherited destroy;
+except;end;
+end;
+//## clear ##
+function tspell.clear:boolean;
+begin
+try
+result:=true;
+low__iroll(iid,1);
+imodified:=true;
+xclearwords;
+except;end;
+end;
+//## xclearwords ##
+procedure tspell.xclearwords;
+var//Note: Don't shrink list for maximum stability
+   p:longint;
+begin
+try
+for p:=0 to (count-1) do
+begin
+iwordlist.items[p]^:='';
+iwordrefs.items[p]:=0;
+end;//p
+icount:=0;
+except;end;
+end;
+//## xsettext ##
+function tspell.xsettext(xtext:string):boolean;
+label
+   skipdone,skipend;
+var
+   a:tdynamicstring;
+   p,dcount,acount:longint;
+begin
+try
+//defaults
+result:=false;
+a:=nil;
+dcount:=0;
+//clear
+xclearwords;
+//init
+a:=tdynamicstring.create;
+a.text:=xtext;
+acount:=a.count;
+iwordlist.atleast(acount);
+iwordrefs.atleast(acount);
+//check
+if (acount<=0) then goto skipdone;
+//get
+for p:=0 to (acount-1) do
+begin
+if (a.items[p]^<>'') then
+   begin
+   iwordlist.items[dcount]^:=a.items[p]^;
+   iwordrefs.items[dcount]:=low__ref32u(a.items[p]^);
+   inc(dcount);
+   end;
+end;//p
+//successful
+skipdone:
+result:=true;
+skipend:
+except;end;
+try
+icount:=dcount;
+freeobj(@a);
+except;end;
+end;
+//## settext ##
+procedure tspell.settext(x:string);
+var
+   xmustsave:boolean;
+begin
+try
+xsettext(x);
+imodified:=true;
+low__iroll(iid,1);
+except;end;
+end;
+//## gettext ##
+function tspell.gettext:string;
+var
+   a:tstr8;
+   p,acount:longint;
+begin
+try
+//defaults
+result:='';
+a:=nil;
+//init
+acount:=icount;
+//get
+a:=bnew;
+for p:=0 to (acount-1) do if (iwordrefs.items[p]<>0) then a.sadd(iwordlist.items[p]^+rcode);
+//set
+result:=a.text;
+except;end;
+try;bfree(a);except;end;
+end;
+//## load ##
+function tspell.load:boolean;
+label
+   skipend;
+var
+   p,acount:longint;
+   xdata:tstr8;
+   e:string;
+begin
+try
+//defaults
+result:=false;
+xdata:=nil;
+//check
+if not low__fileexists(ifilename) then
+   begin
+   icansave:=true;
+   result:=true;
+   exit;
+   end;
+//load
+xdata:=bnew;
+if not low__fromfile(ifilename,xdata,e) then goto skipend;
+//get
+icansave:=true;
+xsettext(xdata.text);
+imodified:=false;
+low__iroll(iid,1);
+//successful
+result:=true;
+skipend:
+except;end;
+try;bfree(xdata);except;end;
+end;
+//## save ##
+function tspell.save:boolean;
+label
+   skipend;
+var
+   p,acount:longint;
+   xdata:tstr8;
+   e:string;
+begin
+try
+//defaults
+result:=false;
+xdata:=nil;
+//check
+if not icansave then exit;
+//get
+xdata:=bnew;
+xdata.text:=text;
+//save
+if not low__tofile(ifilename,xdata,e) then goto skipend;
+imodified:=false;
+//successful
+result:=true;
+skipend:
+except;end;
+try;bfree(xdata);except;end;
+end;
+//## mustsave ##
+function tspell.mustsave:boolean;
+begin
+try;result:=icansave and imodified;except;end;
+end;
+//## findword ##
+function tspell.findword(x:string):boolean;
+var
+   int1:longint;
+begin
+try;result:=findword2(x,int1);except;end;
+end;
+//## findword2 ##
+function tspell.findword2(x:string;var xindex:longint):boolean;
+var
+   xref,xcount,p:longint;
+begin
+try
+//defaults
+result:=false;
+xindex:=0;
+//check
+if (icount<=0) or (x='') then exit;
+//get
+xref:=low__ref32u(x);
+xcount:=icount;
+for p:=0 to (xcount-1) do
+begin
+if (iwordrefs.items[p]=xref) and low__comparetext(x,iwordlist.items[p]^) then
+   begin
+   xindex:=p;
+   result:=true;
+   break;
+   end;
+end;//p
+except;end;
+end;
+//## findempty ##
+function tspell.findempty(var xindex:longint):boolean;
+var
+   xref,xcount,p:longint;
+begin
+try
+//defaults
+result:=false;
+xindex:=0;
+xcount:=iwordlist.count;
+//check
+if (xcount<=0) then exit;
+//get
+for p:=0 to (xcount-1) do
+begin
+if (iwordrefs.items[p]=0) then
+   begin
+   xindex:=p;
+   result:=true;
+   break;
+   end;
+end;//p
+except;end;
+end;
+//xxxxxxxxxxxxxxxxxxxxxxxx//sssssssssssssssss
+//## addword ##
+function tspell.addword(x:string):boolean;
+var
+   dcount,i:longint;
+begin
+try
+//defaults
+result:=false;
+//check
+if (x='') then exit;
+//is it an existing word, if so -> ignore
+if findword(x) then
+   begin
+   result:=true;
+   exit;
+   end;
+//use first empty slot
+if findempty(i) then
+   begin
+   iwordlist.items[i]^:=x;
+   iwordrefs.items[i]:=low__ref32u(x);
+   result:=true;
+   exit;
+   end;
+//add new slot
+i:=iwordlist.count+500;
+iwordlist.atleast(i);
+iwordrefs.atleast(i);
+i:=icount;
+iwordlist.items[i]^:=x;
+iwordrefs.items[i]:=low__ref32u(x);
+inc(icount);
+low__iroll(iid,1);
+imodified:=true;
+result:=true;
+except;end;
+end;
+//## delword ##
+function tspell.delword(x:string):boolean;
+label
+   redo;
+var
+   i:longint;
+   bol1:boolean;
+begin
+try
+//defaults
+result:=true;
+bol1:=false;
+//get
+redo:
+if findword2(x,i) then//remove all duplicate instances of word "x"
+   begin
+   iwordlist.items[i]^:='';
+   iwordrefs.items[i]:=0;
+   bol1:=true;
+   goto redo;
+   end;
+//set
+if bol1 then
+   begin
+   low__iroll(iid,1);
+   imodified:=true;
+   end;
+except;end;
+end;
+
+//## trnd8 #####################################################################
+//## create2 ##
+constructor trnd8.create(xsize:longint);
+var
+   p:longint;
+begin
+//self
+satinc(satOther,1);
+inherited create;
+//range
+imax:=frcmin(xsize,100);
+//vars
+icore:=bnew;
+icore.setlen(imax+1);
+for p:=0 to imax do icore.pbytes[p]:=random(256);//0..255 range
+ipos:=0;
+iposcount:=0;
+end;
+//## destroy ##
+destructor trnd8.destroy;
+begin
+try
+//controls
+freeobj(@icore);
+//self
+inherited destroy;
+satinc(satOther,-1);
+except;end;
+end;
+//## pull ##
+function trnd8.pull:byte;
+begin
+ipos:=ipos+1;
+if (ipos>imax) then ipos:=0;
+result:=icore.pbytes[ipos];
+end;
+//## pull2 ##
+function trnd8.pull2:byte;
+begin
+//get
+if (ipos<imax) then result:=icore.pbytes[ipos] else result:=0;
+//inc
+if (iposcount>=500) then
+   begin
+   ipos:=ipos+random(51);
+   iposcount:=0;
+   end
+else ipos:=ipos+1;//slightly faster than using "inc()"
+if (ipos>imax) then ipos:=0;
+inc(iposcount);
+end;
+
+//## tbwpbar ###################################################################
+//xxxxxxxxxxxxxxxxxxxxxxxxxx//7777777777777777777777
+//## create ##
+constructor tbwpbar.create(xparent:tobject);
+begin
+create2(xparent,true);
+end;
+//## create2 ##
+constructor tbwpbar.create2(xparent:tobject;xstart:boolean);
+var
+   p:longint;
+begin
+//self
+satinc(satTitle,1);
+inherited create2(xparent,false);
+//vars
+itimer250:=ms64;
+ibordersize:=1;
+iref:='';
+icount:=0;
+ihoverindex:=-1;
+idownindex:=-1;
+ocanshowmenu:=true;
+//items
+for p:=0 to high(iarea) do
+begin
+iarea[p]:=nilrect;
+ipert[p]:=0;
+end;
+iname:=xnew('name',30);
+xnew('-',1);
+isize:=xnew('size',10);
+xnew('-',1);
+icolor:=xnew('color',15);
+xnew('-',2);
+inormal:=xnew('N',4);
+ibold:=xnew('B',4);
+iitalic:=xnew('I',4);
+iunderline:=xnew('U',4);
+istrikeout:=xnew('S',4);
+ihighlight:=xnew('H',4);
+xnew('-',2);
+ileft:=xnew('L',4);
+icenter:=xnew('C',4);
+iright:=xnew('R',4);
+xnew('-',2);
+iwrap:=xnew('W',4);
+
+//controls
+//clientheight:=20;
+//start
+if xstart then start;
+end;
+//## destroy ##
+destructor tbwpbar.destroy;
+begin
+try
+inherited destroy;
+satinc(satTitle,-1);
+except;end;
+end;
+//## xnew ##
+function tbwpbar.xnew(xcap:string;xpert:longint):longint;
+begin
+try
+result:=frcrange(icount,0,high(iarea));
+icap[result]:=xcap;
+ipert[result]:=xpert;
+inc(icount);
+except;end;
+end;
+//## getalignheight ##
+function tbwpbar.getalignheight(xclientwidth:longint):longint;//15nov2023
+begin
+try
+result:=20;
+if vitouch then result:=frcmin(result,low__touchsmall);
+except;end;
+end;
+//## findbox ##
+function tbwpbar.findbox:tbasicbwp;
+begin
+try;if osysbox then result:=sysbox else result:=ibox;except;end;
+end;
+//## findbox2 ##
+function tbwpbar.findbox2:tbasicbwp;
+var
+   x:tbasicbwp;
+begin
+try
+//get
+result:=nil;
+x:=findbox;
+//set
+if (x<>nil) and x.visible and x.enabled and (not x.oreadonly) then result:=x;
+except;end;
+end;
+//## showmenuFill ##
+procedure tbwpbar.showmenuFill(xstyle:string;xmenudata:tstr8;var ximagealign:longint;var xmenuname:string);
+var
+   m:tstr8;//pointer only
+   b:tbasicbwp;
+   bok:boolean;
+   p,v:longint;
+   //## nsize ##
+   procedure nsize(x:longint);
+   begin
+   low__menuitem(m,tepNone,inttostr(x),'Set font size to '+inttostr(x),'size.'+inttostr(x),100,true);
+   end;
+begin
+try
+//check
+if zznil(xmenudata,2325) then exit else m:=xmenudata;
+xmenuname:='bwpbar.1';
+b:=findbox2;
+bok:=(b<>nil);
+
+//init
+
+//get
+if (xstyle='size') then
+   begin
+   v:=6;
+   for p:=1 to 30 do
+   begin
+   nsize(v);
+   if (v<=28) then inc(v,2) else inc(v,4);
+   end;//p
+   end
+else if (xstyle='wrap') then
+   begin
+   if bok then v:=b.style else v:=0;
+   low__menutitle(m,tepnone,'Word Wrap','Select word wrap style');
+   low__menuitem(m,tep__tick(v=0),'None','No wrap','wrap.0',100,true);
+   low__menuitem(m,tep__tick(v=1),'Window','Wrap to window','wrap.1',100,true);
+   low__menuitem(m,tep__tick(v=2),'Page','Wrap to page','wrap.2',100,true);
+   low__menuitem(m,tep__tick(v=3),'Page + 2x','Wrap to page','wrap.3',100,true);
+   low__menuitem(m,tep__tick(v=4),'Manuscript','Wrap to manuscript','wrap.4',100,true);
+   end;
+except;end;
+end;
+//xxxxxxxxxxxxxxxxxxxxxx//7777777777777777
+//## showmenuClick ##
+function tbwpbar.showmenuClick(sender:tobject;xstyle:string;xcode:longint;xcode2:string;xtepcolor:longint):boolean;
+var
+   v:longint;
+   b:tbasicbwp;
+   bOK:boolean;
+begin
+try
+//handled
+result:=true;
+//init
+b:=findbox2;
+bOK:=(b<>nil);
+//get
+if (strcopy1(xcode2,1,5)='size.') then
+   begin
+   v:=frcrange(strint(strcopy1(xcode2,6,length(xcode2))),6,300);
+   if bOK then
+      begin
+      b.core.cfontsize:=v;
+      low__wordcore_str(b.core^,'cwritesel.hasundo','size');
+      end;
+   end
+else if (strcopy1(xcode2,1,5)='wrap.') then
+   begin
+   v:=frcrange(strint(strcopy1(xcode2,6,length(xcode2))),0,4);
+   if bOK then
+      begin
+      b.style:=v;
+      //b.linespacing:=low__aorb(1,2,v>=3);
+      end;
+   end
+//not handled
+else result:=false;
+except;end;
+end;
+//## _ontimer ##
+procedure tbwpbar._ontimer(sender:tobject);
+var
+   xmustpaint:boolean;
+   b:tbasicbwp;
+   int1,int2:longint;
+begin
+try
+//defaults
+xmustpaint:=false;
+
+//.itimer250
+if (ms64>itimer250) then
+   begin
+   //box data has changed
+   b:=findbox2;
+   int1:=-1;
+   int2:=-1;
+   if (b<>nil) then
+      begin
+      int1:=b.core.cursorpos;
+      int2:=b.core.dataid3;
+      end;
+   if low__setstr(iref,inttostr(int1)+'-'+inttostr(int2)) then xmustpaint:=true;
+   //reset
+   itimer250:=ms64+250;
+   end;
+
+//paint
+if xmustpaint then paintnow;
+except;end;
+end;
+//## setbox ##
+procedure tbwpbar.setbox(x:tbasicbwp);
+begin
+try
+if (x<>ibox) then
+    begin
+    ibox:=x;
+    paintnow;
+    end;
+except;end;
+end;
+//## findindex ##
+function tbwpbar.findindex(x,y:longint):longint;
+var
+   p:longint;
+begin
+try
+result:=-1;
+for p:=(icount-1) downto 0 do if low__withinrect(x,y,iarea[p]) and (icap[p]<>'-') then
+   begin
+   result:=p;
+   break;
+   end;//p
+except;end;
+end;
+//## _onnotify ##
+function tbwpbar._onnotify(sender:tobject):boolean;
+var
+   v,int1:longint;
+   bol1,xmustpaint:boolean;
+   str1:string;
+   b:tbasicbwp;
+begin
+try
+//defaults
+result:=true;//handled
+xmustpaint:=false;
+
+//down index
+if gui.mousedown and (not gui.mousewasdown) then
+   begin
+   if low__setint(idownindex,findindex(mousemovexy.x,mousemovexy.y)) then xmustpaint:=true;
+   end;
+//hover index
+if low__setint(ihoverindex,findindex(mousemovexy.x,mousemovexy.y)) then xmustpaint:=true;
+
+
+//mouse up
+if (not gui.mousedown) and gui.mousewasdown then
+   begin
+   //.act - button was clicked
+   v:=idownindex;
+   b:=findbox2;
+   if (b<>nil) then
+      begin
+      //.style
+      if      (v=inormal)       then low__wordcore_str(b.core^,'style','normal')
+      else if (v=ibold)         then low__wordcore_str(b.core^,'style','bold')
+      else if (v=iitalic)       then low__wordcore_str(b.core^,'style','italic')
+      else if (v=iunderline)    then low__wordcore_str(b.core^,'style','underline')
+      else if (v=istrikeout)    then low__wordcore_str(b.core^,'style','strikeout')
+      else if (v=ihighlight)    then low__wordcore_str(b.core^,'style','highlight')
+      //.align
+      else if (v=ileft)         then low__wordcore_str(b.core^,'align','l')
+      else if (v=icenter)       then low__wordcore_str(b.core^,'align','c')
+      else if (v=iright)        then low__wordcore_str(b.core^,'align','r')
+      //.name
+      else if (v=iname)         then
+         begin
+         str1:=b.core.cfontname;
+         if gui.popfont2(str1,true,true,true,true,self) then
+            begin
+            b.core.cfontname:=str1;
+            low__wordcore_str(b.core^,'cwritesel.hasundo','name');
+            end;
+         end
+      //.color
+      else if (v=icolor) then
+         begin
+         int1:=b.core.ccolor;
+         if gui.popcolor(int1) then
+            begin
+            b.core.ccolor:=int1;
+            low__wordcore_str(b.core^,'cwritesel.hasundo','color');
+            end;
+         end
+      //.size
+      else if (v=isize) then showmenu2('size')
+      else if (v=iwrap) then showmenu2('wrap');
+
+      end;
+   //.turn off button
+   if low__setint(idownindex,-1) then xmustpaint:=true;
+   end;
+
+//external event override - 01mar2021
+if assigned(fonnotify) then fonnotify(sender);
+//xmustpaint
+if xmustpaint then paintnow;
+except;end;
+end;
+//xxxxxxxxxxxxxxxxx//77777777777777777
+//## _onpaint ##
+procedure tbwpbar._onpaint(sender:tobject);
+var
+   //infovars
+   a:pvirtualinfo;
+   cs,ci:trect;
+   fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfont2,xfontdisable,xback,xback2,xborder,xhover,xfontheight,xfeather,xbordersize:longint;
+   xenabled,xround,xnormal:boolean;
+   //other
+   xenhanced:boolean;
+   p,xnextx,dx,dh,fc:longint;
+   b:tbasicbwp;
+   //## xnextarea ##
+   function xnextarea(xindex:longint):trect;
+   var
+      dw:longint;
+   begin
+   try
+   //range
+   dw:=frcmin( round((ci.right-ci.left)*(frcrange(ipert[xindex],1,100)/100)) ,1);
+   //get
+   iarea[xindex].top:=ci.top;
+   iarea[xindex].bottom:=ci.bottom;
+   iarea[xindex].left:=xnextx-dw+1;
+   iarea[xindex].right:=xnextx;
+   if (xindex=0) then iarea[xindex].left:=ci.left;//use all remaining space
+   //inc
+   dec(xnextx,dw);
+   except;end;
+   end;
+   //## xdraw ##
+   procedure xdraw(xindex:longint);
+   var
+      a:trect;
+      c:string;
+      dx,dy:longint;
+      amark,ahover,adown:boolean;
+   begin
+   try
+   //check
+   if (ipert[xindex]<=0) then exit;
+   //get
+   a:=iarea[xindex];
+   c:=icap[xindex];
+   if (xindex=iname) then
+      begin
+      if (b<>nil) then c:=b.core.cfontname else c:=viFontname;
+      end
+   else if (xindex=isize) then
+      begin
+      if (b<>nil) then c:=inttostr(b.core.cfontsize) else c:=inttostr(viFontsize);
+      end;
+
+   adown:=(xindex=idownindex);
+   ahover:=(xindex=ihoverindex);
+   amark:=false;
+   if (b<>nil) then
+      begin
+      if      (xindex=inormal)      then amark:=(not b.core.cbold) and (not b.core.citalic) and (not b.core.cunderline) and (not b.core.cstrikeout) and (b.core.cbk=clnone)
+      else if (xindex=ibold)        then amark:=b.core.cbold
+      else if (xindex=iitalic)      then amark:=b.core.citalic
+      else if (xindex=iunderline)   then amark:=b.core.cunderline
+      else if (xindex=istrikeout)   then amark:=b.core.cstrikeout
+      else if (xindex=ihighlight)   then amark:=(b.core.cbk<>clnone)
+      else if (xindex=ileft)        then amark:=(b.core.calign=0)
+      else if (xindex=icenter)      then amark:=(b.core.calign=1)
+      else if (xindex=iright)       then amark:=(b.core.calign=2);
+      end;
+   //set
+   if (c='-') then
+      begin
+      //space
+      end
+   else if (c<>'') then
+      begin
+      dx:=a.left+(  ((a.right-a.left)-low__fonttextwidth2(fc,c))  div 2);
+      dy:=a.top+((dh-low__fontmaxh(fc)) div 2);
+      if adown then
+         begin
+         inc(dx);
+         inc(dy);
+         end;
+      //.background
+      if (ahover and (not adown)) or amark then lds3(true,a,xhover,xback,clnone,0,vishadestyle,xround,true)
+      else lds3(true,a,xback,xback2,clnone,0,vishadestyle,xround,true);
+      //.caption
+      ldt1(xback,ci,dx,dy,xfont,c,fc,xfeather,xround);
+      end;
+
+//   ldf2(a,255,255,clnone,1,0,'',nil,xround);
+   except;end;
+   end;
+begin
+try
+//init
+xenhanced:=vienhanced;
+infovars2(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xfont2,xback,xback2,xborder,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);
+
+dh:=frcmin(ch-(2*xbordersize),1);
+fc:=fn;
+xnextx:=ci.right;
+b:=findbox2;
+
+//size items
+for p:=(icount-1) downto 0 do xnextarea(p);
+
+//cls
+case xenhanced of
+true:lds2(cs,low__dc(xback,-10),xback,xback,0,'g50',xround);
+false:lds2(cs,xback,xback,xback,0,vishadestyle,xround);
+end;
+
+//draw items - right to left to use ALL available space
+for p:=(icount-1) downto 0 do xdraw(p);
+
+
+
+//text
+dx:=xbordersize+5;
+//ldt(ci,dx,ci.top+((dh-low__fontmaxh(fc)) div 2),xfont,itext,fc,xfeather,xround);//up 1px - 24feb2021
+
+//frame
+if (xbordersize>=1) then ldf2(cs,xborder,xborder,clnone,xbordersize,0,'',nil,xround);
+xparentcorners;
+except;end;
+end;
+
+
 {$ifdef tbt}
 //## low__encrypt ##
 function low__encrypt(s:tstr8;xpass:string;xpower:longint;xencrypt:boolean;var e:string):boolean;
@@ -41460,6 +43791,38 @@ try
 freeobj(@a);
 bunlockautofree(s);
 bunlockautofree(d);
+except;end;
+end;
+//## low__encryptRETAINONFAIL ##
+function low__encryptRETAINONFAIL(s:tstr8;xpass:string;xpower:longint;xencrypt:boolean;var e:string):boolean;//14nov20223
+label
+   skipend;
+var
+   s2,d:tstr8;
+begin
+try
+//defaults
+result:=false;
+e:=gecTaskfailed;
+d:=nil;
+s2:=nil;
+//init
+s2:=bnew;
+d:=bnew;
+if not s2.add(s) then goto skipend;
+//get
+if low__encrypt2(s2,d,xpass,xpower,xencrypt,e) then
+   begin
+   e:=gecOutOfMemory;
+   s2.clear;
+   s.clear;
+   result:=s.add(d);
+   end;
+skipend:
+except;end;
+try
+bfree(s2);
+bfree(d);
 except;end;
 end;
 //## ttbt ######################################################################
@@ -42173,6 +44536,15 @@ result:=false;
 e:=gecTaskfailed;
 bautofree(s);
 bautofree(d);
+except;end;
+end;
+//## low__encryptRETAINONFAIL ##
+function low__encryptRETAINONFAIL(s:tstr8;xpass:string;xpower:longint;xencrypt:boolean;var e:string):boolean;//14nov20223
+begin
+try
+result:=false;
+e:=gecTaskfailed;
+bautofree(s);
 except;end;
 end;
 
@@ -43462,7 +45834,7 @@ begin
 try;result:=low__togif3(x,xtranscol,true,false,y,e);except;end;
 end;
 //## low__togif3 ##
-function low__togif3(x:tobject;xtranscol:longint;xlocalpalettes,xuse32:boolean;y:tstr8;var e:string):boolean;////14may2022 - now supports 32bit mask channel for transparency, 22sep2021 (now supports localpalettes - each cell of an animation has it's own separate color palette), 11SEP2007
+function low__togif3(x:tobject;xtranscol:longint;xlocalpalettes,xuse32:boolean;y:tstr8;var e:string):boolean;//31dec2022 - fixed bad [0,59] terminator, 14may2022 - now supports 32bit mask channel for transparency, 22sep2021 (now supports localpalettes - each cell of an animation has it's own separate color palette), 11SEP2007
 label//writes v89a GIF's
    skipend;
 const
@@ -43758,7 +46130,7 @@ begin
 //was: pushb(ylen,y,#33#249#4+char(flags)+from16bit(delay,true)+#0#0);
 y.aadd([33,249,4]);
 y.addbyt1(flags);
-y.addsmi2(delay);
+y.addsmi2(delay);//***********************
 y.aadd([0,0]);
 
 
@@ -43774,7 +46146,6 @@ y.addwrd2(id.dy);
 y.addwrd2(id.w);
 y.addwrd2(id.h);
 //if xlocalpalettes then id.pf:=idLocalColorTable;//+idColorTableSize;//only for local palette support - 22sep2021
-
 
 offx:=(p-1)*s.w;
 
@@ -43864,7 +46235,8 @@ z.clear;
 end;//p
 
 //terminator
-y.aadd([0,59]);//was: pushb(ylen,y,#0#59);
+//was: y.aadd([0,59]);//was: pushb(ylen,y,#0#59);
+y.aadd([59]);//fixed 31dec2022
 
 //successful
 result:=true;
@@ -43932,12 +46304,801 @@ e:=gecUnknownformat;
 except;end;
 try;bautofree(y);except;end;
 end;
-
 {$endif}
 //-- GIF end -------------------------------------------------------------------
 
 
+{$ifdef gif2}
+//## gif_start ##
+function gif_start(dcore:tstr8;dw,dh:longint;dloop:boolean;xsmartwrite24:tbasicimage):boolean;
+const
+   //main flags
+   pfGlobalColorTable	= $80;		{ set if global color table follows L.S.D. }
+   pfColorResolution	= $70;		{ Color resolution - 3 bits }
+   pfSort		= $08;		{ set if global color table is sorted - 1 bit }
+   pfColorTableSize	= $07;		{ size of global color table - 3 bits }
+   //local - image des
+   idLocalColorTable	= $80;    { set if a local color table follows }
+   idInterlaced		= $40;    { set if image is interlaced }
+   idSort		= $20;    { set if color table is sorted }
+   idReserved		= $0C;    { reserved - must be set to $00 }
+   idColorTableSize	= $07;    { size of color table as above }
+var
+   s:tgifscreen;
+   p:longint;
+begin
+try
+//defaults
+result:=false;
+//check
+if not block(dcore) then exit;
+//range
+dw:=frcrange(dw,1,maxword);
+dh:=frcrange(dh,1,maxword);
+//init
+dcore.clear;
+dcore.tag1:=dw;//store screen width and height - 27dec2022
+dcore.tag2:=dh;
+dcore.tag3:=0;//cell count
+//get --------------------------------------------------------------------------
+//header
+dcore.aadd([uuG,uuI,uuF,nn8,nn9,lla]);//was: pushb(ylen,y,'GIF89a');
+//screen info - no global palette - 31dec2022
+fillchar(s,sizeof(s),0);
+s.w:=dw;
+s.h:=dh;
+
+//was: pushb(ylen,y,fromstruc(@s,sizeof(s)));
+dcore.addwrd2(s.w);
+dcore.addwrd2(s.h);
+dcore.addbyt1(s.pf);
+dcore.addbyt1(s.bgi);
+dcore.addbyt1(s.ar);
+
+//loop       //unknown code block [78..3..1]                       //0=loop forever
+if dloop then
+   begin
+   dcore.aadd([33,255,11,78,69,84,83,67,65,80,69,50,46,48,3,1]);
+   dcore.addsmi2(0);
+   dcore.addbyt1(0);
+   end;
+
+//xsmartwrite24
+if (xsmartwrite24<>nil) and misokk24(xsmartwrite24) then
+   begin
+   missize(xsmartwrite24,dw,dh);
+   miscls(xsmartwrite24,0);
+   end;
+//successful
+result:=true;
+except;end;
+try
+bunlockautofree(dcore);
+except;end;
+end;
+//## gif_stop ##
+function gif_stop(dcore:tstr8):boolean;
+begin
+try
+//defaults
+result:=false;
+//check
+if not block(dcore) then exit;
+if (dcore.len>=12)   then
+   begin
+   //write the terminator code "0,59" - 27dec2022
+//was:   dcore.aadd([0,59]); <- this is wrong, should have just been a single [59] value as per GIF89a format spec - 31dec2022
+   dcore.aadd([59]);//fixed - 31dec2022
+   //successful
+   result:=true;
+   end;
+except;end;
+try;bunlockautofree(dcore);except;end;
+end;
+//## gif_add ##
+function gif_add(dcore:tstr8;s:tbasicimage;sdelay,strancol2:longint;xoverwrite:boolean):boolean;
+begin
+try;result:=gif_add2(dcore,s,sdelay,strancol2,xoverwrite,nil);except;end;
+end;
+//## gif_add2 ##
+function gif_add2(dcore:tstr8;s:tbasicimage;sdelay,strancol2:longint;xoverwrite:boolean;xsmartwrite24:tbasicimage):boolean;
+begin
+try;result:=gif_add3(dcore,s,sdelay,strancol2,xoverwrite,false,xsmartwrite24);except;end;
+end;
+//## gif_add3 ##
+function gif_add3(dcore:tstr8;s:tbasicimage;sdelay,strancol2:longint;xoverwrite,xwritefullframe:boolean;xsmartwrite24:tbasicimage):boolean;
+label//Note: We keep white (255,255,255) as the internal transparent color even when using 32bit images - 27dec2022
+     //Note: Uses transparency info when (sbits=32) via alpha channel BUT can additionally make "strancol2" colors transparent, useful for 8/24bit images
+     //Note: "xsmartwrite=true" requires a valid image to be provided in "slast"
+     //Note: relies on "xsmartwrite=true" in which case when "xwritefullframe=true" the xsmartwrite24 buffer fill fully filled with "s" and an entire intact frame is written to stream - 05jan2023
+   skipend;
+var
+   ddata:tstr8;
+   sx,sy,p,stranscol,lcount,dcount,dpalcount,ddelay,sbits,sw,sh,lbits,lw,lh:longint;
+   dflags:byte;
+   dfirst,dtrans,xsmartwrite:boolean;
+   ddes:tgifimgdes;
+   dpal:array[0..255] of tcolor24;
+   sr32:pcolorrow32;
+   sr24:pcolorrow24;
+   sr8 :pcolorrow8;
+   dr24:pcolorrow24;
+   d24:tbasicimage;
+   lr24:pcolorrow24;
+   c32:tcolor32;
+   c24:tcolor24;
+   l24:tcolor24;
+   stranscol24:tcolor24;
+   snottrans24:tcolor24;
+   strancol2_24:tcolor24;
+   strancol2_24OK:boolean;
+   v:byte;
+   e:string;
+   //## palfind ##
+   function palfind(var z:tcolor24):byte;
+   var
+      p:integer;
+   begin
+   //defaults
+   result:=1;//frcmax(1,dpalcount-1);//avoid "item.0" if we can as it is reserved for transparent pixels - 23JAN2012
+   //scan
+   for p:=0 to (dpalcount-1) do if (dpal[p].r=z.r) and (dpal[p].g=z.g) and (dpal[p].b=z.b) then
+      begin
+      result:=byte(p);
+      break;
+      end;
+   end;
+begin
+try
+//defaults
+result:=false;
+d24:=nil;
+ddata:=nil;
+
+//check
+if not block(dcore) then exit;
+if (dcore.len<12) or (dcore.tag1<=0) or (dcore.tag2<=0) then goto skipend;
+if not misok82432(s,sbits,sw,sh) then goto skipend;
+//range
+sw:=frcmax(frcrange(sw,1,maxword),dcore.tag1);
+sh:=frcmax(frcrange(sh,1,maxword),dcore.tag2);
+
+//init
+inc(dcore.tag3);
+
+//.smartwrite
+xsmartwrite:=(xsmartwrite24<>nil) and misok82432(xsmartwrite24,lbits,lw,lh) and (lbits=24) and (lw>=sw) and (lh>=sh);
+
+//.static transparent color of WHITE - used internally - 27dec2022
+stranscol24:=low__rgb24(255,255,255);
+snottrans24:=low__rgb24(254,254,254);
+stranscol:=low__rgb(stranscol24.r,stranscol24.g,stranscol24.b);
+strancol2_24OK:=false;
+if (strancol2<>clnone) then
+   begin
+   strancol2_24OK:=true;
+   if (strancol2=clTopLeft) then strancol2_24:=mispixel24(s,0,0)
+   else                          strancol2_24:=low__intrgb(strancol2);
+   end;
+
+//.other
+fillchar(dpal,sizeof(dpal),0);
+dpalcount:=0;
+dtrans:=false;
+dflags:=0;
+
+//Note: Does a "delay=0" produce a multi-image 1st frame for preview systems => NO - 05jan2023
+ddelay:=frcrange(sdelay div 10,0,32767);//20ms or larger (50fps)
+dcount:=frcmin(dcore.tag3,0);
+lcount:=dcount;
+if xwritefullframe then lcount:=0;
+
+//if xsmartwrite and xwritefullframe then miscls(xsmartwrite24,low__rgbint(stranscol24));
+
+
+//image convert
+d24:=misimg24(sw,sh);
+for sy:=0 to (sh-1) do
+begin
+if not misscan82432(s,sy,sr8,sr24,sr32) then goto skipend;
+if not misscan24(d24,sy,dr24)           then goto skipend;
+if xsmartwrite and (not misscan24(xsmartwrite24,sy,lr24)) then goto skipend;
+
+//.32
+if (sbits=32) then
+   begin
+   for sx:=0 to (sw-1) do
+   begin
+   //get
+   c32:=sr32[sx];
+   if (c32.a>=1) then
+      begin
+      c24.r:=c32.r;
+      c24.g:=c32.g;
+      c24.b:=c32.b;
+      if strancol2_24OK and (c24.r=strancol2_24.r) and (c24.g=strancol2_24.g) and (c24.b=strancol2_24.b) then
+         begin
+         c24:=stranscol24;//make this color transparent - optional
+         dtrans:=true;
+         end
+      else if (c24.r=stranscol24.r) and (c24.g=stranscol24.g) and (c24.b=stranscol24.b) then c24:=snottrans24;//can't use white -> we've reserved this for internal transparency -> use an off-white instead "snottrans24" - 27dec2022
+      end
+   else
+      begin
+      c24:=stranscol24;
+      dtrans:=true;
+      end;
+   //smartwrite
+   if xsmartwrite then
+      begin
+      l24:=lr24[sx];
+      if (lcount>=2) and (l24.r=c24.r) and (l24.g=c24.g) and (l24.b=c24.b) then
+         begin
+         c24:=stranscol24;
+         dtrans:=true;
+         end
+      else lr24[sx]:=c24;
+      end;
+   //set
+   dr24[sx]:=c24;
+   end;//sx
+   end
+//.24
+else if (sbits=24) then
+   begin
+   for sx:=0 to (sw-1) do
+   begin
+   //get
+   c24:=sr24[sx];
+   if strancol2_24OK and (c24.r=strancol2_24.r) and (c24.g=strancol2_24.g) and (c24.b=strancol2_24.b) then
+      begin
+      c24:=stranscol24;//make this color transparent - optional
+      dtrans:=true;
+      end
+   else if (c24.r=stranscol24.r) and (c24.g=stranscol24.g) and (c24.b=stranscol24.b) then c24:=snottrans24;//can't use white -> we've reserved this for internal transparency -> use an off-white instead "snottrans24" - 27dec2022
+   //smartwrite
+   if xsmartwrite then
+      begin
+      l24:=lr24[sx];
+      if (lcount>=2) and (l24.r=c24.r) and (l24.g=c24.g) and (l24.b=c24.b) then
+         begin
+         c24:=stranscol24;
+         dtrans:=true;
+         end
+      else lr24[sx]:=c24;
+      end;
+   //set
+   dr24[sx]:=c24;
+   end;//sx
+   end
+//.8
+else if (sbits=8) then
+   begin
+   for sx:=0 to (sw-1) do
+   begin
+   //get
+   c24.r:=sr8[sx];
+   c24.g:=c24.r;
+   c24.b:=c24.r;
+   if strancol2_24OK and (c24.r=strancol2_24.r) and (c24.g=strancol2_24.g) and (c24.b=strancol2_24.b) then
+      begin
+      c24:=stranscol24;//make this color transparent - optional
+      dtrans:=true;
+      end
+   else if (c24.r=stranscol24.r) and (c24.g=stranscol24.g) and (c24.b=stranscol24.b) then c24:=snottrans24;//can't use white -> we've reserved this for internal transparency -> use an off-white instead "snottrans24" - 27dec2022
+   //smartwrite
+   if xsmartwrite then
+      begin
+      l24:=lr24[sx];
+      if (lcount>=2) and (l24.r=c24.r) and (l24.g=c24.g) and (l24.b=c24.b) then
+         begin
+         c24:=stranscol24;
+         dtrans:=true;
+         end
+      else lr24[sx]:=c24;
+      end;
+   //set
+   dr24[sx]:=c24;
+   end;//sx
+   end;
+end;//sy
+
+//image flags
+if xsmartwrite and (dcore.tag3<=1) then dtrans:=false;//no transparency on first frame of animation -> other frames use transparency to paint only the required sections
+if dtrans then inc(dflags);//1=transparent
+
+//.flags - 0=nothing, 4=leave as is, 8=clear background, 12=previous image
+if xsmartwrite     then inc(dflags,4)
+else if xoverwrite then inc(dflags,4) //4=leave as is (overwrite previous pixels)
+else                    inc(dflags,8);//8=clear background and write new pixels
+
+//image header
+dcore.aadd([33,249,4]);
+dcore.addbyt1(dflags);
+dcore.addsmi2(ddelay);
+dcore.aadd([0,0]);
+
+//image information - Note: pf=0 (no local color table, not interlaced, not sorted)
+fillchar(ddes,sizeof(ddes),0);
+ddes.sep:=44;
+ddes.w:=sw;
+ddes.h:=sh;
+ddes.dx:=0;
+ddes.dy:=0;
+dcore.addbyt1(ddes.sep);//2C = OK
+dcore.addwrd2(ddes.dx);
+dcore.addwrd2(ddes.dy);
+dcore.addwrd2(ddes.w);
+dcore.addwrd2(ddes.h);
+
+//image palette -> do it FAST - 27dec2022
+if not mislimitcolors82432ex(d24,0,sw,stranscol,high(dpal)+1,true,true,dpal,dpalcount,e) then goto skipend;
+
+//.restric palette count
+case dpalcount of
+0..2:dpalcount:=2;
+3..16:dpalcount:=16;
+else dpalcount:=256;
+end;
+
+//.store palette flag
+case dpalcount of
+2:dcore.addbyt1(176);
+16:dcore.addbyt1(179);
+else dcore.addbyt1(183);//183=256PAL,NOT-SORTED [247=SORTED]
+end;
+
+//.store local palette colors - 22sep2021
+for p:=0 to (dpalcount-1) do
+begin
+dcore.addbyt1(dpal[p].r);
+dcore.addbyt1(dpal[p].g);
+dcore.addbyt1(dpal[p].b);
+end;//p
+
+//image data
+ddata:=bnew;
+ddata.setlen(sw*sh);//was: setlength(z,cw*ch);
+p:=1;
+//.sy
+for sy:=0 to (sh-1) do
+begin
+if not misscan24(d24,sy,dr24) then goto skipend;
+//.sx
+for sx:=0 to (sw-1) do
+begin
+c24:=dr24[sx];
+ddata.pbytes[p-1]:=palfind(c24);//r-b elements are reversed in pal items
+inc(p);
+end;//sx
+end;//sy
+//.compress image data
+{$ifdef gif}
+if not gif_compress(ddata,e) then goto skipend;
+{$else}
+goto skipend;
+{$endif}
+//.append image data
+dcore.add(ddata);
+
+//successful
+result:=true;
+skipend:
+except;end;
+try
+freeobj(@d24);
+bfree(ddata);
+bunlockautofree(dcore);
+except;end;
+end;
+{$else}
+//## gif_start ##
+function gif_start(dcore:tstr8;dw,dh:longint;dloop:boolean;xsmartwrite24:tbasicimage):boolean;
+begin
+result:=false;
+end;
+//## gif_stop ##
+function gif_stop(dcore:tstr8):boolean;
+begin
+result:=false;
+end;
+//## gif_add ##
+function gif_add(dcore:tstr8;s:tbasicimage;sdelay,strancol2:longint;xoverwrite:boolean):boolean;
+begin
+result:=false;
+end;
+//## gif_add2 ##
+function gif_add2(dcore:tstr8;s:tbasicimage;sdelay,strancol2:longint;xoverwrite:boolean;xsmartwrite24:tbasicimage):boolean;
+begin
+result:=false;
+end;
+//## gif_add3 ##
+function gif_add3(dcore:tstr8;s:tbasicimage;sdelay,strancol2:longint;xoverwrite,xwritefullframe:boolean;xsmartwrite24:tbasicimage):boolean;
+begin
+result:=false;
+end;
+{$endif}
+
+//-- end GIF2 support ----------------------------------------------------------
+
+//-- Master Support - 15nov2023 ------------------------------------------------
+//## master__storevars ##
+procedure master__storevars(xvars:tvars8;xsyssettings,xprgsettings,xwidth,xheight,xcursor:boolean;xtitle:string);
+var
+   n,e:string;
+   a:tstr8;
+begin
+try
+//init
+a:=nil;
+//check
+if (xvars=nil) then exit;
+//init
+a:=bnew;
+//get
+if xsyssettings then xvars.d['_syssettings']:=syssettings.data;
+if xprgsettings then xvars.d['_prgsettings']:=prgsettings.data;
+if (sysprogram<>nil) then
+   begin
+   if xwidth       then xvars.i['_width']:=frcmin(sysprogram.rootwin.clientwidth,0);
+   if xheight      then xvars.i['_height']:=frcmin(sysprogram.rootwin.clientheight,0);
+   end;
+if (xtitle<>'') then xvars.value['_title']:=xtitle;
+//.cursor
+if xcursor then
+   begin
+   //init
+   low__fromfile(low__platsysext('cur.inf'),a,e);
+   n:=low__lowercase(a.text);
+   //get
+   xvars.value['_curinf']:=n;
+   //.system cursor
+   if (n<>'default') and (n<>'custom') then
+      begin
+      low__fromfile(low__platsysext('cur'),a,e);
+      xvars.d['_syscur']:=a;
+      end
+   else xvars.value['_syscur']:='';
+   //.custom cursor
+   if (n='custom') then
+      begin
+      low__fromfile(low__platprgext('cur'),a,e);
+      xvars.d['_prgcur']:=a;
+      end
+   else xvars.value['_prgcur']:='';
+   end;
+except;end;
+try;freeobj(@a);except;end;
+end;
+//## master__size ##
+procedure master__size(swidth,sheight:longint;var dwidth,dheight:longint);//uses smore: "width" and "height"
+const
+   xmin=32;
+var
+   int1:longint;
+begin
+try
+//range
+int1:=frcmin(vizoom,1);
+swidth:=frcmin(swidth,xmin);
+sheight:=frcmin(sheight,xmin);
+//decide
+if not viMaster then
+   begin
+   if sysmore.found('_width')  then swidth:=frcmin(sysmore.i['_width'],xmin);
+   if sysmore.found('_height') then sheight:=frcmin(sysmore.i['_height'],xmin);
+   end;
+dwidth:=swidth div int1;
+dheight:=sheight div int1;
+except;end;
+end;
+//## master__title ##
+procedure master__title;//uses smore: "title"
+var
+   str1:string;
+begin
+try
+if (not viMaster) and (sysprogram<>nil) then
+   begin
+   str1:=sysmore.value['_title'];
+   if sysprogram.rootwin.xhavehead then sysprogram.rootwin.xhead.caption:=str1;
+   application.title:=str1;
+   end;
+except;end;
+end;
+//## master__cursor ##
+procedure master__cursor;//uses smore: "cursor"
+var
+   a:tstr8;
+   e:string;
+begin
+try
+//init
+a:=nil;
+if not viMaster then
+   begin
+   //init
+   a:=bnew;
+   //get
+   if sysmore.dget('_prgcur',a) and (a.len>=1) then low__tofile(low__platprgext('cur'),a,e);
+   if sysmore.dget('_syscur',a) and (a.len>=1) then low__tofile(low__platsysext('cur'),a,e);
+   low__tofile(low__platsysext('cur.inf'),sysmore.d['_curinf'],e);
+   end;
+except;end;
+try;bfree(a);except;end;
+end;
+//## master__cursorCLEAN ##
+procedure master__cursorCLEAN;
+begin
+try
+if not viMaster then
+   begin
+   low__remfile(low__platprgext('cur'));
+   low__remfile(low__platsysext('cur'));
+   low__remfile(low__platsysext('cur.inf'));
+   end;
+except;end;
+end;
+
+//-- PkZIP Archive Support - 10feb2023 -----------------------------------------
+//Note: At this stage 14jan2018 all files are packed WITHOUT compression
+//## zip_refOK ##
+function zip_refOK(xdata,xlist:tstr8):boolean;
+begin
+try
+result:=low__true2(block(xdata),block(xlist));
+if not result then
+   begin
+   bunlockautofree(xlist);
+   bunlockautofree(xdata);
+   end;
+except;end;
+end;
+//## zip_start ##
+function zip_start(xdata,xlist:tstr8):boolean;
+begin
+try
+result:=zip_refOK(xdata,xlist);
+if result then
+   begin
+   xlist.clear;
+   xdata.clear;
+   xdata.tag1:=0;//file count
+   xdata.tag2:=1;//indicated we are in write mode and ready
+   end;
+except;end;
+end;
+//## zip_stop ##
+function zip_stop(xdata,xlist:tstr8):boolean;
+var
+   xlen:longint;
+begin
+try
+result:=false;
+if zip_refOK(xdata,xlist) and (xdata.tag2=1) then//overview: add list -> signature(4) disk.number(2) disk.start(2) disk.entries(2) total.entries(2) xlist.size(4) xlist.startpos(4) comment.len(2)
+   begin
+   //init
+   xlen:=xlist.len;
+   //mark as stopped
+   xdata.tag2:=2;
+   //signature(4)  disk.number(2)  disk.start(2)
+   xlist.aadd([80,75,5,6,     0,0,            0,0]);
+   //disk.entries(2)
+   xlist.addwrd2(xdata.tag1);//file count
+   //total.entries(2)
+   xlist.addwrd2(xdata.tag1);//file count
+   //xlist.size(4)
+   xlist.addint4(xlen);
+   //xlist.startpos(4)
+   xlist.addint4(xdata.len);//was: xdata.tag2);//xlen1b
+   //comment.len(2)
+   xlist.aadd([0,0]);
+   //append to xdata
+   xdata.add(xlist);
+   xlist.clear;
+   //successful
+   result:=true;
+   end;
+except;end;
+end;
+//## zip_add ##
+function zip_add(xdata,xlist:tstr8;sname:string;sdata:tstr8):boolean;
+label
+   skipend;
+var
+   xcompressed:boolean;
+   xpos,nlen,dlen,dlen2,x32:longint;
+   e:string;
+begin
+try
+//defaults
+result:=false;
+//check
+if (not low__true2(block(sdata),zip_refOK(xdata,xlist))) or (xdata.tag2<>1) or (sname='') then goto skipend;
+//init
+//x32:=low__crc32seedable(sdata,0);//MS uses seed "0"
+nlen:=frcrange(length(sname),0,maxword);
+dlen:=sdata.len;
+x32:=low__crc32seedable(sdata,0);//MS uses seed "0"
+//.fast compress
+low__compress2(sdata,e,true,true);
+
+//.use compressed version if SMALLER than original - 11feb2023
+xcompressed:=(sdata.len<dlen);
+if xcompressed then
+   begin
+   xcompressed:=true;
+   sdata.del3(0,2);//remove leading 2 bytes
+   sdata.del3(sdata.len-4,4);//remove trailing 4 bytes
+   end
+else low__decompress(sdata,e);
+
+dlen2:=sdata.len;
+inc(xdata.tag1);//file count
+
+//add file - signature(4)  version(2)  flags(2)  no compression(2)  mod:time(2)  mod:date(2)  crc32(4)   comp.size(4)  decm.size(4)  filename.size(2) extras.size(2)  filename(n)  file.data(n2)
+xpos:=xdata.len;
+xdata.aadd([  80,75,3,4,    low__aorbbyte(10,20,xcompressed),0,      0,0,      low__aorbbyte(0,8,xcompressed),0,               0,0,         0,0]);
+xdata.addint4(x32);//crc32(4)
+xdata.addint4(dlen2);//data.size(4)
+xdata.addint4(dlen);//data.size(4)
+xdata.addwrd2(nlen);//name.size(2)
+xdata.addwrd2(0);//extras.size(2)
+xdata.addstr(sname);//sname
+xdata.add(sdata);//sdata
+
+//add list - signature(4)  version(2)  ver.needed  flags(2)  no compression(2)  mod:time(2)  mod:date(2)  crc32(4)   comp.size(4)  decm.size(4)  filename.size(2) extras.size(2)  file.comment.len(2)  disk.start(2)  Int.Attr(2)  Ext.Attr(4)  Offset.Local.Header(4)  filename(n)
+xlist.aadd([ 80,75,1,2,    low__aorbbyte(10,20,xcompressed),0,       low__aorbbyte(10,20,xcompressed),0,       0,0,      low__aorbbyte(0,8,xcompressed),0,               0,0,         0,0]);
+xlist.addint4(x32);//crc32(4)
+xlist.addint4(dlen2);//data.size(4)
+xlist.addint4(dlen);//data.size(4)
+xlist.addwrd2(nlen);//name.size(2)
+xlist.addwrd2(0);   //extras.size(2)
+xlist.addwrd2(0);   //comments.size(2)
+xlist.addwrd2(0);   //disk.start(2)
+xlist.aadd([1,0,  32,0,0,0]);//Int.Attr(2) + Ext.Attr(4)
+xlist.addint4(xpos);
+xlist.addstr(sname);
+
+//successful
+result:=true;
+skipend:
+except;end;
+try;bunlockautofree(sdata);except;end;
+end;
+
+
+{//xxxxxxxxxxxx
+//## zip_add ##
+function zip_add(xdata,xlist:tstr8;sname:string;sdata:tstr8):boolean;
+label
+   skipend;
+var
+   xpos,nlen,dlen,dlen2,x32:longint;
+   e:string;
+begin
+try
+//defaults
+result:=false;
+//check
+if (not low__true2(block(sdata),zip_refOK(xdata,xlist))) or (xdata.tag2<>1) or (sname='') then goto skipend;
+//init
+//x32:=low__crc32seedable(sdata,0);//MS uses seed "0"
+nlen:=frcrange(length(sname),0,maxword);
+dlen:=sdata.len;
+x32:=low__crc32seedable(sdata,0);//MS uses seed "0"
+dlen2:=sdata.len;
+inc(xdata.tag1);//file count
+
+//add file - signature(4)  version(2)  flags(2)  no compression(2)  mod:time(2)  mod:date(2)  crc32(4)   comp.size(4)  decm.size(4)  filename.size(2) extras.size(2)  filename(n)  file.data(n2)
+xpos:=xdata.len;
+xdata.aadd([  80,75,3,4,    20,0,      0,0,      0,0,               0,0,         0,0]);
+xdata.addint4(x32);//crc32(4)
+xdata.addint4(dlen2);//data.size(4)
+xdata.addint4(dlen);//data.size(4)
+xdata.addwrd2(nlen);//name.size(2)
+xdata.addwrd2(0);//extras.size(2)
+xdata.addstr(sname);//sname
+xdata.add(sdata);//sdata
+
+//add list - signature(4)  version(2)  ver.needed  flags(2)  no compression(2)  mod:time(2)  mod:date(2)  crc32(4)   comp.size(4)  decm.size(4)  filename.size(2) extras.size(2)  file.comment.len(2)  disk.start(2)  Int.Attr(2)  Ext.Attr(4)  Offset.Local.Header(4)  filename(n)
+xlist.aadd([ 80,75,1,2,    20,0,       20,0,       0,0,      0,0,               0,0,         0,0]);
+xlist.addint4(x32);//crc32(4)
+xlist.addint4(dlen2);//data.size(4)
+xlist.addint4(dlen);//data.size(4)
+xlist.addwrd2(nlen);//name.size(2)
+xlist.addwrd2(0);   //extras.size(2)
+xlist.addwrd2(0);   //comments.size(2)
+xlist.addwrd2(0);   //disk.start(2)
+xlist.aadd([1,0,  32,0,0,0]);//Int.Attr(2) + Ext.Attr(4)
+xlist.addint4(xpos);
+xlist.addstr(sname);
+
+//successful
+result:=true;
+skipend:
+except;end;
+try;bunlockautofree(sdata);except;end;
+end;
+{}
+//## zip_add2 ##
+function zip_add2(xdata,xlist:tstr8;sname:string;var sdata:string):boolean;
+begin
+try;result:=zip_add(xdata,xlist,sname,bcopystrall(sdata));except;end;
+end;
+//## zip_add3 ##
+function zip_add3(xdata,xlist:tstr8;sname,sdata:string):boolean;
+begin
+try;result:=zip_add(xdata,xlist,sname,bcopystrall(sdata));except;end;
+end;
+//## zip_addfromfile ##
+function zip_addfromfile(xdata,xlist:tstr8;sfilename:string):boolean;
+var
+   sdata:tstr8;
+   sname,e:string;
+begin
+try
+//defaults
+result:=false;
+sdata:=nil;
+//get
+if zip_refOK(xdata,xlist) and (sfilename<>'') then
+   begin
+   sname:=low__extractfilename(sfilename);
+   if (sname<>'') then
+      begin
+      sdata:=bnew;
+      if low__fromfile(sfilename,sdata,e) then result:=zip_add(xdata,xlist,sname,sdata);
+      end;
+   end;
+except;end;
+try;bfree(sdata);except;end;
+end;
+//## zip_addfromfolder ##
+function zip_addfromfolder(xdata,xlist:tstr8;xfolder,xmasklist,xemasklist:string):boolean;
+var
+   p:longint;
+   xfilelist:tdynamicstring;
+begin
+try
+//defaults
+result:=false;
+xfilelist:=nil;
+//get
+if zip_refOK(xdata,xlist) then
+   begin
+   //range
+   xfolder:=asfolder(xfolder);
+   //init
+   xfilelist:=tdynamicstring.create;
+   if low__filelist(xfilelist,false,xfolder,xmasklist,xemasklist) then
+      begin
+      //successful
+      result:=true;
+      //add each file
+      if (xfilelist.count>=1) then
+         begin
+         for p:=0 to (xfilelist.count-1) do
+         begin
+         if not zip_addfromfile(xdata,xlist,xfolder+xfilelist.value[p]) then
+            begin
+            result:=false;
+            break;
+            end;
+         end;//p
+         end;//if
+      end;
+   end;
+except;end;
+try;freeobj(@xfilelist);except;end;
+end;
+
 //-- Range Support -------------------------------------------------------------
+//## low__statictempname ##
+function low__statictempname(dpre,dpost,dpost2,dext:string):string;//static temp filenames - 30nov2023
+begin//no incremeting id -> same each time for the same program instance
+try;result:=low__plattemp+dpre+low__insstr('-',dpre<>'')+low__digpad11(system_instanceid,10)+low__insstr('-'+dpost,dpost<>'')+low__insstr('-'+dpost2,dpost2<>'')+low__insstr('.',dext<>'')+dext;except;end;
+end;
 //## low__newtempname ##
 function low__newtempname(dpre,dext:string):string;//temp filenames - 25jun2022
 begin
@@ -44296,6 +47457,13 @@ var
 begin
 try;z:=x;x:=y;y:=z;except;end;
 end;
+//## low__swapstr ##
+procedure low__swapstr(var x,y:string);//20nov2023
+var
+   z:string;
+begin
+try;z:=x;x:=y;y:=z;except;end;
+end;
 //## swapcomp ##
 procedure low__swapcomp(var x,y:comp);//07apr2016
 var
@@ -44314,6 +47482,20 @@ end;
 procedure low__swapext(var x,y:extended);//06JUN2007
 var
    z:extended;
+begin
+try;z:=x;x:=y;y:=z;except;end;
+end;
+//## low__swapstr8 ##
+procedure low__swapstr8(var x,y:tstr8);//07dec2023
+var
+   z:tstr8;
+begin
+try;z:=x;x:=y;y:=z;except;end;
+end;
+//## low__swapvars8 ##
+procedure low__swapvars8(var x,y:tvars8);//07dec2023
+var
+   z:tvars8;
 begin
 try;z:=x;x:=y;y:=z;except;end;
 end;
@@ -44484,6 +47666,17 @@ begin
 result:=0;
 a.val:=x;
 result:=(a.r+a.g+a.b) div 3;
+end;
+//## low__greyval ##
+function low__greyval(x:longint):longint;//18nov2023
+var
+   a:tint4;
+begin
+result:=0;
+a.val:=x;
+if (a.g>a.r) then a.r:=a.g;
+if (a.b>a.r) then a.r:=a.b;
+result:=a.r;
 end;
 //## low__focus3 ##
 function low__focus3(x:longint):longint;
@@ -44679,7 +47872,7 @@ end;
 except;end;
 end;
 //## low__hextorgba ##
-function low__hextorgba(sx:string;xdef:longint):longint;//27feb2021
+function low__hextorgba(sx:string;xdef:longint):longint;//17nov2023, 27feb2021
 label
    skipend;
 var
@@ -44709,12 +47902,19 @@ g:=0;
 b:=0;
 a:=0;
 //get
-if (strcopy1(x,1,1)='#') and (xlen>=5) and (xlen<9) then//e.g. "#ae93"
+if (strcopy1(x,1,1)='#') and (xlen>=5) and (xlen<7) then//e.g. "#ae93"
    begin
    r:=xval(strbyte1(x,2)*17);
    g:=xval(strbyte1(x,3)*17);
    b:=xval(strbyte1(x,4)*17);
    a:=xval(strbyte1(x,5)*17);
+   end
+else if (strcopy1(x,1,1)='#') and (xlen>=4) and (xlen<7) then//e.g. "#ae9" - alpha missing
+   begin
+   r:=xval(strbyte1(x,2)*17);
+   g:=xval(strbyte1(x,3)*17);
+   b:=xval(strbyte1(x,4)*17);
+   a:=255;
    end
 else if (strcopy1(x,1,1)='#') and (xlen>=9) then//e.g. "#aaee9933"
    begin
@@ -44723,12 +47923,26 @@ else if (strcopy1(x,1,1)='#') and (xlen>=9) then//e.g. "#aaee9933"
    b:=(xval(strbyte1(x,6))*16)+xval(strbyte1(x,7));
    a:=(xval(strbyte1(x,8))*16)+xval(strbyte1(x,9));
    end
-else if (xlen>=4) and (xlen<8) then//e.g. "ae93"
+else if (strcopy1(x,1,1)='#') and (xlen>=7) then//e.g. "#aaee99" - alpha missing
+   begin
+   r:=(xval(strbyte1(x,2))*16)+xval(strbyte1(x,3));
+   g:=(xval(strbyte1(x,4))*16)+xval(strbyte1(x,5));
+   b:=(xval(strbyte1(x,6))*16)+xval(strbyte1(x,7));
+   a:=255;
+   end
+else if (xlen>=4) and (xlen<7) then//e.g. "ae93"
    begin
    r:=xval(strbyte1(x,1)*17);
    g:=xval(strbyte1(x,2)*17);
    b:=xval(strbyte1(x,3)*17);
    a:=xval(strbyte1(x,4)*17);
+   end
+else if (xlen>=3) and (xlen<7) then//e.g. "ae9" - alpha missing
+   begin
+   r:=xval(strbyte1(x,1)*17);
+   g:=xval(strbyte1(x,2)*17);
+   b:=xval(strbyte1(x,3)*17);
+   a:=255;
    end
 else if (xlen>=8) then//e.g. "aaee9933"
    begin
@@ -44736,6 +47950,13 @@ else if (xlen>=8) then//e.g. "aaee9933"
    g:=(xval(strbyte1(x,3))*16)+xval(strbyte1(x,4));
    b:=(xval(strbyte1(x,5))*16)+xval(strbyte1(x,6));
    a:=(xval(strbyte1(x,7))*16)+xval(strbyte1(x,8));
+   end
+else if (xlen>=6) then//e.g. "aaee99" - missing alpha
+   begin
+   r:=(xval(strbyte1(x,1))*16)+xval(strbyte1(x,2));
+   g:=(xval(strbyte1(x,3))*16)+xval(strbyte1(x,4));
+   b:=(xval(strbyte1(x,5))*16)+xval(strbyte1(x,6));
+   a:=255;
    end
 else goto skipend;
 //set
@@ -45138,13 +48359,17 @@ else if (s=feReminders) then xcap('Reminders List')//09mar2022
 else if (s=feM3U) then xcap('Playlist')//20mar2022
 else if (s=feFootnote) then xcap('Footnote')//21mar2022
 else if (s=feCursorScript) then xcap('Cursor Script')//17may2022
+else if (s=feQuoter) then xcap('Quoter Document')//24dec2022
+else if (s=feQuoter2) then xcap('Quoter 2 Document')
 else if (s=feallfiles) then xcap('All Files')
 else if (s=fealldocs) then xcap('All Documents')
 else if (s=feallimgs) then xcap('All Images')
 else if (s=feallcurs) then xcap('All Cursors')
 else if (s=feallcurs2) then xcap('All Cursors')//22may2022
 else if (s=fealljpgs) then xcap('All JPEG Pictures')//03sep2021
-else if (s=febcs) then xcap(protect_text(16771558,'Blaiz Color Scheme'));
+else if (s=febcs) then xcap(protect_text(16771558,'Blaiz Color Scheme'))
+else if (s=fezip) then xcap('ZIP Archive')//10feb2023
+else if (s=feexe) then xcap('Application');//14nov2023
 except;end;
 end;
 //## low__forceext ##
@@ -45312,6 +48537,11 @@ end;
 function low__insstr(x:string;y:boolean):string;
 begin
 try;if y then result:=x else result:='';except;end;
+end;
+//## low__useonce ##
+function low__useonce(var x:string):string;//return value of x and clear x - 28dec2022
+begin
+try;result:=x;x:='';;except;end;
 end;
 //## low__repeatstr ##
 function low__repeatstr(x:string;xcount:longint):string;//15nov2022
@@ -45527,8 +48757,23 @@ if (sizeof(a)=sizeof(b)) then
    end;
 except;end;
 end;
+//## low__toggle ##
+procedure low__toggle(var x:boolean);
+begin
+x:=not x;
+end;
 //## aorb ##
 function low__aorb(a,b:longint;xuseb:boolean):longint;
+begin
+try;if xuseb then result:=b else result:=a;except;end;
+end;
+//## low__aorbrect ##
+function low__aorbrect(a,b:trect;xuseb:boolean):trect;//25nov2023
+begin
+try;if xuseb then result:=b else result:=a;except;end;
+end;
+//## low__aorbbyte ##
+function low__aorbbyte(a,b:byte;xuseb:boolean):byte;//11feb2023
 begin
 try;if xuseb then result:=b else result:=a;except;end;
 end;
@@ -45541,6 +48786,21 @@ end;
 function low__yes(x:boolean):string;//16sep2022
 begin
 try;result:=low__aorbstr('No','Yes',x);except;end;
+end;
+//## low__aorbimg ##
+function low__aorbimg(a,b:tbasicimage;xuseb:boolean):tbasicimage;//30nov2023
+begin
+try;if xuseb then result:=b else result:=a;except;end;
+end;
+//## low__aorbstr8 ##
+function low__aorbstr8(a,b:tstr8;xuseb:boolean):tstr8;//06dec2023
+begin
+try;if xuseb then result:=b else result:=a;except;end;
+end;
+//## low__aorbvars8 ##
+function low__aorbvars8(a,b:tvars8;xuseb:boolean):tvars8;//06dec2023
+begin
+try;if xuseb then result:=b else result:=a;except;end;
 end;
 //## low__aorbstr ##
 function low__aorbstr(a,b:string;xuseb:boolean):string;
@@ -45854,6 +49114,16 @@ result.g:=g;
 result.b:=b;
 except;end;
 end;
+//## low__rgba32 ##
+function low__rgba32(r,g,b,a:byte):tcolor32;//25nov2023
+begin
+try
+result.r:=r;
+result.g:=g;
+result.b:=b;
+result.a:=a;
+except;end;
+end;
 //## low__rgba ##
 function low__rgba(r,g,b,a:byte):longint;
 var
@@ -45881,6 +49151,86 @@ result.r:=x.r;
 result.g:=x.g;
 result.b:=x.b;
 result.a:=xa;
+end;
+//## ppBlend32 ##
+function ppBlend32(var s,snew:tcolor32):boolean;//color / pixel processor - 30nov2023
+var//250ms -> 235ms -> 218ms -> 204ms per 10,000,000 calls
+   v1,v2,da,daBIG:longint;
+begin
+//defaults
+result:=false;
+//decide
+if (snew.a=0) then exit
+else if (snew.a=255) then
+   begin
+   result:=true;
+   s:=snew;
+   exit;
+   end;
+//get
+v1:=snew.a*255;
+v2:=s.a*(255-snew.a);
+da:=snew.a + (v2 div 255);//must div by 255 exactly, otherwise subtle color loss creeps in damaging the image
+daBIG:=v1 + v2;
+s.r:=( (snew.r*v1) + (s.r*v2) ) div daBIG;
+s.g:=( (snew.g*v1) + (s.g*v2) ) div daBIG;
+s.b:=( (snew.b*v1) + (s.b*v2) ) div daBIG;
+s.a:=da;
+//successful
+result:=true;
+end;
+{
+//----------------------------------------------------------------------START---
+//reference for ppBlend32 - original floating point algorithms
+var//250ms -> 235ms -> 218ms -> 204ms per 10,000,000 calls
+   sr,sg,sb,sa,nr,ng,nb,na,dr,dg,db,da:extended;
+begin
+//defaults
+result:=false;
+//decide
+if (snew.a=0) then exit
+else if (snew.a=255) then
+   begin
+   result:=true;
+   s:=snew;
+   exit;
+   end;
+//init
+//.n
+nr:=snew.r / 255;
+ng:=snew.g / 255;
+nb:=snew.b / 255;
+na:=snew.a / 255;
+//.s
+sr:=s.r / 255;
+sg:=s.g / 255;
+sb:=s.b / 255;
+sa:=s.a / 255;
+
+da:=na + (sa*(1-na));
+dr:=( (nr*na) + (sr*sa*(1-na)) ) / da;
+dg:=( (ng*na) + (sg*sa*(1-na)) ) / da;
+db:=( (nb*na) + (sb*sa*(1-na)) ) / da;
+
+s.r:=round(dr*255);
+s.g:=round(dg*255);
+s.b:=round(db*255);
+s.a:=round(da*255);
+//------------------------------------------------------------------------END---
+{}
+//## ppBlendColor32 ##
+function ppBlendColor32(var s,snew:tcolor32):boolean;//color blending / pixel processor - 01dec2023
+begin
+//defaults
+result:=false;
+//check
+if (s.a=0) or (snew.a=0) then exit;
+//get
+s.r:=((snew.r*snew.a) + (s.r*(255-snew.a))) div 255;
+s.g:=((snew.g*snew.a) + (s.g*(255-snew.a))) div 255;
+s.b:=((snew.b*snew.a) + (s.b*(255-snew.a))) div 255;
+//successful
+result:=true;
 end;
 //## low__colbright ##
 function low__colbright(x:longint):longint;
@@ -45928,6 +49278,11 @@ function low__compare24(s,d:tcolor24):boolean;
 begin
 result:=(s.r=d.r) and (s.g=d.g) and (s.b=d.b);
 end;
+//## low__compare32 ##
+function low__compare32(s,d:tcolor32):boolean;
+begin
+result:=(s.r=d.r) and (s.g=d.g) and (s.b=d.b) and (s.a=d.a);
+end;
 //## low__rgbsplice24 ##
 function low__rgbsplice24(xpert:extended;s,d:tcolor24):tcolor24;//17may2022
 var//xpert range is 0..1 (0=0% and 0.5=50% and 1=100%)
@@ -45952,6 +49307,36 @@ result.g:=v;
 v:=round((d.b*xpert)+(s.b*p2));
 if (v<0) then v:=0 else if (v>255) then v:=255;
 result.b:=v;
+except;end;
+end;
+//## low__rgbsplice32 ##
+function low__rgbsplice32(xpert:extended;s,d:tcolor32):tcolor32;//06dec2023
+var//xpert range is 0..1 (0=0% and 0.5=50% and 1=100%)
+   p2:extended;
+   v:longint;
+begin
+try
+//defaults
+result:=s;
+//init
+if (xpert<0) then xpert:=0 else if (xpert>1) then xpert:=1;
+p2:=1-xpert;
+//r
+v:=round((d.r*xpert)+(s.r*p2));
+if (v<0) then v:=0 else if (v>255) then v:=255;
+result.r:=v;
+//g
+v:=round((d.g*xpert)+(s.g*p2));
+if (v<0) then v:=0 else if (v>255) then v:=255;
+result.g:=v;
+//b
+v:=round((d.b*xpert)+(s.b*p2));
+if (v<0) then v:=0 else if (v>255) then v:=255;
+result.b:=v;
+//a
+v:=round((d.a*xpert)+(s.a*p2));
+if (v<0) then v:=0 else if (v>255) then v:=255;
+result.a:=v;
 except;end;
 end;
 //## low__sc ##
@@ -46068,50 +49453,16 @@ a.val:=x;
 result.r:=a.r;
 result.g:=a.g;
 result.b:=a.b;
-result.a:=a.b;
+result.a:=a.a;//fixed - 17nov2023
 except;end;
-end;
-//## low__blendcolor32 ##
-procedure low__blendcolor32(var f,b:tcolor32);//7,703ms -> 6,047ms -> 5,782ms -> 5,234 -> 3,781ms -> 3,875ms
-var//Note: Blends two 32bit colors together at high-speed. Output color
-   //      is written into "b" wiping previous contents - 01jul2021
-   //Works perfectly - 01jul2021
-   ba,v:longint;
-   ff,bb:double;
-begin
-if (f.a>=255) then
-   begin
-   b.r:=f.r;
-   b.g:=f.g;
-   b.b:=f.b;
-   b.a:=f.a;
-   exit;
-   end
-else if (f.a<=0) then exit;
-ba:=b.a;
-b.a:=255-round((255-f.a)*(255-ba)*0.0039215);//slightly faster than using a "div 255" - 01jul2021
-if (b.a<=0) then
-   begin
-   b.r:=0;
-   b.g:=0;
-   b.b:=0;
-   b.a:=0;
-   exit;
-   end;
-ff:=f.a/b.a;
-bb:=ba*(255-f.a)/(b.a*255);
-//.r
-v:=round( (f.r*ff) + (b.r*bb) );
-if (v>255) then b.r:=255 else b.r:=v;
-//.g
-v:=round( (f.g*ff) + (b.g*bb) );
-if (v>255) then b.g:=255 else b.g:=v;
-//.b
-v:=round( (f.b*ff) + (b.b*bb) );
-if (v>255) then b.b:=255 else b.b:=v;
 end;
 //## low__iseven ##
 function low__iseven(x:longint):boolean;
+begin//no error handling for maximum speed - 28mar2020
+result:=(x=((x div 2)*2));
+end;
+//## low__even ##
+function low__even(x:longint):boolean;
 begin//no error handling for maximum speed - 28mar2020
 result:=(x=((x div 2)*2));
 end;
@@ -46661,9 +50012,17 @@ begin
 result:=rect(0,0,-1,-1);
 end;
 //## maxarea ##
-function maxarea:trect;//27jul2021
+function maxarea:trect;//02dec2023, 27jul2021
 begin//allow for graphics sub-procs to have room with their maths -> don't push it too near to "maxint-1" - 28jul2021
-result:=rect(0,0,maxint-1000,maxint-1000);
+result:=rect(0,0,maxint-100000,maxint-100000);//allow 100k numeric void
+end;
+//## noarea ##
+function noarea:trect;//sets area to maximum inverse values - 19nov2023
+begin
+result.right    :=minint;
+result.left     :=maxint;
+result.top      :=maxint;
+result.bottom   :=minint;
 end;
 //## validrect ##
 function validrect(x:trect):boolean;
@@ -46676,13 +50035,22 @@ begin
 result:=(x.left<=x.right) and (x.top<=x.bottom);
 end;
 //## low__shiftarea ##
-function low__shiftarea(xarea:trect;xshiftx,xshifty:longint):trect;
+function low__shiftarea(xarea:trect;xshiftx,xshifty:longint):trect;//always shift
+begin
+try;result:=low__shiftarea2(xarea,xshiftx,xshifty,false);except;end;
+end;
+//## low__shiftarea2 ##
+function low__shiftarea2(xarea:trect;xshiftx,xshifty:longint;xvalidcheck:boolean):trect;//xvalidcheck=true=shift only if valid area, false=shift always
 begin
 try
-result.left:=xarea.left+xshiftx;
-result.right:=xarea.right+xshiftx;
-result.top:=xarea.top+xshifty;
-result.bottom:=xarea.bottom+xshifty;
+result:=xarea;
+if (not xvalidcheck) or validarea(xarea) then
+   begin
+   inc(result.left,xshiftx);
+   inc(result.right,xshiftx);
+   inc(result.top,xshifty);
+   inc(result.bottom,xshifty);
+   end;
 except;end;
 end;
 //## low__withinrect ##
@@ -46710,6 +50078,27 @@ result.right:=xright;
 result.bottom:=xbottom;
 except;end;
 end;
+//## low__rectclip ##
+function low__rectclip(clip_rect,s:trect):trect;//21nov2023
+begin
+try
+//defaults
+result:=s;
+//check
+if (s.left>clip_rect.right) or (s.right<clip_rect.left) or (s.top>clip_rect.bottom) or (s.bottom<clip_rect.top) or (s.right<s.left) or (s.bottom<s.top) or (clip_rect.right<clip_rect.left) or (clip_rect.bottom<clip_rect.top) then
+   begin
+   result:=nilrect;
+   exit;
+   end;
+//range
+result.left      :=frcrange(result.left,clip_rect.left,clip_rect.right);
+result.right     :=frcrange(result.right,clip_rect.left,clip_rect.right);
+result.top       :=frcrange(result.top,clip_rect.top,clip_rect.bottom);
+result.bottom    :=frcrange(result.bottom,clip_rect.top,clip_rect.bottom);
+//check
+if (result.right<result.left) or (result.bottom<result.top) then result:=nilrect;
+except;end;
+end;
 //## low__rectgrow ##
 function low__rectgrow(x:trect;xby:longint):trect;//07apr2021
 begin
@@ -46726,7 +50115,7 @@ begin
 try;result:='rect('+inttostr(x.left)+','+inttostr(x.top)+','+inttostr(x.right)+','+inttostr(x.bottom)+') and '+inttostr(x.right-x.left+1)+'w x '+inttostr(x.bottom-x.top+1)+'h';except;end;
 end;
 //## low__ref32u ##
-function low__ref32u(x:string):longint;{1..32}
+function low__ref32u(x:string):longint;//1..32 - 04feb2023
 var//Fast: 180% faster
    v:byte;
    p,xlen:longint;
@@ -46747,6 +50136,8 @@ if (v>=97) and (v<=122) then dec(v,32);
 //inc
 result:=result+p4INT32[p]*v;
 end;//p
+//check
+if (result=0) then result:=1;//never zero - 04feb2023
 except;end;
 end;
 //## ref256 ##
@@ -49093,6 +52484,25 @@ if (lgfINDEX>=0) and (lgfINDEX<=high(x.lgfdata)) and (x.initstate='inited') then
    end;
 except;end;
 end;
+//## low__wordcore__fontonevals ##
+procedure low__wordcore__fontonevals(var x:twordcore;var xfontname:string;var xfontsize:longint);//04feb2023
+begin
+try
+//defaults
+if (xfontname='') then xfontname:='$fontname';
+if (xfontsize<4)  then xfontsize:=10;
+//check
+if not low__wordcore__inited(x) then exit;
+//fontsize
+case x.onefontsize of
+0:xfontsize:=frcrange(viFontsize,4,300);
+1:xfontsize:=frcrange(viFontsize2,4,300);
+2..maxint:xfontsize:=frcrange(x.onefontsize,4,300);
+end;//case
+//fontname
+low__findfontname(xfontname,xfontname);
+except;end;
+end;
 //## low__wordcore__style ##
 function low__wordcore__style(x:char):char;
 begin
@@ -49139,7 +52549,7 @@ var
    //## xcharok ##
    function xcharok(xpos:longint):boolean;
    begin
-   result:=low__wordcore__charinfo(x,xpos,xout) and (xout.cs=wc_t);
+   result:=low__wordcore__charinfo(x,xpos,1,xout) and (xout.cs=wc_t);
    end;
    //## ddelskipped ##
    procedure ddelskipped;
@@ -49593,7 +53003,7 @@ except;end;
 try;bunlockautofree(x);except;end;
 end;
 //## low__wordcore__charinfo ##
-function low__wordcore__charinfo(var x:twordcore;xpos:longint;var xout:twordcharinfo):boolean;
+function low__wordcore__charinfo(var x:twordcore;xpos,xlinespacing:longint;var xout:twordcharinfo):boolean;
 var
    wrd2:twrd2;
    xzoom:longint;
@@ -49637,6 +53047,12 @@ if zzok(x.data,7050) and (xpos>=1) and (xpos<=x.data.len) then
       //.height
       xout.height   :=low__fromLGF_height (x.lgfdata[xout.txtid]);
       xout.height1  :=low__fromLGF_height1(x.lgfdata[xout.txtid]);
+      //.line spacing
+      if (xlinespacing>=2) then
+         begin
+         xout.height:=xout.height*xlinespacing;
+         xout.height1:=xout.height1*xlinespacing;
+         end;
       //.width
       if      (xout.c=9)  then xout.width:=5*low__fromLGF_charw(x.lgfdata[xout.txtid],32)
       else if (xout.c=10) then xout.width:=0//return code -> no width
@@ -49650,6 +53066,12 @@ if zzok(x.data,7050) and (xpos>=1) and (xpos<=x.data.len) then
       xout.width    :=x.imgw[xout.wid]*xzoom; if (xout.width<1) then xout.width:=1;
       xout.height   :=x.imgh[xout.wid]*xzoom; if (xout.height<1) then xout.height:=1;
       xout.height1  :=xout.height;
+      //.line spacing
+      if (x.olinespacing>=2) then
+         begin
+         //xout.height:=xout.height*x.olinespacing;
+         //xout.height1:=xout.height1*x.olinespacing;
+         end;
       end
    //.nil
    else
@@ -49665,7 +53087,7 @@ if zzok(x.data,7050) and (xpos>=1) and (xpos<=x.data.len) then
 except;end;
 end;
 //## low__wordcore__charinfo2 ##
-function low__wordcore__charinfo2(var x:twordcore;d1,d2,d3:tstr8;xpos:longint;var xout:twordcharinfo):boolean;
+function low__wordcore__charinfo2(var x:twordcore;d1,d2,d3:tstr8;xpos,xlinespacing:longint;var xout:twordcharinfo):boolean;
 var
    wrd2:twrd2;
    xzoom:longint;
@@ -49711,6 +53133,12 @@ if zzok(d1,7050) and (xpos>=1) and (xpos<=d1.len) then
       //.height
       xout.height   :=low__fromLGF_height (x.lgfdata[xout.txtid]);
       xout.height1  :=low__fromLGF_height1(x.lgfdata[xout.txtid]);
+      //.line spacing
+      if (xlinespacing>=2) then
+         begin
+         xout.height:=xout.height*xlinespacing;
+         xout.height1:=xout.height1*xlinespacing;
+         end;
       //.width
       if      (xout.c=9)  then xout.width:=5*low__fromLGF_charw(x.lgfdata[xout.txtid],32)
       else if (xout.c=10) then xout.width:=0//return code -> no width
@@ -49724,6 +53152,12 @@ if zzok(d1,7050) and (xpos>=1) and (xpos<=d1.len) then
       xout.width    :=x.imgw[xout.wid]*xzoom; if (xout.width<1) then xout.width:=1;
       xout.height   :=x.imgh[xout.wid]*xzoom; if (xout.height<1) then xout.height:=1;
       xout.height1  :=xout.height;
+      //.line spacing
+      if (x.olinespacing>=2) then
+         begin
+         //xout.height:=xout.height*x.olinespacing;
+         //xout.height1:=xout.height1*x.olinespacing;
+         end;
       end
    //.nil
    else
@@ -49794,7 +53228,7 @@ end;//p
 except;end;
 end;
 //## low__wordcore__charinfoULTRA ##
-function low__wordcore__charinfoULTRA(var x:twordcore;xpos:longint;var xout:twordcharinfo;var xlastWID,xlastWID2:longint):boolean;//12jun2022 (7.30pm), 22apr2022
+function low__wordcore__charinfoULTRA(var x:twordcore;xpos,xlinespacing:longint;var xout:twordcharinfo;var xlastWID,xlastWID2:longint):boolean;//12jun2022 (7.30pm), 22apr2022
 var
    wrd2:twrd2;
    xzoom:longint;
@@ -49827,6 +53261,12 @@ if zzok(x.data,7050) and (xpos>=1) and (xpos<=x.data.len) then
          xlastWID2:=xout.txtid;
          xout.height   :=low__fromLGF_height (x.lgfdata[xout.txtid]);
          xout.height1  :=low__fromLGF_height1(x.lgfdata[xout.txtid]);
+         //line spacing
+         if (xlinespacing>=2) then
+            begin
+            xout.height:=xout.height*xlinespacing;
+            xout.height1:=xout.height1*xlinespacing;
+            end;
          end;
       //.width
       if      (xout.c=9)  then xout.width:=5*low__fromLGF_charw(x.lgfdata[xout.txtid],32)
@@ -49843,6 +53283,12 @@ if zzok(x.data,7050) and (xpos>=1) and (xpos<=x.data.len) then
          xout.width    :=x.imgw[xout.wid]*xzoom; if (xout.width<1) then xout.width:=1;
          xout.height   :=x.imgh[xout.wid]*xzoom; if (xout.height<1) then xout.height:=1;
          xout.height1  :=xout.height;
+         //line spacing
+         if (x.olinespacing>=2) then
+            begin
+            //xout.height:=xout.height*x.olinespacing;
+            //xout.height1:=xout.height1*x.olinespacing;
+            end;
          end;
       xlastWID2:=-1;//reset the text id handler
       end
@@ -49862,7 +53308,7 @@ if zzok(x.data,7050) and (xpos>=1) and (xpos<=x.data.len) then
    end;//if
 end;
 //## low__wordcore__charinfoFAST ##
-function low__wordcore__charinfoFAST(var x:twordcore;xpos:longint;var xout:twordcharinfo):boolean;
+function low__wordcore__charinfoFAST(var x:twordcore;xpos,xlinespacing:longint;var xout:twordcharinfo):boolean;
 var
    wrd2:twrd2;
 begin
@@ -49960,21 +53406,21 @@ if (xwid>=0) and (xwid<=high(x.txtname)) then
 except;end;
 end;
 //## low__wordcore__paint2432 ##
-function low__wordcore__paint2432(var x:twordcore;aw,ah:longint;xcliparea,xpaintarea:trect;ar24:pcolorrows24;ar32:pcolorrows32;xdebug:tbmp;xmask:tmask8;xmaskval:longint;xround:boolean;xroundstyle,xrowcolor:longint):boolean;//19apr2021
+function low__wordcore__paint2432(var x:twordcore;aw,ah:longint;xcliparea,xpaintarea:trect;ar24:pcolorrows24;ar32:pcolorrows32;xdebug:tbmp;xmask:tmask8;xmaskval:longint;xround:boolean;xroundstyle,xrowcolor:longint):boolean;//04feb2023, 19apr2021
 label//Note: acanvas is optional -> for debug purposes only - 29aug2019
    skipchar,redo,skipdone,skipend;
 var
    xstr1:tstr8;
    xchar,xcur:twordcharinfo;
-   xlastWID,xlastWID2,xzoom,hpos,vpos,ax,ay,xselstart,xselcount,sel1,sel2,int1,intPART1,lx,ly,lh,lh1,xpos,xcount,lpos,lp,lc,xlen,p,dx,dy,sx,sy,sw,sh:longint;
+   xwrapstyle,xlinespacing,xlastWID,xlastWID2,xzoom,hpos,vpos,ax,ay,xselstart,xselcount,sel1,sel2,int1,intPART1,lx,ly,lh,lh1,xpos,xcount,lpos,lp,lc,xlen,p,dx,dy,sx,sy,sw,sh:longint;
    mr8:pcolorrows8;
    xfc:tstr8;
    xc,xc2,crowback24,c24:tcolor24;
    crowback32,c32:tcolor32;
    xselcol,xselcol2,int4:tint4;
    xurlpos,xurlpos2,xpagecolor,xpagefontselcolor,xpageselcolorX,xpageselcolor,xpagefontcolor2,xpagecolor2:longint;
-   finv,xcoloriseOK,xpagecolorise2,xpageoverride2,bol1,bol2,bol3,xrowok,xcursoronscrn:boolean;
-   acliparea:trect;
+   dspell,finv,xcoloriseOK,xpagecolorise2,xpageoverride2,bol1,bol2,bol3,xrowok,xcursoronscrn:boolean;
+   tmparea,acliparea:trect;
    //## xdrawrow ##
    procedure xdrawrow;
    var
@@ -50622,7 +54068,7 @@ var
       //before
       xlastWID:=-1;
       xlastWID2:=-1;
-      if low__wordcore__charinfoULTRA(x,xpos-1,xchar,xlastWID,xlastWID2) and (xchar.c>ssSpace) then
+      if low__wordcore__charinfoULTRA(x,xpos-1,1,xchar,xlastWID,xlastWID2) and (xchar.c>ssSpace) then
          begin
          v1:=-1;
          v2:=-1;
@@ -50633,7 +54079,7 @@ var
       xlastWID2:=-1;
       for p:=xpos to (xpos+999) do
       begin
-      if not low__wordcore__charinfoULTRA(x,p,xchar,xlastWID,xlastWID2) then
+      if not low__wordcore__charinfoULTRA(x,p,1,xchar,xlastWID,xlastWID2) then
          begin
          v2:=frcmin(p-1,0);
          break;
@@ -50728,6 +54174,8 @@ if (xrowcolor<>clnone) then
 
 //init
 //.continue
+xwrapstyle:=x.wrapstyle;
+xlinespacing:=frcmin(x.olinespacing,1);
 xselcol.val:=x.pageselcolor;
 xselcol2.val:=low__dc(x.pageselcolor,-35);
 xpagefontselcolor:=x.pagefontselcolor;
@@ -50830,8 +54278,7 @@ if (p>x.wrapcount) then
    goto skipdone;
    end;
 //.get char
-//was: if not low__wordcore__charinfo(x,p,xchar) then goto skipdone;
-if not low__wordcore__charinfoULTRA(x,p,xchar,xlastWID,xlastWID2) then goto skipdone;//FASTER - 19jun2022
+if not low__wordcore__charinfoULTRA(x,p,1,xchar,xlastWID,xlastWID2) then goto skipdone;//FASTER - 19jun2022
 sy:=ly+lh1-xchar.height1;
 if ((sx+xchar.width)<acliparea.left) then goto skipchar;
 
@@ -50890,7 +54337,8 @@ if (xchar.cs=wc_t) then
             end
          else int1:=low__wordcore__txtcolor(x,xchar.wid);
          //.draw
-         low__fromLGF_drawchar2432(x.lgfdata[xchar.txtid],ord(xchar.c),sx,sy,aw,ah,int1,acliparea,acliparea,ar24,ar32,xmask,xmaskval,xfc,x.feather,false,x.txtitalic[xchar.wid],x.txtunderline[xchar.wid],(p>=xurlpos) and (p<=xurlpos2),x.txtstrikeout[xchar.wid],xround,xroundstyle);
+         dspell:=x.odic and x.dicshow and (p>=x.dicfrom) and (p<=x.dicto);
+         low__fromLGF_drawchar2432(x.lgfdata[xchar.txtid],ord(xchar.c),sx,sy,aw,ah,int1,acliparea,acliparea,ar24,ar32,xmask,xmaskval,xfc,x.feather,false,x.txtitalic[xchar.wid],x.txtunderline[xchar.wid],(p>=xurlpos) and (p<=xurlpos2),x.txtstrikeout[xchar.wid],dspell,xround,xroundstyle);
          end;
       end;
    end
@@ -50903,7 +54351,7 @@ else if (xchar.cs=wc_i) then
   end;
 
 skipchar:
-//.draw cursor -> mask support as of 26aug2020
+//.draw cursor -> mask support as of 04feb2023, 26aug2020
 if (p=x.cursorpos) then
    begin
    xcursoronscrn:=true;
@@ -50916,9 +54364,10 @@ if (p=x.cursorpos) then
       if (dx>=acliparea.left) and (dx<=acliparea.right) then
          begin
          //init
-         if low__wordcore__charinfo(x,frcmin(p-1,1),xcur) then
+         if low__wordcore__charinfo(x,frcmin(p-1,1),1,xcur) then
             begin
-            int1:=ly+lh1-xcur.height1;
+            int1:=ly+lh1-xcur.height1;//04feb2023
+
             //get
             if (ar24<>nil) then
                begin
@@ -51002,6 +54451,127 @@ a.addbol1(xmouseright);
 low__wordcore(x,'mstack',a);
 except;end;
 end;
+//## low__wordcore_find ##
+function low__wordcore_find(var s:twordcore;xtext,xcmd:string):boolean;
+label
+   redo,skipend;
+var
+   xpos,p,xlen,xtextlen:longint;
+   v,v1,v2:byte;
+begin
+try
+//defaults
+result:=false;
+//check
+if (not low__wordcore__inited(s)) or (xtext='') then exit;
+//filter
+xcmd:=low__lowercase(xcmd);
+//init
+xlen:=blen(s.data);
+xtextlen:=length(xtext);
+v1:=strbyte1(xtext,1);
+v2:=v1;
+if      (v1>=uua) and (v1<=uuz) then v2:=v1+vvUppertolower
+else if (v1>=lla) and (v1<=llz) then v2:=v1-vvUppertolower;
+xpos:=frcmin(low__wordcore_str2(s,'cursorpos','')-1,0);
+//check
+if (xlen<xtextlen) or (xpos>=xlen) then goto skipend;
+//find
+redo:
+if (xpos<xlen) then
+   begin
+   v:=s.data.bytes[xpos];
+   if ((v=v1) or (v=v2)) and low__comparetext(s.data.str[xpos,xtextlen],xtext) then
+      begin
+      result:=true;
+      low__wordcore_str(s,'cursorpos' ,inttostr(1+xpos+xtextlen));
+      low__wordcore_str(s,'cursorpos2',inttostr(1+xpos));
+      goto skipend;
+      end;
+   end;
+//inc
+inc(xpos);
+if (xpos<xlen) then goto redo;
+
+skipend:
+if not result then sysfind_cmd:='find.finished';
+except;end;
+end;
+//## low__wordcore_backup ##
+procedure low__wordcore_backup(var s:twordcore;xcap:string);
+var
+   p:longint;
+   df,e,str2,dname,dext:string;
+   xdata:tstr8;
+begin
+try
+//defaults
+xdata:=nil;
+//check
+if (not low__wordcore__inited(s)) or (not s.obackup) then exit;
+//init
+case low__wordcore__findformatlevel(s) of//0=txt (plaintext), 1=bwd, 2=bwp
+0:dext:='txt';
+1:dext:='bwd';
+2:dext:='bwp';
+else dext:='bwp';
+end;
+//get
+xdata:=bnew;
+if low__wordcore4(s,'ioget',bcopystr1(low__udv(dext,'txt')+' all',1,maxint),xdata,str2,e) then
+   begin
+   //init
+   if (s.obackupname<>'') then dname:=remlastext(safename(low__extractfilename(s.obackupname))) else dname:='';
+   //get
+   low__tofile(low__backupfilename(dname+'.'+dext),xdata,e);//25feb2023
+   low__iroll(systrack_backupcount,1);//12feb2023
+   end;
+except;end;
+try;bfree(xdata);except;end;
+end;
+//## low__wordcore_docchar ##
+function low__wordcore_docchar(var s:twordcore;i:longint):byte;//slow, mainly for dic support - 05feb2023
+var
+   xc:twordcharinfo;
+begin
+if low__wordcore__charinfoFAST(s,i,1,xc) then result:=xc.c else result:=0;
+end;
+//## low__wordcore_docsep__ ##
+function low__wordcore_docsep__(var s:twordcore;i,xdepthcount:longint):boolean;//slow, mainly for dic support - 05feb2023
+var
+   x:byte;
+begin
+x:=low__wordcore_docchar(s,i);
+case x of
+0..38,40..47,58..64,91..96,123..191,247:result:=true;
+ssSingleQuote:result:=(xdepthcount>=3) or (low__wordcore_docsep__(s,i-1,xdepthcount+1) or low__wordcore_docsep__(s,i+1,xdepthcount+1));
+else result:=false;
+end;//case
+end;
+//## low__wordcore_docsep ##
+function low__wordcore_docsep(var s:twordcore;i:longint):boolean;//slow, mainly for dic support - 26feb2023, 05feb2023
+begin
+result:=low__wordcore_docsep__(s,i,0);
+end;
+//## low__wordcore_docsep2__ ##
+function low__wordcore_docsep2__(var s:twordcore;i,xdepthcount:longint;xsplitdash:boolean):boolean;//slow, mainly for dic support - 05feb2023
+var
+   x:byte;
+begin
+x:=low__wordcore_docchar(s,i);
+case x of
+0..38,40..44,46..47,58..64,91..96,123..191,247:result:=true;
+ssDash:result:=xsplitdash;
+ssSingleQuote:result:=(xdepthcount>=3) or (low__wordcore_docsep2__(s,i-1,xdepthcount+1,xsplitdash) or low__wordcore_docsep2__(s,i+1,xdepthcount+1,xsplitdash));
+else result:=false;
+end;//case
+//result:=(x<=ssSpace) or (x=ssSpace2) or (x=ssDot) or (x=ssComma) or (x=ssExclaim) or (x=ssQuestion) or (x=ssColon) or (x=ssSemicolon) or ((x=ssDash) and xsplitdash) or (x=ssDoubleQuote) or (x=ssSlash) or (x=ssBackslash) or ((x=ssSingleQuote) and (low__wordcore_docsep2(s,i-1,xsplitdash) or low__wordcore_docsep2(s,i+1,xsplitdash)));
+end;
+//## low__wordcore_docsep2 ##
+function low__wordcore_docsep2(var s:twordcore;i:longint;xsplitdash:boolean):boolean;//slow, mainly for dic support - 26feb2023, 05feb2023
+begin
+result:=low__wordcore_docsep2__(s,i,0,xsplitdash);
+end;
 //## low__wordcore ##
 function low__wordcore(var x:twordcore;xcmd:string;xval:tstr8):boolean;
 var
@@ -51079,6 +54649,12 @@ var
    if (xindex<0) then xindex:=0 else if (xindex>xmax) then xindex:=xmax;
    except;end;
    end;
+   //## xsafelineb ##
+   function xsafelineb(xindex:longint):longint;
+   begin
+   result:=xindex;
+   xsafeline(result);
+   end;
    //## xposTOx ##
    function xposTOx(xpos:longint;var dx,dx2:longint):boolean;
    var
@@ -51102,7 +54678,7 @@ var
       xmin:=x.linep[xline];
       for p:=xmin to blen(x.data) do
       begin
-      if not low__wordcore__charinfo(x,p,xchar) then break;
+      if not low__wordcore__charinfo(x,p,1,xchar) then break;
       dx2:=dx+xchar.width;//right side of cursor character
       if (p>=xpos) then break;
       inc(dx,xchar.width);
@@ -51220,6 +54796,11 @@ var
    x.mustpaint:=true;
    except;end;
    end;
+   //## xincdata3 ##
+   procedure xincdata3;//25dec2022
+   begin
+   try;if (x.dataid3<maxint) then inc(x.dataid3) else x.dataid3:=1;except;end;
+   end;
    //## xmakefont2 ##
    function xmakefont2(xoverride:boolean;xLGFdata_optional:tstr8;xfontname:string;xfontsize,xcolor,xbk,xborder:longint;xbold,xitalic,xunderline,xstrikeout:boolean;xalign:byte):longint;
    label
@@ -51319,6 +54900,7 @@ var
    if (i>=0) then x.txtid[result]:=i;
    //changed
    xchanged;
+   xincdata3;
    skipend:
    except;end;
    try;bunlockautofree(xLGFdata_optional);except;end;
@@ -51496,7 +55078,7 @@ var
    try
    //check
    xpos:=frcmin(x.cursorpos-1,0);
-   if not low__wordcore__charinfo(x,xpos,xchar) then exit;
+   if not low__wordcore__charinfo(x,xpos,1,xchar) then exit;
    //get
    x.cfontname    :=x.txtname[xchar.wid];
    x.cfontsize    :=x.txtsize[xchar.wid];
@@ -51534,7 +55116,7 @@ var
 //04jun2020
    for p:=xselstart to (xselstart+xselcount-1) do
    begin
-   if not low__wordcore__charinfo(x,p,xchar) then break;
+   if not low__wordcore__charinfo(x,p,1,xchar) then break;
    xtxt:=(xchar.cs=wc_t);
    ximg:=(xchar.cs=wc_i);
    if (xtxt or ximg) then
@@ -51605,6 +55187,7 @@ var
       xwrapadd(xlinebefore(xselstart),xselstart+x.c_bigwrap);//need to wrap ATLEAST current page, else flicker may occur due to multiple paint attempts - 07dec2019
       x.timer_chklinecursorx:=true;
       xchanged;
+      xincdata3;
       end;
    except;end;
    end;
@@ -51633,7 +55216,7 @@ var
 //04jun2020
    for p:=1 to blen(x.data) do
    begin
-   if not low__wordcore__charinfo(x,p,xchar) then break;
+   if not low__wordcore__charinfo(x,p,1,xchar) then break;
    xtxt:=(xchar.cs=wc_t);
    ximg:=(xchar.cs=wc_i);
    //.text only
@@ -51680,6 +55263,7 @@ var
       low__wordcore(x,'wrapall',nil);
       x.timer_chklinecursorx:=true;
       xchanged;
+      xincdata3;
       end;
    except;end;
    end;
@@ -51803,9 +55387,22 @@ var
    wwsNone   :result:=frcmin(x.widestline+3,x.viewwidth);//Note: +3px is a patch -> required to display last part of trailing char on line AND the 2px cursor - 27mar2021
    wwsWindow :result:=x.viewwidth;
    wwsPage   :result:=xmmTOpixels(x.paperwidth);//converts "paperwidth" which is in millimetres into pixels (e.g. for the screenat default dpi of 95) - 12mar2021
+   wwsPage2  :result:=xmmTOpixels(x.paperwidth);//converts "paperwidth" which is in millimetres into pixels (e.g. for the screenat default dpi of 95) - 12mar2021
    else       result:=x.viewwidth;
    end;//case
    x.pagewidth:=frcmin(result,0);
+   end;
+   //## xpageheight ##
+   function xpageheight:longint;
+   begin
+   case x.wrapstyle of
+   wwsNone   :result:=frcmin(x.viewheight,1);//Note: +3px is a patch -> required to display last part of trailing char on line AND the 2px cursor - 27mar2021
+   wwsWindow :result:=frcmin(x.viewheight,1);
+   wwsPage   :result:=xmmTOpixels(x.paperheight);//converts "paperwidth" which is in millimetres into pixels (e.g. for the screenat default dpi of 95) - 12mar2021
+   wwsPage2  :result:=xmmTOpixels(x.paperheight);//converts "paperwidth" which is in millimetres into pixels (e.g. for the screenat default dpi of 95) - 12mar2021
+   else       result:=frcmin(x.viewheight,1);
+   end;//case
+   x.pageheight:=frcmin(result,0);
    end;
    //## xwrap_hvsync_changed ##
    procedure xwrap_hvsync_changed;
@@ -51824,7 +55421,7 @@ var
       xlineblock=5000;//22apr2022
    var
       a:twordcharinfo;
-      awid,awid2,xwidestline,xwrapstyle,xlastalign,xdif,odx,olh1,olh2,lp,int1,sh2,p,ddx,dx,pw,ph,lc,lh1,lh2,lx,ly,xlen:longint;
+      xleftmargin,awid,awid2,xwidestline,xwrapstyle,xlastalign,xdif,odx,olh1,olh2,lp,int1,sh2,p,ddx,dx,pw,ph,lc,lh1,lh2,lx,ly,xlen:longint;
       lac:byte;
       xwrapNone:boolean;//14mar2021
       //## xmustbreak ##
@@ -51840,7 +55437,7 @@ var
       ddx:=dx;
       for i:=p to xmax do
       begin
-      low__wordcore__charinfo(x,i,a);
+      low__wordcore__charinfo(x,i,1,a);
       if (a.c=10) or (a.c=9) or (a.c=32) then break
       else if ((ddx+a.width)>=pw) then//and (a.c<>10) then
          begin
@@ -51877,8 +55474,9 @@ var
       if      (xalign=x.c_aligncentre) then result:=((pw-lx) div 2)
       else if (xalign=x.c_alignright)  then result:=pw-lx;
 {}
+
       //filter
-      result:=frcmin(result,0);
+      result:=frcmin(result+xleftmargin,0);
       end;
    begin
    try
@@ -51894,13 +55492,20 @@ var
    xmax:=frcrange(xmax,xmin,xlen);
    xwrapstyle:=x.wrapstyle;
    xwidestline:=x.widestline;
+   xleftmargin:=0;
    //init
    case xwrapstyle of
    wwsNone   :pw:=maxint-1000;//allow some math space
    wwsWindow :pw:=frcmin(x.viewwidth-3,0);//noticed the letter "r" on a Reminder paste prompt was beneath scrollbar border by 1-2px - 09mar2022
    wwsPage   :pw:=frcmin(xmmtopixels(x.paperwidth)-3,0);//09mar2022, 17mar2021
+   wwsPage2  :begin
+      int1:=xmmtopixels(x.paperwidth);
+      xleftmargin:=round(int1*0.2);
+      pw:=frcmin(int1-xleftmargin-3,0);//09mar2022, 17mar2021
+      end;
    else       pw:=frcmin(x.viewwidth-3,0);
    end;//case
+
    xwrapNone:=(xwrapstyle=wwsNone);//if "true" then disable align.modes, e.g. CENTER and RIGHT become offline - 14mar2021
    pw:=frcmin(pw,1);
    ph:=frcmin(x.pageheight,1);
@@ -51948,7 +55553,7 @@ redo:
    //init
    //was:
    //low__wordcore__charinfo(x,p,a);//very slow -> taking 6s for 6Mb, BUT ultra does it in 1s (6x faster!!!) - 22apr2022
-   low__wordcore__charinfoULTRA(x,p,a,awid,awid2);
+   low__wordcore__charinfoULTRA(x,p,x.olinespacing,a,awid,awid2);
    sh2:=a.height-a.height1;
    if (sh2<0) then sh2:=0;
    //.store line   [never break on #10] [line must have 1+ chars]
@@ -52024,6 +55629,7 @@ redo:
       begin
       x.widestline:=xwidestline;
       xpagewidth;
+      xpageheight;
       x.hhostsync:=true;
       end;
    except;end;
@@ -52085,6 +55691,7 @@ redo:
    if xmoveto then x.cursor_keyboard_moveto:=int1;
    x.timer_chklinecursorx:=true;
    xchanged;
+   xincdata3;
    except;end;
    end;
    //## xdelsel ##
@@ -52149,6 +55756,7 @@ redo:
    x.imgh[result]:=frcmin(dh,1);
    //changed
    xchanged;
+   xincdata3;
    skipend:
    except;end;
    try;bunlockautofree(ximgdata);except;end;//28jan2021
@@ -52265,7 +55873,7 @@ redo:
    //get
    for p:=1 to blen(x.data) do
    begin
-   if not low__wordcore__charinfo(x,p,xchar) then break;
+   if not low__wordcore__charinfo(x,p,1,xchar) then break;
    xtxt:=(xchar.cs=wc_t);
    ximg:=(xchar.cs=wc_i);
    //.text only
@@ -52284,6 +55892,7 @@ redo:
          x.data2.byt1[p-1]:=wrd2.bytes[0];
          x.data3.byt1[p-1]:=wrd2.bytes[1];
          xmustchange:=true;
+         xincdata3;
          end;
       end;
    end;//p
@@ -52311,7 +55920,7 @@ redo:
    //find start point
    for p:=x.cursorpos downto 1 do
    begin
-   if not low__wordcore__charinfo(x,p,xchar) then break
+   if not low__wordcore__charinfo(x,p,1,xchar) then break
 //was:   else if (xchar.cs<>wc_t) or ((xchar.c=ss10) or (xchar.c=ss9) or (xchar.c=ssSpace)) then break
    else if (xchar.cs<>wc_t) or (xchar.c<=ssSpace) then break
    else s:=p;
@@ -52321,7 +55930,7 @@ redo:
       begin
       for p:=s to x.data.len do
       begin
-      if not low__wordcore__charinfo(x,p,xchar) then break
+      if not low__wordcore__charinfo(x,p,1,xchar) then break
       //was: else if (xchar.cs<>wc_t) or ((xchar.c=ss10) or (xchar.c=ss9) or (xchar.c=ssSpace)) then break
       else if (xchar.cs<>wc_t) or (xchar.c<=ssSpace) then break
       else slen:=p-s+1;
@@ -52362,7 +55971,7 @@ redo:
    begin
    try
    result:=vpos;
-   if (not low__wordcore(x,'wrapdone',nil)) and (vpos>=low__aorb(x.linecount,x.totalheight,xpx)) then xwrapnow(0,blen(x.data),x.vpos);//xxxxxxxxxxxxxxxxx
+   if (not low__wordcore(x,'wrapdone',nil)) and (vpos>=low__aorb(x.linecount,x.totalheight,xpx)) then xwrapnow(0,blen(x.data),0);//by lines
    except;end;
    end;
    //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//444444444444444444444444444444444444
@@ -52847,7 +56456,6 @@ skipdone:
    x.mlen:=0;
    except;end;
    end;
-//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//77777777777777777777777
 //xxxxxxxxx
    //## mdok ##
    function mdok:boolean;
@@ -52858,6 +56466,11 @@ skipdone:
    function mmax:longint;
    begin
    result:=frcrange(x.mlimit-1,0,high(x.mn));
+   end;
+   //## mredoflush ##
+   function mredoflush:boolean;//true=flushed redo, false=nothing changed
+   begin
+   try;result:=x.menabled and low__mredoflush(x.mlist);except;end;
    end;
    //## mstore12 ##
    function mstore12(xuseslot:longint;xstoreRecovered:boolean):boolean;//27sep2022 fixed "no undo in use issue", multi-undo write
@@ -53149,6 +56762,7 @@ skipdone:
    x.mstyle :=musRecovered;
    x.timer_chklinecursorx:=true;
    xchanged;
+   xincdata3;
    //rewrite modified "replace" version back to same slot - 03jul2022
    if (xact=muaRep) then mstore12(xslot,true);
    //free
@@ -53185,6 +56799,10 @@ skipdone:
    xmaxp:=frcrange(xmaxp,1,blen(x.data));
    //check
    if (xmaxp<xminp) then exit;
+
+   //flush redo list - 02may2023
+   mredoflush;
+
    //m-undo - 28jun2022
    mstore1;//previous
    x.mstyle:=musRangekeep;
@@ -53194,7 +56812,7 @@ skipdone:
    //get
    for p:=xminp to xmaxp do
    begin
-   if not low__wordcore__charinfo(x,p,xchar) then break;
+   if not low__wordcore__charinfo(x,p,1,xchar) then break;
    if (xchar.cs=wc_t) and (xchar.c=10) then
       begin
       wrd2.val:=xmakefont2(true,nil,x.txtname[xchar.wid],x.txtsize[xchar.wid],x.txtcolor[xchar.wid],x.txtbk[xchar.wid],x.txtborder[xchar.wid],x.txtbold[xchar.wid],x.txtitalic[xchar.wid],x.txtunderline[xchar.wid],x.txtstrikeout[xchar.wid],x.calign);
@@ -53213,6 +56831,7 @@ skipdone:
       xwrapadd(xlinebefore(xminp),xmaxp+x.c_bigwrap);//need to wrap ATLEAST current page, else flicker may occur due to multiple paint attempts - 07dec2019
       x.timer_chklinecursorx:=true;
       xchanged;
+      xincdata3;
       end;
    except;end;
    end;
@@ -53326,6 +56945,11 @@ skipdone:
    result:=true;
    except;end;
    end;
+   //## xbackup ##
+   procedure xbackup(xcap:string);
+   begin
+   low__wordcore_backup(x,xcap);
+   end;
 begin
 try
 //defaults
@@ -53372,6 +56996,7 @@ if (xcmd='timer') then//special host driven call -> used by this proc to check k
          begin
          xwine_remakefonts;
          xpagewidth;
+         xpageheight;
          xwrap_hvsync_changed;
          end;
       //reset
@@ -53497,11 +57122,13 @@ if (xcmd='timer') then//special host driven call -> used by this proc to check k
                low__wordcore(x,'redo',nil);
                str1:='Redo';
                end                     //S
+{
             else if x.shortcuts and (c=83) and low__wordcore(x,'cansave',nil) then
                begin
                low__wordcore(x,'save',nil);
                str1:='Save';
                end
+{}//not used here
             //-- style shortcuts --      //N
             else if x.styleshortcuts and (c=78) and low__wordcore(x,'canstyle',nil) then
                begin
@@ -53576,11 +57203,9 @@ if (xcmd='timer') then//special host driven call -> used by this proc to check k
          vknext:     low__wordcore_str(x,'move','pagedown');
          vkhome:     low__wordcore_str(x,'move','home');
          vkend:      low__wordcore_str(x,'move','end');
-         {
-         vkf2:if canfind then find(true);//find up - 16aug2014
-         vkf3:if canfind then find(false);//find down - 16aug2014
-         vkf7:if (odic<>nil) then odic.spellstatus:=3;//find next spelling error - 19aug2014
-         {}//xxxxxxxxxx
+         vkF4:sysfind_cmd:='find.pop';
+         vkF3:sysfind_cmd:=low__aorbstr('find','find.pop',(sysfind_text=''));
+         vkF7:if x.odic then dic_spell(x);
          end;//case
          end
       //.standard character
@@ -53589,6 +57214,14 @@ if (xcmd='timer') then//special host driven call -> used by this proc to check k
 skipkeyboard:
    end;//while
 
+   //.find support
+   if (sysfind_handler=x.ofindhandler) and (sysfind_cmd='find') then
+      begin
+      sysfind_cmd:='';
+      low__wordcore_find(x,sysfind_text,'find');
+      end;
+
+   //.cursor alignment checkers
    xcursor_keyboard_moveto:=x.cursor_keyboard_moveto;       x.cursor_keyboard_moveto:=0;//take value and set to zero (off)
    xchklinecursorx:=x.timer_chklinecursorx;                 x.timer_chklinecursorx:=false;
 
@@ -53666,9 +57299,10 @@ skipkeyboard:
    //vhostsync -----------------------------------------------------------------
    if (x.vpos>=x.linecount) then
       begin
-      low__wordcore_str(x,'vpos',inttostr(x.linecount-1));
+      //Note: Required when not using "vpos.px" -> e.g. "basicbwp.vsmooth:=false"
+      //was: low__wordcore_str(x,'vpos',inttostr(x.linecount-1));
+      low__wordcore_str(x,'vpos.px',inttostr(xsafelineb(x.vpos)));//must use "vpos.px" for accurate reposition - 06feb2023
       end;
-
 
    if (xcursor_keyboard_moveto>=1) or (x.vcheck>=1) then
       begin
@@ -53729,6 +57363,18 @@ skipkeyboard:
       begin
       x.drawcursor:=bol1;
       if x.cursoronscrn then xmustpaint:=true;
+      end;
+
+   //.dic support - 11feb2023, 04feb2023
+   if x.odic and ((x.dicref1<>x.dataid3) or (x.dicref2<>x.cursorpos) or (x.dicid<>dic_id)) then
+      begin
+      bol2:=(x.dicid<>dic_id);
+      x.dicref1:=x.dataid3;
+      x.dicref2:=x.cursorpos;
+      x.dicid:=dic_id;//detect changes in dic and resample
+      bol1:=dic_misspelt(dic_extractwordfromdoc(x,x.cursorpos,false,x.dicfrom,x.dicto));
+      if bol1 then bol1:=dic_misspelt(dic_extractwordfromdoc(x,x.cursorpos,true,x.dicfrom,x.dicto));
+      if low__setbol(x.dicshow,bol1) or bol2 then xmustpaint:=true;
       end;
 
    //set
@@ -53907,6 +57553,7 @@ else if (x.initstate<>'inited') then
       x.wrapcount     :=0;
       x.dataid        :=0;
       x.dataid2       :=0;//only time this datais is ever reset by the control - this is a PERSISTEN dataid handler - 14jun2022
+      x.dataid3       :=0;
       x.modified      :=false;
       x.mustpaint     :=true;
       x.paintlock     :=false;
@@ -53929,6 +57576,20 @@ else if (x.initstate<>'inited') then
       x.claude_header5  :=0;
       //.special actions - 19apr2021
       x.oviewurl        :=true;
+      x.olinespacing    :=1;//04feb2023
+      //.dic support
+      x.odic            :=false;//04feb2023
+      x.dicref1         :=-2;
+      x.dicref2         :=-2;
+      x.dicid           :=-2;
+      x.dicshow         :=false;
+      x.dicfrom         :=0;
+      x.dicto           :=0;
+      //.backup support
+      x.obackup         :=false;//05feb2023
+      x.obackupname     :='';//25feb2023
+      //.find support
+      x.ofindhandler    :=low__newid1;//18feb2023
       //finalise
       x.initstate:='inited';
       //successful
@@ -53946,6 +57607,11 @@ else if (x.initstate<>'inited') then
 if (xcmd='init') or (xcmd='init.dataonly') then
    begin
    //nil
+   end
+//.spell check support - 05feb2023
+else if (xcmd='spell') then
+   begin
+   if x.odic then dic_spell(x);
    end
 //.optional toolbar support #2
 else if (xcmd='cwritesel') then cwritesel(xvalstr)
@@ -54140,7 +57806,7 @@ else if (xcmd='findalign') then//find alignment value based on input position "1
       begin
       int1:=low__wordcore2(x,'pos>rc',xval);//find nearest return code "#10"
       x.lastfindalignpos:=int1;//used for fast cache reference
-      if low__wordcore__charinfo(x,int1,xchar) and (xchar.cs=wc_t) and (xchar.c=10) then xoutval:=inttostr(x.txtalign[xchar.wid]);
+      if low__wordcore__charinfo(x,int1,1,xchar) and (xchar.cs=wc_t) and (xchar.c=10) then xoutval:=inttostr(x.txtalign[xchar.wid]);
       end;
    end
 //
@@ -54176,6 +57842,7 @@ else if (xcmd='wrapstyle') then//12mar2021
    if (xvalstr<>'') and low__setint(x.wrapstyle,frcrange(strint(xvalstr),0,wwsMax)) then
       begin
       xpagewidth;
+      xpageheight;
       xwrap_hvsync_changed;
       end;
    xoutval:=inttostr(x.wrapstyle);
@@ -54221,9 +57888,10 @@ else if (xcmd='papersize') then
       begin
       x.paperwidth:=int1;
       x.paperheight:=int2;
-      if (x.wrapstyle=wwsPage) then
+      if (x.wrapstyle=wwsPage) or (x.wrapstyle=wwsPage2) then
          begin
          xpagewidth;
+         xpageheight;
          xwrap_hvsync_changed;
          end;
       end;
@@ -54331,6 +57999,17 @@ else if (xcmd='pagefontselcolor') then
    //get
    xoutval:=inttostr(x.pagefontselcolor);
    end
+//.linespacing - 04feb2023
+else if (xcmd='linespacing') then
+   begin
+   //set
+   if (xvalstr<>'') and low__setint(x.olinespacing,frcrange(strint(xvalstr),1,4)) then
+      begin
+      xwrap_hvsync_changed;
+      end;
+   //get
+   xoutval:=inttostr(frcrange(x.olinespacing,1,4));
+   end
 //.host viewing area
 else if (xcmd='viewwidth') then
    begin
@@ -54342,6 +58021,7 @@ else if (xcmd='viewwidth') then
       if (i<>x.viewwidth) then
          begin
          xpagewidth;
+         xpageheight;
          xwrap_hvsync_changed;
 //         x.hhostsync:=true;
 //         x.vhostsync:=true;
@@ -54413,7 +58093,8 @@ else if (xcmd='vpos.px') then
    //set
    if (xvalstr<>'') then
       begin
-      int2:=frcrange(xwrapfinish(strint(xvalstr),true),0,frcmin(x.totalheight-1,0));
+      int2:=xwrapfinish(strint(xvalstr),true);
+      int2:=frcrange(int2,0,frcmin(x.totalheight-1,0));//fixed - 07feb2023
       int3:=frcmin(low__wordcore_str2(x,'y>line',xvalstr),0);
       if (int3>=0) then int4:=x.liney[int3] else int4:=0;
       if (x.vpos<>int3) or ((int4+x.vposPART)<>int2) then
@@ -54462,6 +58143,7 @@ else if (xcmd='hshow') then
    wwsNone   :xoutval:='1';
    wwsWindow :xoutval:='0';
    wwsPage   :if (x.pagewidth<=x.viewwidth) then xoutval:='0' else xoutval:='1';
+   wwsPage2  :if (x.pagewidth<=x.viewwidth) then xoutval:='0' else xoutval:='1';
    end;//case
    end
 else if (xcmd='hhostsync') then//tells host it must re-sync horizontal scrollbar
@@ -54498,7 +58180,9 @@ else if (xcmd='haveshortcut') then
    if x.shortcuts then
       begin
       case strint(xvalstr) of
-      akctrlP,akctrlT,akctrlC,akctrlU,akctrlR,akctrlS,akctrlN,akctrlB,akctrlI,akctrlD,akctrlK,akctrlH,akctrlZ:xoutval:='1';
+      akctrlP,akctrlT,akctrlC,akctrlU,akctrlR,{akctrlS,}akctrlN,akctrlB,akctrlI,akctrlD,akctrlK,akctrlH,akctrlZ:xoutval:='1';
+      akf3,akf4:xoutval:='1';//18feb2023
+      akf7:if x.odic then xoutval:='1';//05feb2023
       end;//case
       end;
    end
@@ -54567,6 +58251,7 @@ else if (xcmd='clearall') or (xcmd='clear') or (xcmd='clear2') then//Note: clear
    //finalise
    x.cursorpos     :=1;
    x.cursorpos2    :=1;
+   x.totalheight   :=0;//07feb2023
    x.linecount     :=0;
    x.line          :=0;
    x.col           :=0;
@@ -54591,6 +58276,10 @@ else if (xcmd='ins') or (xcmd='ins2') then//ins2 overrides readonly
       xnoidle;
       knoidle;
       int1:=x.cursorpos;
+
+      //flush redo list - 02may2023
+      mredoflush;
+
       //filter text -> remove any characters in the system range
       low__wordcore__filtertext(xval);
 
@@ -54642,6 +58331,7 @@ else if (xcmd='ins') or (xcmd='ins2') then//ins2 overrides readonly
          xwrapadd(xlinebefore(int2),int2+blen(xstr1)+x.c_pagewrap);
          x.timer_chklinecursorx:=true;
          xchanged;
+         xincdata3;
          end;
       end;
    end
@@ -54666,6 +58356,9 @@ else if (xcmd='insimg') or (xcmd='insimg.noundo') then
          //m-undo
          if (xcmd='insimg') then
             begin
+            //flush redo list - 02may2023
+            mredoflush;
+
             mstore1;//previous
             if (xselcount>=1) then
                begin
@@ -54683,6 +58376,7 @@ else if (xcmd='insimg') or (xcmd='insimg.noundo') then
          xwrapadd(xlinebefore(int2),int2+blen(xstr1)+x.c_pagewrap);
          x.timer_chklinecursorx:=true;
          xchanged;
+         xincdata3;
          end;
       end;
    end
@@ -54699,6 +58393,11 @@ else if (xcmd='deleteall') then
    begin
    if (not x.readonly) and (x.data.len>=2) then
       begin
+      xbackup('deleteall');
+
+      //flush redo list - 02may2023
+      mredoflush;
+
       mstore1;//previous
       x.cursorpos:=1;
       x.cursorpos2:=blen(x.data);
@@ -54720,6 +58419,10 @@ else if (xcmd='cut') then
       low__wordcore_str(x,'copy',xvalstr);//16mar2021
       if (xselcount>=1) then
          begin
+         xbackup('cut');
+         //flush redo list - 02may2023
+         mredoflush;
+
          mstore1;//previous
          x.mstyle:=musSel;
          mstore1;
@@ -54777,6 +58480,7 @@ else if (xcmd='pastereplace') then//handles bitmap+text image+text
    begin
    if (not x.readonly) and xcanpaste then
       begin
+      xbackup('pastereplace');
       if not xpaste(true) then goto skipend;
       xoutval:='1';
       end;
@@ -54787,6 +58491,7 @@ else if (xcmd='paste') then//handles bitmap+text image+text
    begin
    if (not x.readonly) and xcanpaste then
       begin
+      xbackup('paste');
       if not xpaste(false) then goto skipend;
       xoutval:='1';
       end;
@@ -54798,6 +58503,9 @@ else if (xcmd='dell') then
       //init
       xnoidle;
       knoidle;
+      if (xselcount>=2) then xbackup('dell');
+      //flush redo list - 02may2023
+      mredoflush;
       //check
       if (x.mstyle<>musDelL) or (xselstart<>x.mfrom1) then mstore1;
       //get
@@ -54830,6 +58538,7 @@ else if (xcmd='dell') then
          x.cursor_keyboard_moveto:=int1;
          x.timer_chklinecursorx:=true;
          xchanged;
+         xincdata3;
          x.mfrom1:=xselstart;
          end;
       end;
@@ -54842,6 +58551,9 @@ else if (xcmd='delr') then
       xnoidle;
       knoidle;
       int1:=x.cursorpos;
+      if (xselcount>=2) then xbackup('delr');
+      //flush redo list - 02may2023
+      mredoflush;
       //check
       if (x.mstyle<>musDelR) or (xselstart<>x.mfrom1) then mstore1;
       //get
@@ -54873,9 +58585,11 @@ else if (xcmd='delr') then
          bdel1(x.data3,int1,1);
          xmincheck;
          xsetcursorpos(int1);//x.cursorpos);
-         xwrapadd(xlinebefore(x.cursorpos),x.cursorpos+x.c_pagewrap);//04jun2020
+         xwrapadd(xlinebefore(int1),int1+x.c_pagewrap);//04jun2020
+         x.cursor_keyboard_moveto:=int1;//new
          x.timer_chklinecursorx:=true;
          xchanged;
+         xincdata3;
          end;
       end;
    end
@@ -54930,7 +58644,7 @@ else if (xcmd='move') then
    //scoot.left
    else if low__comparetext(str1,'scoot.left') then//31mar2021
       begin
-      if low__wordcore__charinfo(x,x.cursorpos-1,xchar) and (xchar.cs=wc_t) and ((xchar.c=ss10) or ((x.cursorpos-1)<=0)) then
+      if low__wordcore__charinfo(x,x.cursorpos-1,1,xchar) and (xchar.cs=wc_t) and ((xchar.c=ss10) or ((x.cursorpos-1)<=0)) then
          begin
          x.cursor_keyboard_moveto:=frcrange(x.cursorpos-1,1,blen(x.data));
          x.timer_chklinecursorx:=true;
@@ -54939,7 +58653,7 @@ else if (xcmd='move') then
          begin
          for int1:=(x.cursorpos-2) downto 1 do
          begin
-         if not low__wordcore__charinfo(x,int1,xchar) then break
+         if not low__wordcore__charinfo(x,int1,1,xchar) then break
          else if (xchar.cs=wc_i) or ((xchar.cs=wc_t) and xscootable(xchar.c)) then
             begin
             x.cursor_keyboard_moveto:=frcrange(int1+1,1,blen(x.data));
@@ -54975,7 +58689,7 @@ else if (xcmd='move') then
    //scoot.right
    else if low__comparetext(str1,'scoot.right') then//31mar2021
       begin
-      if low__wordcore__charinfo(x,x.cursorpos,xchar) and (xchar.cs=wc_t) and (xchar.c=ss10) then
+      if low__wordcore__charinfo(x,x.cursorpos,1,xchar) and (xchar.cs=wc_t) and (xchar.c=ss10) then
          begin
          x.cursor_keyboard_moveto:=frcrange(x.cursorpos+1,1,blen(x.data));
          x.timer_chklinecursorx:=true;
@@ -54984,7 +58698,7 @@ else if (xcmd='move') then
          begin
          for int1:=(x.cursorpos+1) to blen(x.data) do
          begin
-         if not low__wordcore__charinfo(x,int1,xchar) then break
+         if not low__wordcore__charinfo(x,int1,1,xchar) then break
          else if (xchar.cs=wc_i) or ((xchar.cs=wc_t) and xscootable(xchar.c)) then
             begin
             x.cursor_keyboard_moveto:=frcrange(int1,1,blen(x.data));
@@ -55013,7 +58727,7 @@ else if (xcmd='move') then
             dx:=x.linex[xline];
             for p:=int2 to int3 do
             begin
-            if not low__wordcore__charinfo(x,p,xchar) then break;
+            if not low__wordcore__charinfo(x,p,1,xchar) then break;
             if (dx<=x.linecursorx) then int1:=p;
             inc(dx,xchar.width);
             end;//p
@@ -55035,7 +58749,7 @@ else if (xcmd='move') then
             dx:=x.linex[xline];
             for p:=int2 to int3 do
             begin
-            if not low__wordcore__charinfo(x,p,xchar) then break;
+            if not low__wordcore__charinfo(x,p,1,xchar) then break;
             if (dx<=x.linecursorx) then int1:=p;
             inc(dx,xchar.width);
             end;//p
@@ -55079,7 +58793,7 @@ else if (xcmd='move') then
             dx:=x.linex[xline];
             for p:=int2 to int3 do
             begin
-            if not low__wordcore__charinfo(x,p,xchar) then break;
+            if not low__wordcore__charinfo(x,p,1,xchar) then break;
             if (dx<=x.linecursorx) then int1:=p;
             inc(dx,xchar.width);
             end;//p
@@ -55118,7 +58832,7 @@ else if (xcmd='move') then
             dx:=x.linex[xline];
             for p:=int2 to int3 do
             begin
-            if not low__wordcore__charinfo(x,p,xchar) then break;
+            if not low__wordcore__charinfo(x,p,1,xchar) then break;
             if (dx<=x.linecursorx) then int1:=p;
             inc(dx,xchar.width);
             end;//p
@@ -55248,7 +58962,7 @@ else if (xcmd='xy>pos') then
             int3:=x.linep[p];
             for p2:=x.linep[p] to (x.linep[p]+low__wordcore_str2(x,'line>itemcount',inttostr(p))-1) do
             begin
-            if not low__wordcore__charinfo(x,p2,xchar) then break;
+            if not low__wordcore__charinfo(x,p2,1,xchar) then break;
             if (dx>=(int2-2)) then int3:=p2 else break;
             inc(int2,xchar.width);
             end;//p2
@@ -55261,7 +58975,7 @@ else if (xcmd='xy>pos') then
 else if (xcmd='pos>rc') then//find end of line #10
    begin
    xoutval:='1';
-   if (blen(x.data)>=1) and (blen(xval)>=1) then for p:=frcrange(strint(xvalstr),1,blen(x.data)) to blen(x.data) do if low__wordcore__charinfo(x,p,xchar) and (xchar.cs=wc_t) and (xchar.c=10) then
+   if (blen(x.data)>=1) and (blen(xval)>=1) then for p:=frcrange(strint(xvalstr),1,blen(x.data)) to blen(x.data) do if low__wordcore__charinfo(x,p,1,xchar) and (xchar.cs=wc_t) and (xchar.c=10) then
       begin
       xoutval:=inttostr(p);
       break;
@@ -55415,7 +59129,7 @@ else if (xcmd='ioget') or (xcmd='ioget2') or (xcmd='ioget.alt') then//accepts "i
       //init
       xoutbin.setlen(xsize);//pre-size for max speed
       //get
-      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,xchar) and (xchar.cs=wc_t) then
+      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,1,xchar) and (xchar.cs=wc_t) then
          begin
          inc(dlen);
          xoutbin.pbytes[dlen-1]:=xchar.c;
@@ -55429,7 +59143,7 @@ else if (xcmd='ioget') or (xcmd='ioget2') or (xcmd='ioget.alt') then//accepts "i
       //init
       xoutbin.setlen(xsize);//pre-size for max speed
       //get
-      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,xchar) and (xchar.cs=wc_t) then
+      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,1,xchar) and (xchar.cs=wc_t) then
          begin
          //check size
          if ((dlen+2)>xsize) then
@@ -55462,7 +59176,7 @@ else if (xcmd='ioget') or (xcmd='ioget2') or (xcmd='ioget.alt') then//accepts "i
       xcolor2:=255;//red
 
       //.color info
-      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,xchar) and (xchar.cs=wc_t) then
+      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,1,xchar) and (xchar.cs=wc_t) then
          begin
          //font information - once only
          if xonce then
@@ -55471,6 +59185,8 @@ else if (xcmd='ioget') or (xcmd='ioget2') or (xcmd='ioget.alt') then//accepts "i
             xfontname :=x.txtname[xchar.wid];
             xfontsize :=x.txtsize[xchar.wid];
             xcolor    :=x.txtcolor[xchar.wid];
+            //.force one font information for saving/copying - 04feb2023
+            if (x.onefontname<>'') or (x.onefontsize<>-1) then low__wordcore__fontonevals(x,xfontname,xfontsize);
             end;
          //.search for 2nd color -> if one is used
          if xonce2 and (xcolor<>x.txtcolor[xchar.wid]) then
@@ -55488,7 +59204,7 @@ else if (xcmd='ioget') or (xcmd='ioget2') or (xcmd='ioget.alt') then//accepts "i
          end;//p
 
       //get
-      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,xchar) and (xchar.cs=wc_t) then
+      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,1,xchar) and (xchar.cs=wc_t) then
          begin
          inc(dlen);
          //text stream
@@ -55527,6 +59243,7 @@ else if (xcmd='ioget') or (xcmd='ioget2') or (xcmd='ioget.alt') then//accepts "i
       xvar1.i['fontcolor2']:=xcolor2;
       xvar1.i['fontstyle']:=0;
       xvar1.i['bgcolor']:=x.pagecolor;
+      if (x.olinespacing>=2) then xvar1.i['linespacing']:=x.olinespacing;//04feb2023
 
       if not xappend(xoutbin,'info',xvar1.data) then goto skipend;
 
@@ -55568,7 +59285,7 @@ else if (xcmd='ioget') or (xcmd='ioget2') or (xcmd='ioget.alt') then//accepts "i
       //.data
       dlen:=0;
       xstr1.setlen(3*xsize);//pre-size for max speed
-      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,xchar) then
+      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,1,xchar) then
          begin
          inc(dlen,3);
          //was: xstr1.pbytes[dlen-2-1]:=x.data.pbytes[p-1];
@@ -55594,7 +59311,7 @@ else if (xcmd='ioget') or (xcmd='ioget2') or (xcmd='ioget.alt') then//accepts "i
       //Include all used LGF fonts - optional (must use "ioget2")
       if (xcmd='ioget2') then
          begin
-         for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,xchar) and (xchar.cs=wc_t) then xstr3.pbytes[1+xchar.txtid-1]:=1;//mark as used
+         for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,1,xchar) and (xchar.cs=wc_t) then xstr3.pbytes[1+xchar.txtid-1]:=1;//mark as used
          //.f0..f999 -> store all "lgf" font snapshots that have been referred to -> optional -> allows viewing of document on platforms even without the original fonts (system independent viewing) - 04sep2019
          for p:=1 to blen(xstr3) do if (xstr3.pbytes[p-1]=1) then
          begin
@@ -55607,7 +59324,7 @@ else if (xcmd='ioget') or (xcmd='ioget2') or (xcmd='ioget.alt') then//accepts "i
          end;//if
 
       //text & images
-      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,xchar) then
+      for p:=xmin to xmax do if low__wordcore__charinfo2(x,d1,d2,d3,p,1,xchar) then
          begin
          //.t0..t999
          if (xchar.cs=wc_t) and (xstr2.pbytes[1+xchar.wid-1]=0) then
@@ -55881,6 +59598,7 @@ else if (xcmd='ioset') or (xcmd='ioins') or (xcmd='ioins.noundo') then
          if not x.wrapreadonly then x.wrapstyle:=frcrange(strint(low__udv(xvar1.s['wrapstyle'],inttostr(wwsWindow))),0,wwsMax);
          x.pagecolor:=strint(low__udv(xvar1.s['bgcolor'],inttostr(low__rgb(255,255,255))));//white
          xpagewidth;
+         xpageheight;
          xwrap_hvsync_changed;
          end;
 
@@ -56088,6 +59806,9 @@ else if (xcmd='ioset') or (xcmd='ioins') or (xcmd='ioins.noundo') then
          //m-undo
          if (xcmd='ioins') then
             begin
+            //flush redo list - 02may2023
+            mredoflush;
+
             mstore1;//previous
             x.mstyle:=musSel;
             mstore1;
@@ -56132,6 +59853,7 @@ else if (xcmd='ioset') or (xcmd='ioins') or (xcmd='ioins.noundo') then
       xwrapadd(xlinebefore(int2),int2+blen(xstr1)+x.c_pagewrap);
       x.timer_chklinecursorx:=true;
       xchanged;
+      xincdata3;
       end;
 
    //successful
@@ -56146,6 +59868,7 @@ else if (xcmd='transform') or (xcmd='transform.webimages')then//25jul2021, 15may
       xwrapadd(0,xselstart+x.c_bigwrap);
       x.timer_chklinecursorx:=true;
       xchanged;
+      xincdata3;
       end;
    end
 else
@@ -57301,7 +61024,7 @@ except;end;
 end;
 //xxxxxxxxxxxxxxxxxxxxxxxxxxxxx//tttttttttttttttttttttttttttttttttttt
 //## low__fromLGF_drawchar2432 ##
-function low__fromLGF_drawchar2432(x:tobject;xindex,ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xround:boolean;xroundstyle:longint):boolean;//27feb2021, 23jan2020
+function low__fromLGF_drawchar2432(x:tobject;xindex,ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround:boolean;xroundstyle:longint):boolean;//04feb2023 - spell indicator underline, 27feb2021, 23jan2020
 label//Note: xfeather: minint..0=off, 1=low(LR only), 2=medium(LR+TB), 3=high(LR+TB+heavier)
    drawmasked24,drawmasked32,draw24,draw32,skipdone,skipend;
 var//Ultra-rapid, real-time, linear graphic font character drawing system
@@ -57312,12 +61035,12 @@ var//Ultra-rapid, real-time, linear graphic font character drawing system
    a:trect;
    mr8:pcolorrows8;
    wrd2:twrd2;
-   int4:tint4;
+   int4,red4,white4:tint4;
    dc24:tcolor24;
    dc32:tcolor32;
    xzoom,xlinkstep,xgreyfilter,lx2,rx2,lx,rx,amin,cfeatherpower,p,i,xcount,c,r,g,b,fi1,fi2,fi,int1,int2,xlen,xpos,xstop,sx,sy,dx,dy,dx2,tw,th,th1:longint;
-   xbold1,xbold2,ybold1,ybold2,xunderline1,xunderline2,xstrikeout1,xstrikeout2:longint;
-   xgreyscale,bol1,xcounton,dlink,dunderline,dstrikeout:boolean;
+   xbold1,xbold2,ybold1,ybold2,xunderline1,xunderline2,xstrikeout1,xstrikeout2,xspell1,xspell2:longint;
+   xgreyscale,bol1,xcounton,dlink,dunderline,dstrikeout,dspell:boolean;
    xval8:byte;
    //## dc32G ##
    procedure dc32G(sy,sx:longint);//13feb2022
@@ -57335,6 +61058,45 @@ var//Ultra-rapid, real-time, linear graphic font character drawing system
    dc32.r:=int4.r;
    dc32.g:=int4.g;
    dc32.b:=int4.b;
+   ar32[sy][sx]:=dc32;
+   end;
+   //## xfindspellcolor ##
+   procedure xfindspellcolor(sx:longint;var r,g,b:byte);
+   begin
+   if (((sx div 2)*2)=sx) then
+      begin//red
+      r:=255;
+      g:=0;
+      b:=0;
+      end
+   else
+      begin//white
+      r:=255;
+      g:=255;
+      b:=255;
+      end;
+   end;
+   //## dcSPELL32 ##
+   function dcSPELL32(sx:longint):tcolor32;
+   begin
+   xfindspellcolor(sx,result.r,result.g,result.b);
+   result.a:=dc32.a;
+   end;
+   //## dcSPELL24 ##
+   function dcSPELL24(sx:longint):tcolor24;
+   begin
+   xfindspellcolor(sx,result.r,result.g,result.b);
+   end;
+   //## dc24GonSPELL ##
+   procedure dc24GonSPELL(sy,sx:longint);//13feb2022
+   begin
+   xfindspellcolor(sx,dc24.r,dc24.g,dc24.b);
+   ar24[sy][sx]:=dc24;
+   end;
+   //## dc32GonSPELL ##
+   procedure dc32GonSPELL(sy,sx:longint);//13feb2022
+   begin
+   xfindspellcolor(sx,dc32.r,dc32.g,dc32.b);
    ar32[sy][sx]:=dc32;
    end;
    //## dc24G ##
@@ -57366,6 +61128,7 @@ var//Ultra-rapid, real-time, linear graphic font character drawing system
    dunderline:=xunderline and (dy>=xunderline1) and (dy<=xunderline2);
    dlink:=xlink and (dy>=xunderline1) and (dy<=xunderline2);
    dstrikeout:=xstrikeout and (dy>=xstrikeout1) and (dy<=xstrikeout2);
+   dspell:=xspell and (dy>=xspell1) and (dy<=xspell2);
    end;
 begin
 try
@@ -57462,6 +61225,11 @@ if xunderline or xlink then//19jun2022, 17apr2020
    xunderline1:=ay+frcmax(th1+1,th-1);
    xunderline2:=ay+frcmax(th1+frcmin(trunc(th*0.06),1),th-1);
    end;
+if xspell then//04feb2023
+   begin
+   xspell1:=ay+frcmax(th1+2,th-1);
+   xspell2:=ay+frcmax(th1+1+frcmin(trunc(th*0.06),1),th-1);
+   end;
 if xstrikeout then//17apr2020
    begin
    int1:=round(th1*0.3);
@@ -57479,6 +61247,8 @@ if xbold then//18apr2020
    end;
 //get
 int4.val:=dcolor;
+red4.val:=low__rgb(255,0,0);
+white4.val:=low__rgb(255,255,255);
 if      (ar32<>nil) then
    begin
    if (xmaskval>=0) then goto drawmasked32 else goto draw32;
@@ -57631,6 +61401,11 @@ if (dx>=lx) and (dx<=rx) and (dy>=xarea.top) and (dy<=xarea.bottom) then
             if (xfeather>=1) and ((sy+int2)>=0) and ((sy+int2)<th) then xfc.pbytes[((sy+int2)*tw)+sx+0]:=1;
             end;
          end;
+      end
+   else if dspell then
+      begin
+      if xgreyscale then dc32GonSPELL(dy,dx) else ar32[dy][dx]:=dcSPELL32(dx);
+      bol1:=true;
       end
    else if dunderline then
       begin
@@ -57896,6 +61671,14 @@ if (dx>=lx) and (dx<=rx) and (dy>=xarea.top) and (dy<=xarea.bottom) then
             if (xfeather>=1) and ((sy+int2)>=0) and ((sy+int2)<th) then xfc.pbytes[((sy+int2)*tw)+sx+0]:=1;
             end;
          end;
+      end
+   else if dspell then
+      begin
+      if (mr8[dy][dx]=xmaskval) then
+         begin
+         if xgreyscale then dc32GonSPELL(dy,dx) else ar32[dy][dx]:=dcSPELL32(dx);
+         end;
+      bol1:=true;
       end
    else if dunderline then
       begin
@@ -58166,6 +61949,11 @@ if (dx>=lx) and (dx<=rx) and (dy>=xarea.top) and (dy<=xarea.bottom) then
             end;
          end;
       end
+   else if dspell then
+      begin
+      if xgreyscale then dc24GonSPELL(dy,dx) else ar24[dy][dx]:=dcSPELL24(dx);
+      bol1:=true;
+      end
    else if dunderline then
       begin
       if xgreyscale then dc24Gon(dy,dx) else ar24[dy][dx]:=dc24;
@@ -58427,6 +62215,14 @@ if (dx>=lx) and (dx<=rx) and (dy>=xarea.top) and (dy<=xarea.bottom) then
             if (xfeather>=1) and ((sy+int2)>=0) and ((sy+int2)<th) then xfc.pbytes[((sy+int2)*tw)+sx+0]:=1;
             end;
          end;
+      end
+   else if dspell then
+      begin
+      if (mr8[dy][dx]=xmaskval) then
+         begin
+         if xgreyscale then dc24GonSPELL(dy,dx) else ar24[dy][dx]:=dcSPELL24(dx);
+         end;
+      bol1:=true;
       end
    else if dunderline then
       begin
@@ -58725,12 +62521,12 @@ else low__tab(xtab,0,low__fromLGF_height(x),xcolalign,xcolcount,xcoltrim,xcolwid
 except;end;
 end;
 //## low__fromLGF_drawtext2432 ##
-function low__fromLGF_drawtext2432(x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xround:boolean;xroundstyle:longint):boolean;
+function low__fromLGF_drawtext2432(x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround:boolean;xroundstyle:longint):boolean;
 begin
-try;result:=low__fromLGF_drawtext2432TAB(tbnone,x,xtext,ax,ay,aw,ah,dcolor,xarea,xarea2,ar24,ar32,xmask,xmaskval,xfc,xfeather,xbold,xitalic,xunderline,xlink,xstrikeout,xround,xroundstyle);except;end;
+try;result:=low__fromLGF_drawtext2432TAB(tbnone,x,xtext,ax,ay,aw,ah,dcolor,xarea,xarea2,ar24,ar32,xmask,xmaskval,xfc,xfeather,xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround,xroundstyle);except;end;
 end;
 //## low__fromLGF_drawtext2432TAB ##
-function low__fromLGF_drawtext2432TAB(xtab:longint;x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xround:boolean;xroundstyle:longint):boolean;//23feb2021
+function low__fromLGF_drawtext2432TAB(xtab:longint;x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;ar24:pcolorrows24;ar32:pcolorrows32;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround:boolean;xroundstyle:longint):boolean;//23feb2021
 label
    donone,dotabs,skipdone,skipend;
 var
@@ -58762,7 +62558,7 @@ for p:=0 to (xlen-1) do
 begin
 v:=(xtext as tstr8).pbytes[p];
 vw:=low__fromLGF_charw(x,v);
-if not low__fromLGF_drawchar2432(x,v,ax,ay,aw,ah,dcolor,xarea,xarea2,ar24,ar32,xmask,xmaskval,xfc,xfeather,xbold,xitalic,xunderline,xlink,xstrikeout,xround,xroundstyle) then
+if not low__fromLGF_drawchar2432(x,v,ax,ay,aw,ah,dcolor,xarea,xarea2,ar24,ar32,xmask,xmaskval,xfc,xfeather,xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround,xroundstyle) then
    begin
    bol1:=false;
    break;
@@ -58810,7 +62606,7 @@ if (v=ss9) or (p>=(xlen-1)) then
       sv:=(xtext as tstr8).pbytes[di];
       vw:=low__fromLGF_charw(x,sv);
       if (xcolalign=taR) then dec(ax,vw);
-      if not low__fromLGF_drawchar2432(x,sv,ax,ay,aw,ah,dcolor,xcolarea,xarea2,ar24,ar32,xmask,xmaskval,xfc,xfeather,xbold,xitalic,xunderline,xlink,xstrikeout,xround,xroundstyle) then
+      if not low__fromLGF_drawchar2432(x,sv,ax,ay,aw,ah,dcolor,xcolarea,xarea2,ar24,ar32,xmask,xmaskval,xfc,xfeather,xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround,xroundstyle) then
          begin
          bol1:=false;
          break;
@@ -58840,7 +62636,7 @@ bunlockautofree(xfc);//fixed - 10oct2020 -> was block(xfc)
 except;end;
 end;
 //## low__fromLGF_drawtext2432TAB2 ##
-function low__fromLGF_drawtext2432TAB2(xtab:longint;x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;s:tobject;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xround:boolean;xroundstyle:longint):boolean;//23feb2021
+function low__fromLGF_drawtext2432TAB2(xtab:longint;x,xtext:tobject;ax,ay,aw,ah,dcolor:longint;xarea,xarea2:trect;s:tobject;xmask:tmask8;xmaskval:longint;xfc:tstr8;xfeather:longint;xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround:boolean;xroundstyle:longint):boolean;//23feb2021
 var
    sr24:pcolorrows24;
    sr32:pcolorrows32;
@@ -58848,8 +62644,8 @@ begin
 try
 result:=false;
 case misb(s) of
-24:result:=misrows24(s,sr24) and low__fromLGF_drawtext2432TAB(xtab,x,xtext,ax,ay,aw,ah,dcolor,xarea,xarea2,sr24,nil,xmask,xmaskval,xfc,xfeather,xbold,xitalic,xunderline,xlink,xstrikeout,xround,xroundstyle);
-32:result:=misrows32(s,sr32) and low__fromLGF_drawtext2432TAB(xtab,x,xtext,ax,ay,aw,ah,dcolor,xarea,xarea2,nil,sr32,xmask,xmaskval,xfc,xfeather,xbold,xitalic,xunderline,xlink,xstrikeout,xround,xroundstyle);
+24:result:=misrows24(s,sr24) and low__fromLGF_drawtext2432TAB(xtab,x,xtext,ax,ay,aw,ah,dcolor,xarea,xarea2,sr24,nil,xmask,xmaskval,xfc,xfeather,xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround,xroundstyle);
+32:result:=misrows32(s,sr32) and low__fromLGF_drawtext2432TAB(xtab,x,xtext,ax,ay,aw,ah,dcolor,xarea,xarea2,nil,sr32,xmask,xmaskval,xfc,xfeather,xbold,xitalic,xunderline,xlink,xstrikeout,xspell,xround,xroundstyle);
 end;
 except;end;
 end;
@@ -58873,10 +62669,10 @@ end;
 //## low__fontlist ##
 procedure low__fontlist(x:tstr8);//26mar2022
 begin
-try;low__fontlist2(x,true,true);except;end;
+try;low__fontlist2(x,true,true,false);except;end;
 end;
 //##  low__fontlist2 ##
-procedure low__fontlist2(x:tstr8;xscreen,xprinter:boolean);//26mar2022
+procedure low__fontlist2(x:tstr8;xscreen,xprinter,xspecial:boolean);//26mar2022
 var
    a:tdynamicstring;
    p,acount:longint;
@@ -58904,6 +62700,13 @@ if not block(x) then exit;
 x.clear;
 a:=tdynamicstring.create;
 acount:=0;
+
+//SPECIAL - 15nov2023
+if xspecial then
+   begin
+   a.value[acount]:='$fontname';inc(acount);
+   a.value[acount]:='$fontname2';inc(acount);
+   end;
 
 //SCREEN
 try
@@ -59346,6 +63149,8 @@ else if (n='xml') then xset(tepXML20)//30dec2021
 else if (n='footnote') then xset(tepTXT20)//21mar2022
 else if (n='cscript') then xset(tepCUR20)//17may2022
 else if (n='sfef')    then xset(tepSFEF20)//05oct2022
+else if (n='quoter')  then xset(tepquoter20)//26dec2022
+else if (n='quoter2') then xset(tepquoter20)//10jan2023
 
 //.programs
 else if (n='exe') then xset(tepEXE20)
@@ -59457,11 +63262,19 @@ else if nok('open20',tepopen20) then goto skipdone
 else if nok('save20',tepsave20) or nok('saveas20',tepsave20) then goto skipdone
 else if nok('disk20',tepdisk20) then goto skipdone
 else if nok('close20',tepclose20) then goto skipdone
+else if nok('closed20',tepclosed20) then goto skipdone
+else if nok('upward20',tepupward20) then goto skipdone
+else if nok('downward20',tepdownward20) then goto skipdone
 else if nok('hide20',tephide20) then goto skipdone
 else if nok('undo20',tepundo20) then goto skipdone
 else if nok('redo20',tepredo20) then goto skipdone
 else if nok('cut20',tepcut20) then goto skipdone
 else if nok('copy20',tepcopy20) then goto skipdone
+else if nok('github20',tepgithub20) then goto skipdone
+else if nok('sourceforge20',tepsourceforge20) then goto skipdone
+else if nok('instagram20',tepinstagram20) then goto skipdone
+else if nok('facebook20',tepfacebook20) then goto skipdone
+else if nok('twitter20',teptwitter20) then goto skipdone
 else if nok('paste20',teppaste20) then goto skipdone
 else if nok('selectall20',tepselectall20) then goto skipdone
 else if nok('frame20',tepframe20) then goto skipdone
@@ -59557,6 +63370,7 @@ else if nok('bwd20',tepbwd20) then goto skipdone
 else if nok('bwp20',tepbwp20) then goto skipdone
 else if nok('rtf20',teprtf20) then goto skipdone
 else if nok('mid20',tepmid20) then goto skipdone
+else if nok('quoter20',tepquoter20) then goto skipdone
 else if nok('sfef20',tepsfef20) then goto skipdone//05oct2022
 else if nok('bcs20',tepbcs20) then goto skipdone
 else if nok('notes20',tepnotes20) then goto skipdone//20mar2022
@@ -59596,17 +63410,23 @@ try;result:=tepfind3(xindex,xdata,false);except;end;
 end;
 //## tepfind3 ##
 function tepfind3(xindex:longint;var xdata:tlistptr;xmusthavedata:boolean):boolean;//16sep2022
-  //## m ##
-  procedure m(const x:array of byte);//map array to pointer record
-  begin
-  xdata:=low__maplist(x);
-  end;
+label
+   skipend;
+   //## m ##
+   procedure m(const x:array of byte);//map array to pointer record
+   begin
+   xdata:=low__maplist(x);
+   end;
 begin
 try
 //defaults
 result:=false;
 xdata.count:=0;
 xdata.bytes:=nil;
+
+//allow program to override ANY tep image
+if (xindex<>tepNone) and tep__findcustom(xindex,xdata) and (xdata.count>=1) and (xdata.bytes<>nil) then goto skipend;
+
 //get
 case xindex of
 tepNone:;
@@ -59638,6 +63458,9 @@ tepOpen20     :m(tep_open20);
 tepSave20     :m(tep_save20);
 tepDisk20     :m(tep_disk20);
 tepClose20    :m(tep_close20);
+tepClosed20   :m(tep_closed20);
+tepupward20   :m(tep_upward20);
+tepdownward20 :m(tep_downward20);
 tepUndo20     :m(tep_undo20);
 tepRedo20     :m(tep_redo20);
 tepCut20      :m(tep_cut20);
@@ -59726,7 +63549,11 @@ tepFNew20     :m(tep_fnew20);//23mar2022
 tepBack20     :m(tep_back20);//23mar2022
 tepForw20     :m(tep_forw20);
 tepPower20    :m(tep_power20);
-
+tepInstagram20:m(tep_instagram20);//02dec2023
+tepFacebook20 :m(tep_facebook20);//02dec2023
+tepTwitter20  :m(tep_twitter20);//02dec2023
+tepsourceforge20:m(tep_sourceforge20);//02dec2023
+tepGitHub20   :m(tep_GitHub20);//02dec2023
 //.file format teps
 tepXXX20       :m(tep_xxx20);
 tepBMP20       :m(tep_bmp20);
@@ -59750,6 +63577,7 @@ tepR20         :m(tep_r20);
 tepHide20      :m(tep_hide20);
 tepIcon20      :m(program_icon20h);
 tepSFEF20      :m(tep_sfef20);
+tepQuoter20    :m(tep_Quoter20);
 
 //.large images -> 32x32px
 tepIcon32           :m(program_icon32h);
@@ -59769,6 +63597,8 @@ tepSysstart20..tepSysstop20:tep__find20(xindex,xdata);
 //.fallback image
 else           m(tep_unknown20);
 end;//case
+
+skipend:
 except;end;
 try;result:=(xdata.count>=low__aorb(1,2,xmusthavedata)) and (xdata.bytes<>nil);except;end;
 end;
@@ -67444,8 +71274,13 @@ var
    v:byte;
 begin
 try
+//defaults
 result:=false;
+//size
 setparams(dbits,dw,dh);
+//lock
+if not block(ddata) then exit;
+//get
 if (ddata<>nil) and (idata<>nil) then
    begin
    xlen:=frcmax(idata.len,ddata.len);
@@ -67462,7 +71297,140 @@ if (ddata<>nil) and (idata<>nil) then
    end;
 result:=true;//19feb2022
 except;end;
-try;bautofree(ddata);except;end;
+try;bunlockautofree(ddata);except;end;
+end;
+//## getareadata ##
+function tbasicimage.getareadata(sa:trect):tstr8;
+begin
+try
+result:=bnew_autofree;
+block(result);
+getarea(result,sa);
+bunlock(result);
+except;end;
+end;
+//## setareadata ##
+procedure tbasicimage.setareadata(sa:trect;sdata:tstr8);
+begin
+try;setarea(sdata,sa);except;end;
+end;
+//## getarea ##
+function tbasicimage.getarea(ddata:tstr8;da:trect):boolean;//07dec2023
+label
+   skipend;
+var
+   a:tbasicimage;
+begin
+try
+//defaults
+result:=false;
+a:=nil;
+//lock
+if not block(ddata) then exit;
+ddata.clear;
+//check
+if not validarea(da) then goto skipend;
+//get
+a:=misimg(bits,da.right-da.left+1,da.bottom-da.top+1);//image of same bit depth as ourselves
+result:=miscopyarea32(0,0,misw(a),mish(a),da,a,self) and ddata.addb(a.data);//copy area to this image and then return it's raw datastream - 07dec2023
+skipend:
+except;end;
+try
+bunlockautofree(ddata);
+freeobj(@a);
+except;end;
+end;
+//## getareadata ##
+function tbasicimage.getareadata2(sa:trect):tstr8;
+begin
+try
+result:=bnew_autofree;
+block(result);
+getarea_fast(result,sa);
+bunlock(result);
+except;end;
+end;
+//## getarea_fast ##
+function tbasicimage.getarea_fast(ddata:tstr8;da:trect):boolean;//07dec2023
+label
+   skipend;
+var
+   sstart,srowsize,drowsize,sw,sh,dy,dw,dh:longint;
+begin
+try
+//defaults
+result:=false;
+//lock
+if not block(ddata) then exit;
+//ddata.clear;
+//check
+if not validarea(da) then goto skipend;
+//range
+sw:=width;
+sh:=height;
+da.left:=frcrange(da.left,0,sw-1);
+da.right:=frcrange(da.right,da.left,sw-1);
+da.top:=frcrange(da.top,0,sh-1);
+da.bottom:=frcrange(da.bottom,da.top,sh-1);
+dw:=da.right-da.left+1;
+dh:=da.bottom-da.top+1;
+sstart:=(bits div 8)*da.left;
+srowsize:=(bits div 8)*sw;
+drowsize:=(bits div 8)*dw;
+//.size - presize for maximum speed
+//ddata.minlen(dh*drowsize);
+//ddata.count:=0;
+
+if (ddata.len<>(dh*drowsize)) then ddata.setlen(dh*drowsize);
+ddata.setcount(0);
+
+
+
+//get
+for dy:=da.top to da.bottom do
+begin
+if not ddata.add3(idata,(dy*srowsize)+sstart,drowsize) then goto skipend;
+end;
+
+//if (ddata.len>50000) then showbasic(low__thousands64(ddata.len));//xxxxxxxxxx
+//successful
+result:=true;
+skipend:
+except;end;
+try
+if not result then ddata.clear;
+bunlockautofree(ddata);
+except;end;
+end;
+//## setarea ##
+function tbasicimage.setarea(ddata:tstr8;da:trect):boolean;//07dec2023
+label
+   skipend;
+var
+   a:tbasicimage;
+begin
+try
+//defaults
+result:=false;
+a:=nil;
+//lock
+if not block(ddata) then exit;
+//check
+if (da.left>=width) or (da.right<0) or (da.top>=height) or (da.bottom<0) or (da.right<da.left) or (da.bottom<da.top) then
+   begin
+   result:=true;
+   goto skipend;
+   end;
+//init
+a:=misimg8(1,1);
+//get
+result:=a.setraw(bits,da.right-da.left+1,da.bottom-da.top+1,ddata) and miscopyarea32(da.left,da.top,da.right-da.left+1,da.bottom-da.top+1,misarea(a),self,a);
+skipend:
+except;end;
+try
+bunlockautofree(ddata);
+freeobj(@a);
+except;end;
 end;
 //## getscanline ##
 function tbasicimage.findscanline(slayer,sy:longint):pointer;
@@ -67873,6 +71841,10 @@ irows15:=idata;
 irows16:=idata;
 irows24:=idata;
 irows32:=idata;
+tag1:=0;
+tag2:=0;
+tag3:=0;
+tag4:=0;
 xresize(xlen,true);
 end;
 //## destroy ##
@@ -68264,6 +72236,11 @@ end;
 function tstr8.clear:boolean;
 begin
 try;result:=setlen(0);except;end;
+end;
+//## setcount ##
+procedure tstr8.setcount(x:longint);//07dec2023
+begin
+try;icount:=frcrange(x,0,idatalen);except;end;
 end;
 //## setlen ##
 function tstr8.setlen(x:longint):boolean;
@@ -70030,6 +74007,25 @@ if ((xpos+15)<xlen) then
    inc(xpos,blen);
    //successful
    result:=true;
+   end;
+except;end;
+end;
+//## findcount ##
+function tvars8.findcount:longint;//10jan2023
+label
+   redo;
+var
+   str1:string;
+   xpos:longint;
+begin
+try
+result:=0;
+xpos:=0;
+redo:
+if xnextname(xpos,str1) then
+   begin
+   inc(result);
+   goto redo;
    end;
 except;end;
 end;
@@ -73273,7 +77269,7 @@ var
       end;
    end;//case
    //get
-   miscopyareaxx8(rect(0,0,maxint,maxint),lx,ly,misw(il32),mish(il32),misarea(il32),s,il32,nil,nil,nil,nil,nil,nil,0,0,false,xlogoopacity,1,mispixel24VAL(il32,0,0),0,0,0,nil,nil,nil,nil,nil,nil,nil,false);
+   miscopyareaxx8(maxarea,lx,ly,misw(il32),mish(il32),misarea(il32),s,il32,nil,nil,nil,nil,nil,nil,0,0,false,xlogoopacity,1,mispixel24VAL(il32,0,0),0,0,0,nil,nil,nil,nil,nil,nil,nil,false);
    except;end;
    end;
    //## xsetside ##
@@ -73678,6 +77674,7 @@ zzadd(self);
 imustcloseprompt:=false;//26aug2021
 ilastmousemovecheckx:=minint;//07mar2022
 ilastmousemovechecky:=minint;
+iecopainting:=false;//16nov2023
 icursorloadid:=-1;
 iclosed:=false;
 icloselocked:=0;
@@ -73715,6 +77712,7 @@ ibuffer2:=nil;
 idragbuffer:=nil;
 ihidecursorref:=0;//off - 28feb2022
 isizing:=0;//22apr2022
+ifullscreen_hidehead:=false;//12feb2023
 imask:=nil;
 inherited create;
 omax_entirescreen:=false;
@@ -73737,8 +77735,18 @@ ibufferresize64       :=ms64;
 ibufferresize642      :=ms64;
 itimer250             :=ms64;
 itimer1000            :=ms64;
-ihost.width           :=frcrange(round(dwidth*vizoom*(low__aorb(100,120,vitouch)/100)),10,misworkw);
-ihost.height          :=frcrange(round(dheight*vizoom*(low__aorb(100,120,vitouch)/100)),10,misworkh);
+isnapshot64           :=0;//off - 03nov2023
+//.zoom only master windows - slave windows are to be sized as requested - 15nov2023
+if viMaster then
+   begin
+   ihost.width           :=frcrange(round(dwidth*vizoom*(low__aorb(100,120,vitouch)/100)),10,misworkw);
+   ihost.height          :=frcrange(round(dheight*vizoom*(low__aorb(100,120,vitouch)/100)),10,misworkh);
+   end
+else
+   begin
+   ihost.width           :=frcrange(dwidth,10,misworkw);
+   ihost.height          :=frcrange(dheight,10,misworkh);
+   end;
 //.sync width & height immedately -> so remaining procs are sure to have proper dimensions - 11may2021
 iwidth                :=ihost.width;
 iheight               :=ihost.height;
@@ -73859,7 +77867,6 @@ icorecount  :=0;
 for p:=0 to high(icore) do icore[p]:=nil;
 //action
 iacount     :=0;
-iabusy      :=false;
 //paint
 for p:=0 to high(recs) do recs[p]:=rect(0,0,0,0);
 ibits       :=0;
@@ -74239,12 +78246,34 @@ isplash:=tbasicsplash.create(self);
 isplash.xabout;
 except;end;
 end;
+//## xsnapshot ##
+procedure tbasicsystem.xsnapshot;
+begin
+try;isnapshot64:=ms64+500;except;end;
+end;
+//## xsnapshot_make ##
+procedure tbasicsystem.xsnapshot_make;
+var
+   d:tbasicimage;
+   dw,dh:longint;
+begin
+try
+dw:=width;
+dh:=height;
+d:=misimg24(dw,dh);
+miscopyareaxx1(0,0,dw,dh,rect(0,0,dw-1,dh-1),d,ibuffer);
+low__copyimg(d,0);
+popstatus('Snapshot copied to Clipboard',0);
+except;end;
+try;freeobj(@d);except;end;
+end;
 //## xshowoptions ##
 procedure tbasicsystem.xshowoptions;
 const
    vsp=5;
 var
    dw,dh,int1,xpreviousfocus:longint;
+   xpreviouscontrol:tbasiccontrol;
    xcolor,a,ca:tbasicscroll;
    b,b2:tstr8;
    xcolorscheme:tbasicmenu;
@@ -74291,6 +78320,7 @@ a:=nil;
 b:=nil;
 b2:=nil;
 xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
 xhost:=nil;
 //check
 if ishowoptions_inuse then exit else ishowoptions_inuse:=true;
@@ -74298,8 +78328,8 @@ if ishowoptions_inuse then exit else ishowoptions_inuse:=true;
 ishowoptions_timer100:=ms64;
 ishowoptions_timer500:=ms64;
 //get
-dw:=largest(460,system_onshowoptionsNEWWIDTH);
-dh:=largest(460,system_onshowoptionsNEWHEIGHT);;//was: 440 - 13mar2022
+dw:=largest(480,system_onshowoptionsNEWWIDTH);//was: 460 - 02dec2023
+dh:=largest(480,system_onshowoptionsNEWHEIGHT);//was: 480 - 09dec2023, 440 - 13mar2022
 low__winzoom(dw,dh);//17mar2021
 bs:=vibordersize;
 a:=ndlg2(rect(0,0,dw+(2*bs),dh+(2*bs)),true,true);
@@ -74362,7 +78392,12 @@ with xhigh2 do
 begin
 xhost:=client;
 ntitle(false,'Frame Options','Frame options');
-dint3b(ishowoptions_framesize1,'Size','bordersize',protect_text(16771582,'Adjust Frame Size'),0,72,32,'bordersize').ospbackname:='yellow';
+with dint3b(ishowoptions_framesize1,'Size','bordersize',protect_text(16771582,'Adjust Frame Size'),0,72,32,'bordersize') do
+begin
+ospbackname:='yellow';
+ovalunit_defshow:=false;
+end;
+
 dint3b(ishowoptions_sparkle1,'Sparkle','sparkle',protect_text(16771132,'Adjust Sparkle'),0,20,0,'sparkle').ospbackname:='blue';
 end;
 
@@ -74447,7 +78482,7 @@ end;
 
 with dsel3(protect_text(16771093,'Font Name 2 (Text Entry)'),'fontname2','',0,'fontnameraw2') do
 begin
-osepv:=5;
+osepv:=10;//04feb2023
 itemsperline:=3;
 str1:='Select font name';
 xadd('Arial','Arial',str1);
@@ -74500,7 +78535,19 @@ begin
 visible:=not system_storeapp;
 xset3(0,protect_text(16771221,'Start button link'),'startlink','Selected: Place a link to this program on your Start button | Not Selected: Remove link from Start button',false,'startlink');
 xset3(1,protect_text(16771189,'Desktop link'),'desktoplink','Selected: Place a link to this program on your Desktop | Not Selected: Remove link from Desktop',false,'desktoplink');
+xset3(2,protect_text(16771177,'Automatic Startup'),'startuplink','Selected: Place a link to this program in your Startup folder, and automatically start the program when your computer starts | Not Selected: Remove link from the Startup folder',false,'startuplink');
 ospbackname:='red';
+end;
+
+with dsel3(protect_text(16771232,'Start Style'),'startstyle','',0,'startstyle') do
+begin
+itemsperline:=3;
+xadd('Normal','0','Start program normally (as a window - default)');
+xadd('Minimised','1','Start program minimised (hidden from view)');
+xadd('Maximised','2','Start program maximised (expand to use most of screen)');
+//xadd('Full Screen','3','Full screen program on start');
+reload;
+ospbackname:='blue';
 end;
 
 ishowoptions_options:=dset(protect_text(16770856,'Options'),'','',0);
@@ -74540,6 +78587,7 @@ xset3(1,'Enhanced','enhanced',protect_text(16772764,'Selected: Show visiual effe
 xset3(2,'Curved Shading','shaderound',protect_text(16772229,'Selected: Curved shading | Not Selected: Flattened shading'),false,'shaderound');
 xset3(3,'Colorise Images','coloriseimages',protect_text(16772483,'Selected: Show images in current color scheme colors | Not Selected: Show images normally'),false,'coloriseimages');//10mar2021
 xset3(4,'Glow','shadeglow',protect_text(16771897,'Selected: Glow shading | Not Selected: Normal shading'),false,'shadeglow');
+xset3(5,'Emboss','emboss',protect_text(16772606,'Selected: Embossed text labels | Not Selected: Normal text labels'),false,'emboss');
 
 itemsperline:=3;
 ospbackname:='blue';
@@ -74548,7 +78596,11 @@ end;
 //was: dint3('Sparkle','sparkle',protect_text(16771132,'Adjust Sparkle'),0,20,0,'sparkle').ospbackname:='blue';
 //was: dint3('Frame Size','bordersize',protect_text(16771582,'Adjust Frame Size'),0,72,32,'bordersize').ospbackname:='yellow';
 dint3b(ishowoptions_sparkle2,'Sparkle','sparkle',protect_text(16771132,'Adjust Sparkle'),0,20,0,'sparkle').ospbackname:='blue';
-dint3b(ishowoptions_framesize2,'Frame Size','bordersize',protect_text(16771582,'Adjust Frame Size'),0,72,32,'bordersize').ospbackname:='yellow';
+with dint3b(ishowoptions_framesize2,'Frame Size','bordersize',protect_text(16771582,'Adjust Frame Size'),0,72,32,'bordersize') do
+begin
+ospbackname:='yellow';
+ovalunit_defshow:=false;
+end;
 dint3('Scrollbar Size','scrollsize',protect_text(16771546,'Adjust Scrollbar Size'),5,72,20,'scrollsize').ospbackname:='orange';
 
 
@@ -74608,7 +78660,7 @@ a.page:=low__udv(system_options_str1,low__udv(system_onshowoptionsINITPAGENAME,x
 xcolor.ofirstpos:=system_options_pos1;
 ishowoptions_window:=a;
 xcenter(a);
-xshowwait(a,xpreviousfocus);
+xshowwait(a,xpreviouscontrol,xpreviousfocus);
 system_options_str1:=a.page;
 system_options_pos1:=xcolor.pos;
 
@@ -74850,6 +78902,8 @@ xadd3('Wild Thing 3');
 xadd3('Wild Thing 4');
 xadd3('Black');
 xadd3('Black 2');
+xadd3('Black 3');//03nov2023
+xadd3('Black 4');//03nov2023
 xadd3('White');
 xadd3('White 2');
 xadd3('Blue');
@@ -75371,6 +79425,22 @@ end;
 function tbasicsystem.getfullscreen:boolean;
 begin
 try;result:=xmaximised;except;end;
+end;
+//## getmaxscreen ##
+function tbasicsystem.getmaxscreen:boolean;
+begin
+try;result:=fullscreen and fullscreen_hidehead;except;end;
+end;
+//## setmaxscreen ##
+procedure tbasicsystem.setmaxscreen(x:boolean);
+begin
+try
+if (x<>maxscreen) then
+   begin
+   fullscreen_hidehead:=x;
+   fullscreen:=x;
+   end;
+except;end;
 end;
 //## xsyncfullscreen ##
 procedure tbasicsystem.xsyncfullscreen;
@@ -76076,7 +80146,6 @@ if xvisible(i) then
 end;//p
 except;end;
 end;
-
 //## __onpaint ##
 procedure tbasicsystem.__onpaint(sender:tobject);//28jul2020
 label
@@ -76295,8 +80364,10 @@ if not low__canecopaint(iecomode64) then
    begin
    iinternalpaint:=not xmustfull;
    ipaintbusy:=false;
+   iecopainting:=true;//16nov2023
    exit;
-   end;
+   end
+else iecopainting:=false;
 
 
 //init -------------------------------------------------------------------------
@@ -76725,8 +80796,8 @@ if system_debug then
       dy:=p*int1;//not zoomed
       tw:=low__fonttextwidth(xfn,xline);
       da:=low__rect(0,dy,tw-1,dy+int1);
-      low__draw(true,xbits,cw,ch,rows,imask,-1,'s',da,da,da,low__rgb(250,250,250),clnone,clnone,0,0,0,0,nil,nil,corNone,false);
-      low__draw2(true,tbnone,xbits,cw,ch,rows,imask,-1,'t',da,da,da,0,clnone,clnone,0,dy,0,0,0,0,sysfont_data[xfn],xline,corNone,false,false,false,false,false);
+      low__draw(true,xbits,cw,ch,rows,imask,-1,'s',da,da,da,low__rgb(250,250,250),clnone,clnone,0,0,0,0,-1,nil,nil,corNone,false);
+      low__draw2(clnone,true,tbnone,xbits,cw,ch,rows,imask,-1,'t',da,da,da,0,clnone,clnone,0,dy,0,0,0,0,-1,sysfont_data[xfn],xline,corNone,false,false,false,false,false);
       if ipaintingpart or xdragpaintareaok then ppadd(da);
       end;
    end;//p
@@ -77545,7 +81616,7 @@ except;end;
 end;
 //## pumptimer2 ##
 procedure tbasicsystem.pumptimer2;//forceably drive the timer - 15jul2021
-begin
+begin//Warning: Use of this proc can cause out of order mouse messages etc via the "anext" proc being called simultaneously
 try
 app__timer;//19feb2021
 __ontimer2(self);
@@ -77655,20 +81726,20 @@ if (xms64>=itimer250) then
    if mousedown then low__resetdowntime;
 
    //settings check
-   if visyssettingsloaded and viprgsettingsloaded then
+   if visyssettingsloaded and viprgsettingsloaded and (ialignid>=1) then
       begin
       //show splash
       if (ishowonceref<>0) and (ms64<ishowonceref) and showing then
          begin
          ishowonceref:=0;//off
          //show splash on startup
-         if visplash and (application.mainform=ihost) then xshowsplash else viSplashdone:=true;
+         if visplash and viMaster and (application.mainform=ihost) then xshowsplash else viStartupdone:=true;
          end;
       //splash
       if zzok(isplash,7122) and isplash.xmustclose then
          begin
          freeobj(@isplash);
-         viSplashdone:=true;//15mar2022
+         viStartupdone:=true;//15nov2023
          end;
       end;
 
@@ -77738,6 +81809,28 @@ if (xms64>=itimer250) then
    itimer250:=xms64+250;
    end;
 
+//find support - host "find" dialog here so as not to lock up wordcore / basicbwp timers - 18feb2023
+if (sysfind_cmd<>'') then
+   begin
+   if (sysfind_cmd='find.pop') then
+      begin
+      sysfind_cmd:='';
+      if not sysfind_dlgshowing then
+         begin
+         sysfind_dlgshowing:=true;
+         if (sysfind_handler<>0) then pop_find(sysfind_handler,sysfind_text,sysfind_cmd);
+         if (sysfind_cmd='find.pop') then sysfind_cmd:='';//cancel repeats
+         sysfind_dlgshowing:=false;
+         end;
+      end
+   else if (sysfind_cmd='find.finished') then
+      begin
+      sysfind_cmd:='';
+      if (sysfind_handler<>0) then pop_info('Find','Find complete');
+      if (sysfind_cmd='find.finished') then sysfind_cmd:='';//cancel repeats
+      end;
+   end;
+
 //size
 if (cw<>iwidth) or (ch<>iheight) or (vidataid<>ilastdataid) then
    begin
@@ -77805,6 +81898,13 @@ if ishowoptions_crosssync and (not visyncing) and (not vimustsync) then
    begin
    ishowoptions_crosssync:=false;
    xshowoptions_crosssync;
+   end;
+
+//isnapshot64
+if (isnapshot64<>0) and (ms64>=isnapshot64) then
+   begin
+   isnapshot64:=0;
+   xsnapshot_make;
    end;
 
 leakhunt(-1,'sys.xtimer');
@@ -77881,8 +81981,13 @@ end;
 //## nsetcolor ##
 function tbasicsystem.nsetcolor(da:trect;xshowhead:boolean):tbasicsetcolor;//27feb2021
 begin
+try;result:=nsetcolor2(da,xshowhead,false);except;end;
+end;
+//## nsetcolor2 ##
+function tbasicsystem.nsetcolor2(da:trect;xshowhead,xuse32:boolean):tbasicsetcolor;//17nov2023
+begin
 try
-result:=tbasicsetcolor.create(self);
+result:=tbasicsetcolor.create(self,xuse32);
 result.makedlg3(da,tepColor32,'Color',xshowhead,true,500,0);
 except;end;
 end;
@@ -78274,17 +82379,17 @@ begin
 try;syswait_focus:=self;except;end;
 end;
 //## xshowwait ##
-function tbasicsystem.xshowwait(a:tbasicscroll;xpreviousfocus:longint):boolean;
+function tbasicsystem.xshowwait(a:tbasicscroll;xpreviouscontrol:tbasiccontrol;xpreviousfocus:longint):boolean;
 begin
-try;result:=xshowwait2(a,xpreviousfocus,0);except;end;
+try;result:=xshowwait2(a,xpreviouscontrol,xpreviousfocus,0);except;end;
 end;
 //## xshowwait2 ##
-function tbasicsystem.xshowwait2(a:tbasicscroll;xpreviousfocus,xtimeout:longint):boolean;
+function tbasicsystem.xshowwait2(a:tbasicscroll;xpreviouscontrol:tbasiccontrol;xpreviousfocus,xtimeout:longint):boolean;
 begin
-try;result:=xshowwait3(a,xpreviousfocus,xtimeout,true);except;end;
+try;result:=xshowwait3(a,xpreviouscontrol,xpreviousfocus,xtimeout,true);except;end;
 end;
 //## xshowwait3 ##
-function tbasicsystem.xshowwait3(a:tbasicscroll;xpreviousfocus,xtimeout:longint;xlimitsize:boolean):boolean;
+function tbasicsystem.xshowwait3(a:tbasicscroll;xpreviouscontrol:tbasiccontrol;xpreviousfocus,xtimeout:longint;xlimitsize:boolean):boolean;
 var//Note: xlimitsize=true=window can't be larger than actual screen so limit it's size to the screen or less - 08mar2021
    xref,xautoclose:comp;
 begin
@@ -78331,6 +82436,7 @@ except;end;
 try
 a.visible:=false;
 winfocus:=xpreviousfocus;
+if (xpreviouscontrol<>nil) then focuscontrol:=xpreviouscontrol;//18feb2023
 closeunlock;//close unlock
 ishowaitcount:=frcmin(ishowaitcount-1,0);//20jun2021
 except;end;
@@ -78378,7 +82484,7 @@ else if zzok(xcontrol,7130) and xcontrol.visibletohost then
 xsafepopXYWHex(dx,dy,dw,dh,dy2);
 if a.setbounds(dx,dy,dw,dh) then a.alignnow;
 //set
-result:=xshowwait(a,xpreviousfocus);
+result:=xshowwait(a,nil,xpreviousfocus);
 except;end;
 end;
 //## xclose ##
@@ -78443,10 +82549,73 @@ end;
 //set
 a.makeautohigh;
 focuscontrol:=b;
-result:=xshowwait(a,xpreviousfocus);
+result:=xshowwait(a,nil,xpreviousfocus);
 if result then xval:=b.val;
 except;end;
 try;freeobj(@a);except;end;
+end;
+//ssssssssssssssssssssssssssssssssssssss//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+//## popfind ##
+function tbasicsystem.popfind(xhandler:longint;var xtext,xcmd:string):boolean;
+var
+   a:tbasicscroll;
+   b:tbasicedit;
+   da:trect;
+   xpreviousfocus,dw,dh:longint;
+   xpreviouscontrol:tbasiccontrol;
+   xref:comp;
+begin
+try
+//defaults
+result:=false;
+xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
+a:=nil;
+//reset
+sysfind_cmd:='';
+sysfind_handler:=xhandler;
+//init
+dw:=300;
+dh:=320;
+low__winzoom(dw,dh);//17mar2021
+da.left:=(width-dw) div 2;
+da.top:=(height-dh) div 2;
+da.right:=da.left+dw-1;
+da.bottom:=da.top+dh-1;
+//get
+a:=ndlg(da,false);
+a.oborderstyle:=bsSystem50;
+a.static:=true;
+a.oautoheight:=true;
+a.xhead.caption:='Find';
+//.tep
+a.xhead.tep:=tepInfo32;
+a.xhelp;
+a.nlabel('Find Text','');
+b:=a.nedit('','Find Text');
+b.value:=xtext;
+b.makefind;
+with a.xtoolbar2 do
+begin
+cadd(ntranslate('Find'),tepNext20,1,scfind,rthtranslate('Find text'),0);
+cadd(ntranslate('Cancel'),tepClose20,0,scdlg,rthtranslate('Cancel'),600);
+end;
+//set
+a.makeautohigh;
+focuscontrol:=b;
+result:=xshowwait(a,xpreviouscontrol,xpreviousfocus);
+if result then
+   begin
+   xtext:=b.value;
+   sysfind_cmd:='find';
+   end;
+except;end;
+try;freeobj(@a);except;end;
+end;
+//## poppass ##
+function tbasicsystem.poppass(var x:string;xcap,xhelp:string):boolean;
+begin
+try;result:=popedit3(x,tepNone,'',xcap,xhelp,'','',0,true);except;end;
 end;
 //## popedit ##
 function tbasicsystem.popedit(var x:string;xcap,xhelp:string):boolean;
@@ -78455,17 +82624,24 @@ try;result:=popedit2(x,tepNone,'',xcap,xhelp,'','',0);except;end;
 end;
 //## popedit2 ##
 function tbasicsystem.popedit2(var x:string;xtep32:longint;xtitle,xcap,xhelp,xcancelcap,xokcap:string;xsize:longint):boolean;
+begin
+try;result:=popedit3(x,xtep32,xtitle,xcap,xhelp,xcancelcap,xokcap,xsize,false);except;end;
+end;
+//## popedit3 ##
+function tbasicsystem.popedit3(var x:string;xtep32:longint;xtitle,xcap,xhelp,xcancelcap,xokcap:string;xsize:longint;xpassword:boolean):boolean;
 var
    a:tbasicscroll;
    b:tbasicedit;
    da:trect;
    xpreviousfocus,dw,dh:longint;
+   xpreviouscontrol:tbasiccontrol;
    xref:comp;
 begin
 try
 //defaults
 result:=false;
 xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
 a:=nil;
 //init
 if (xsize<=0) then xsize:=100;
@@ -78488,6 +82664,7 @@ a.xhead.tep:=xtep32;
 a.xhelp;
 a.nlabel(xcap,xhelp);
 b:=a.nedit('',xhelp);
+if xpassword then b.makepass;
 b.value:=x;
 with a.xtoolbar2 do
 begin
@@ -78497,7 +82674,7 @@ end;
 //set
 a.makeautohigh;
 focuscontrol:=b;
-result:=xshowwait(a,xpreviousfocus);
+result:=xshowwait(a,xpreviouscontrol,xpreviousfocus);
 if result then x:=b.value;
 except;end;
 try;freeobj(@a);except;end;
@@ -78509,12 +82686,14 @@ var
    b:array[0..99] of tbasicedit;
    da:trect;
    p,xpreviousfocus,dw,dh:longint;
+   xpreviouscontrol:tbasiccontrol;
    xref:comp;
 begin
 try
 //defaults
 result:=false;
 xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
 a:=nil;
 //check
 if (low(x)<>0) or (xcount<=0) then exit;
@@ -78553,7 +82732,7 @@ end;
 //set
 a.makeautohigh;
 focuscontrol:=b[0];
-result:=xshowwait(a,xpreviousfocus);
+result:=xshowwait(a,xpreviouscontrol,xpreviousfocus);
 if result then
    begin
    for p:=0 to (xcount-1) do x[p]:=b[p].value;
@@ -78596,12 +82775,14 @@ var
    b:tbasicbwp;
    da:trect;
    xpreviousfocus,dw,dh:longint;
+   xpreviouscontrol:tbasiccontrol;
    xref:comp;
 begin
 try
 //defaults
 result:=false;
 xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
 a:=nil;
 block(xtext);
 //init
@@ -78637,7 +82818,7 @@ a.xtoolbar.setbc14(a,b,nil,nil);
 a.xtoolbar.onclick2:=poptxt__event2;
 //set
 focuscontrol:=b;
-result:=xshowwait(a,xpreviousfocus);
+result:=xshowwait(a,xpreviouscontrol,xpreviousfocus);
 if result and zzok(xtext,7134) then
    begin
    xtext.clear;
@@ -78676,12 +82857,14 @@ var
    a:tbasicscroll;
    da:trect;
    xpreviousfocus:longint;
+   xpreviouscontrol:tbasiccontrol;
    xref:comp;
 begin
 try
 //defaults
 result:=false;
 xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
 a:=nil;
 //init
 low__winzoom2(dw,dh,50,50);//17mar2021
@@ -78703,7 +82886,7 @@ cadd(low__udv(xokcap,ntranslate('OK')),tepYes20,1,scdlg,rthtranslate('OK'),cok);
 cadd(low__udv(xcancelcap,ntranslate('Cancel')),tepClose20,0,scdlg,rthtranslate('Cancel'),ccancel);
 end;
 //set
-result:=xshowwait(a,xpreviousfocus);
+result:=xshowwait(a,xpreviouscontrol,xpreviousfocus);
 except;end;
 try;freeobj(@a);except;end;
 end;
@@ -78743,12 +82926,14 @@ var
    a:tbasicscroll;
    da:trect;
    xpreviousfocus:longint;
+   xpreviouscontrol:tbasiccontrol;
    xref:comp;
 begin
 try
 //defaults
 result:=false;
 xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
 a:=nil;
 //init
 low__winzoom2(dw,dh,50,50);//17mar2021
@@ -78779,7 +82964,48 @@ begin
 cadd(low__udv(xclosecap,ntranslate('Close')),tepYes20,1,scdlg,rthtranslate('Close'),cclose);
 end;
 //set
-result:=xshowwait(a,xpreviousfocus);
+result:=xshowwait(a,xpreviouscontrol,xpreviousfocus);
+except;end;
+try;freeobj(@a);except;end;
+end;
+//## popstatus ##
+function tbasicsystem.popstatus(xmsg:string;xshowsec:longint):boolean;//03jnov2023
+var
+   a:tbasicscroll;
+   da:trect;
+   dw,dh,xpreviousfocus:longint;
+   xpreviouscontrol:tbasiccontrol;
+   xref:comp;
+begin
+try
+//defaults
+result:=false;
+xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
+a:=nil;
+//init
+if (xshowsec=0) then xshowsec:=2;
+xshowsec:=frcmin(xshowsec,1)*1000;
+dw:=300;
+dh:=0;
+low__winzoom2(dw,dh,50,50);//17mar2021
+da.left:=(width-dw) div 2;
+da.top:=(height-dh) div 2;
+da.right:=da.left+dw-1;
+da.bottom:=da.top+dh-1;
+//get
+a:=ndlg(da,false);
+a.ominheight:=0;
+a.oborderstyle:=bsSystem20;
+a.static:=true;
+a.xhelp.showhelp:=false;
+with a.nlabel(xmsg,'') do
+begin
+oautoheight:=true;
+ocentertext:=true;//19nov2023
+end;
+//set
+result:=xshowwait2(a,xpreviouscontrol,xpreviousfocus,xshowsec);
 except;end;
 try;freeobj(@a);except;end;
 end;
@@ -78916,7 +83142,7 @@ if (xstyle=lslist) and zzok(xcontrol,7135) then
    a.oborderstyle:=bsSystem20;
    end
 else a.oborderstyle:=bsSystem50;//50% - 29aug2020
-a.ominwidth:=low__insint(120,xminwidth)+(2*a.findbordersize);
+a.ominwidth:=low__insint(48,xminwidth)+(2*a.findbordersize);
 a.xhelp.showhelp:=xshowhelp;//19mar2021
 a.xmenu.orowcount:=frcmin(xdropcount,0);
 a.xmenu.bordersize:=0;
@@ -78958,12 +83184,7 @@ if xpopwait2(a,xcontrol,xpreviousfocus,int1+a.xmenu.getalignwidth(0),int1+a.xmen
    result:=(xcode<>0);
    end;
 //popshortcut -> user executed a shortcut (doesn't matter if it exists or not) -> menu has been closed and the shortcut, now feed stored shortcut back to host form for execution - 02apr2020
-{
-if low__shortcutok(a.popshortcut) and (xhost<>nil) and (xhost is tbasicform) then
-   begin
-   (xhost as tbasicform).xaction('k',0,a.popshortcut,0);
-   end;
-{}///xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//???????????????????
+//???
 
 //.update system
 //app__processmessages;
@@ -78977,18 +83198,28 @@ end;
 //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//fffffffffffffffffffffffffff
 //## popfont ##
 function tbasicsystem.popfont(var xfontname:string):boolean;//26mar2022
+begin
+try;result:=popfont2(xfontname,true,true,false,false,nil);except;end;
+end;
+//## popfont2 ##
+function tbasicsystem.popfont2(var xfontname:string;xscreen,xprinter,xspecial,xaslist:boolean;xpopcontrol:tbasiccontrol):boolean;//15nov2023
+label
+   skipdone;
 var
    a:tbasicscroll;
    b:tbasicmenu;
    da:trect;
-   int1,xpos,xcount,xpreviousfocus,dw,dh:longint;
+   xtepcolor,xcode,int1,xpos,xcount,xpreviousfocus,dw,dh:longint;
+   xcode2:string;
    xref:comp;
    xlist,xline,xpoplist:tstr8;
+   xpreviouscontrol:tbasiccontrol;
 begin
 try
 //defaults
 result:=false;
 xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
 a:=nil;
 xlist:=nil;
 xline:=nil;
@@ -79006,7 +83237,7 @@ xlist:=bnew;
 xline:=bnew;
 xpoplist:=bnew;
 low__menuinit(xpoplist);
-low__fontlist(xlist);
+low__fontlist2(xlist,xscreen,xprinter,xspecial);
 //get
 xpos:=0;
 xcount:=0;
@@ -79017,7 +83248,17 @@ low__menuadd(xpoplist,tepFNew20,clnone,xline.text,'Select font',xline.text,xcoun
 inc(xcount);
 end;
 low__menuend(xpoplist);
-//set
+//.show as a menu list
+if xaslist then
+   begin
+   if popmenu2b(pmNormal,iaNormal,xpoplist,xpopcontrol,'popfont2',0,xcode,xcode2,xtepcolor) then
+      begin
+      xfontname:=xcode2;
+      result:=true;
+      end;
+   goto skipdone;
+   end;
+//.show as a window
 a:=ndlg(da,false);
 a.oborderstyle:=bsSystem50;
 //a.static:=true;
@@ -79039,8 +83280,9 @@ end;
 //show
 a.makeautohigh;
 focuscontrol:=b;
-result:=xshowwait(a,xpreviousfocus);
+result:=xshowwait(a,xpreviouscontrol,xpreviousfocus);
 if result then xfontname:=b.xgetval2(b.itemindex);
+skipdone:
 except;end;
 try
 freeobj(@a);
@@ -79220,12 +83462,14 @@ var
    c:tstr8;
    da:trect;
    xpreviousfocus,dw,dh:longint;
+   xpreviouscontrol:tbasiccontrol;
    xref:comp;
 begin
 try
 //defaults
 result:=false;
 xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
 a:=nil;
 c:=nil;
 //range
@@ -79276,7 +83520,7 @@ b.manage(a.xtoolbar,a.xtoolbar2);
 //set
 a.makeautohigh;
 focuscontrol:=b;
-result:=xshowwait(a,xpreviousfocus);
+result:=xshowwait(a,xpreviouscontrol,xpreviousfocus);
 //.unmanage
 b.unmanage;
 //.result
@@ -79324,6 +83568,7 @@ var
    b:tbasicnav;
    da:trect;
    int1,xpreviousfocus,dw,dh:longint;
+   xpreviouscontrol:tbasiccontrol;
    xref:comp;
    xcap:string;
 begin
@@ -79331,6 +83576,7 @@ try
 //defaults
 result:=false;
 xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
 a:=nil;
 //init
 if (xstyle='nav') then
@@ -79375,6 +83621,7 @@ if      (xstyle='open') then
    b.filterindex:=xfilterindex;//set BEFORE value - 09mar2021
    b.value:=xvalue;
    b.favfolder:=xvalue;//folder to be added if user clicks "add" -> "add to favs list"
+   b.xfocusname;//11feb2023
    end
 else if (xstyle='save') then
    begin
@@ -79390,6 +83637,7 @@ else if (xstyle='save') then
 //was: b.filterindex:=xfilterindex;//set BEFORE value - 09mar2021
    b.value:=xvalue;
    b.favfolder:=xvalue;//folder to be added if user clicks "add" -> "add to favs list"
+   b.xfocusname;//11feb2023
    end
 else if (xstyle='folder') then
    begin
@@ -79427,9 +83675,10 @@ else
    goto redo;
    end;
 //set
+b.make__backgroundhead;//03dec2023
 b.hisname:=xhisname;
 a.xhead.caption:=xcap;
-result:=xshowwait(a,xpreviousfocus);
+result:=xshowwait(a,xpreviouscontrol,xpreviousfocus);
 if result then xvalue:=b.value;
 xfilterindex:=b.filterindex;//always return this even on a "cancel" - 10mar2021
 //.sortstyle
@@ -79578,34 +83827,34 @@ except;end;
 try;freeobj(@m);except;end;
 end;
 //## popcolorhistory ##
-function tbasicsystem.popcolorhistory(var xvalue:longint):boolean;
+function tbasicsystem.popcolorhistory(var xvalue:longint;xuse32:boolean):boolean;
 begin
-try;result:=xcolorhistory(xvalue,false,false);except;end;
+try;result:=xcolorhistory(xvalue,false,false,xuse32);except;end;
 end;
 //## popcolorhistory__add ##
-function tbasicsystem.popcolorhistory__add(xvalue:longint):boolean;//19mar2021
+function tbasicsystem.popcolorhistory__add(xvalue:longint;xuse32:boolean):boolean;//19mar2021
 begin
-try;result:=xcolorhistory(xvalue,true,false);except;end;
+try;result:=xcolorhistory(xvalue,true,false,xuse32);except;end;
 end;
 //## popcolorhistory__edit ##
 function tbasicsystem.popcolorhistory__edit:boolean;//19mar2021
 var
    int1:longint;
 begin
-try;int1:=clnone;result:=xcolorhistory(int1,false,true);except;end;
+try;int1:=clnone;result:=xcolorhistory(int1,false,true,false);except;end;
 end;
 //## xcolorhistory ##
-function tbasicsystem.xcolorhistory(var xvalue:longint;xaddonly,xeditonly:boolean):boolean;//19mar2021
+function tbasicsystem.xcolorhistory(var xvalue:longint;xaddonly,xeditonly,xuse32:boolean):boolean;//17nov2023, 19mar2021
 label//xaddonly: true=add "xvalue" to top of color history, false=display color history in a popup list
    skipend;
 var
    xhis:array[0..99] of longint;
    xdata,m:tstr8;
-   xcount,lp,vc,v,vint,vr,vg,vb,p,xcode,xtepcolor,int1:longint;
+   xcount,lp,vc,v,vint,vr,vg,vb,va,p,xcode,xtepcolor,int1:longint;
    str1,e,vstr,xhelp,xcode2:string;
-   c24:tcolor24;
+   c32:tcolor32;
    //## hadd ##
-   procedure hadd(xr,xg,xb:longint);
+   procedure hadd(xr,xg,xb,xa:longint);
    var
       dcol,p:longint;
    begin
@@ -79613,7 +83862,7 @@ var
    //check
    if (xcount>high(xhis)) then exit;
    //init
-   dcol:=low__rgb(xr,xg,xb);
+   dcol:=low__rgba(xr,xg,xb,xa);
    //find existing
    if (xcount>=1) then
       begin
@@ -79628,12 +83877,12 @@ var
    except;end;
    end;
    //## xadd ##
-   procedure xadd(xr,xg,xb:longint);
+   procedure xadd(xr,xg,xb,xa:longint);
    var
       xcap:string;
    begin
-   xcap:=low__digpad11(xr,3)+'r, '+low__digpad11(xg,3)+'g, '+low__digpad11(xb,3)+'b';
-   low__menuitemx2(m,tepColorPal20,low__rgb(xr,xg,xb),xcap,xhelp,'color',100,aknone,true);
+   xcap:=low__digpad11(xr,3)+'r, '+low__digpad11(xg,3)+'g, '+low__digpad11(xb,3)+'b'+low__insstr(', '+low__digpad11(xa,3)+'a',xuse32);
+   low__menuitemx2(m,tepColorPal20,low__rgba(xr,xg,xb,xa),xcap,xhelp,'color',100,aknone,true);
    end;
 begin
 try
@@ -79646,8 +83895,8 @@ xcount:=0;
 //1st
 if xaddonly and (xvalue>=0) then
    begin
-   c24:=low__intrgb(xvalue);
-   hadd(c24.r,c24.g,c24.b);
+   c32:=low__intrgba32(xvalue);
+   hadd(c32.r,c32.g,c32.b,c32.a);
    end;
 
 //load
@@ -79660,12 +83909,13 @@ if xeditonly then
    if not poptxt(str1,wwsNone,'Edit Color History','Type one red,green,blue number per line') then goto skipend;
    xdata.text:=str1;
    end;
-//.add to histor list
+//.add to history list
 if (xdata.len>=1) then
    begin
    vr:=0;
    vg:=0;
    vb:=0;
+   va:=255;//default
    vc:=0;
    lp:=0;
    xdata.aadd([ss10]);//always ends in a return code
@@ -79681,6 +83931,7 @@ if (xdata.len>=1) then
       0:vr:=vint;
       1:vg:=vint;
       2:vb:=vint;
+      3:va:=vint;
       end;
       //set
       if ((v=ss10) or (v=ss13)) then
@@ -79688,12 +83939,13 @@ if (xdata.len>=1) then
          //set
          if (vc>=1) then//at least one comma to confirm it is a color we are reading - 19mar2021
             begin
-            hadd(vr,vg,vb);
+            hadd(vr,vg,vb,va);
             end;
          //reset
          vr:=0;
          vg:=0;
          vb:=0;
+         va:=255;//default
          vc:=-1;
          end;
       //inc
@@ -79712,8 +83964,8 @@ if xaddonly or xeditonly then
       begin
       for p:=0 to (xcount-1) do
       begin
-      c24:=low__intrgb(xhis[p]);
-      xdata.sadd(low__digpad11(c24.r,3)+','+low__digpad11(c24.g,3)+','+low__digpad11(c24.b,3)+rcode);
+      c32:=low__intrgba32(xhis[p]);
+      xdata.sadd(low__digpad11(c32.r,3)+','+low__digpad11(c32.g,3)+','+low__digpad11(c32.b,3)+','+low__digpad11(c32.a,3)+rcode);
       end;//p
       end;
    if not low__tofile(low__platfolder('settings')+'colhis.txt',xdata,e) then goto skipend;
@@ -79730,8 +83982,8 @@ if (xcount>=1) then
    begin
    for p:=0 to (xcount-1) do
    begin
-   c24:=low__intrgb(xhis[p]);
-   xadd(c24.r,c24.g,c24.b);
+   c32:=low__intrgba32(xhis[p]);
+   xadd(c32.r,c32.g,c32.b,c32.a);
    end;//p
    end;
 if (xcount>=1) then low__menusep(m);
@@ -79754,15 +84006,22 @@ try;bfree(m);bfree(xdata);except;end;
 end;
 //## popcolor ##
 function tbasicsystem.popcolor(var xvalue:longint):boolean;
+begin
+try;result:=popcolor2(xvalue,false);except;end;
+end;
+//## popcolor2
+function tbasicsystem.popcolor2(var xvalue:longint;xuse32:boolean):boolean;
 var
    a:tbasicsetcolor;
    da:trect;
    int1,xpreviousfocus,dw,dh:longint;
+   xpreviouscontrol:tbasiccontrol;
 begin
 try
 //defaults
 result:=false;
 xpreviousfocus:=winfocus;
+xpreviouscontrol:=focuscontrol;
 a:=nil;
 //init
 //dw:=700;
@@ -79777,15 +84036,15 @@ da.top:=(height-dh) div 2;
 da.right:=da.left+dw-1;
 da.bottom:=da.top+dh-1;
 //get
-a:=nsetcolor(da,true);
+a:=nsetcolor2(da,true,xuse32);
 //pop
 (a as tbasicsetcolor).setparams(xvalue,xvalue,sysdlg_popcolor_page);
-result:=xshowwait(a,xpreviousfocus);
+result:=xshowwait(a,xpreviouscontrol,xpreviousfocus);
 if result then
    begin
    (a as tbasicsetcolor).getparams(sysdlg_popcolor_color,int1,sysdlg_popcolor_page);
    xvalue:=sysdlg_popcolor_color;
-   if (xvalue>=0) then popcolorhistory__add(xvalue);
+   if (xvalue>=0) then popcolorhistory__add(xvalue,xuse32);
    end;
 except;end;
 try;freeobj(@a);except;end;
@@ -80020,10 +84279,9 @@ var
    if (b1>=1) then xshift:=true;
    end;
 begin
-try
+try//Note: Do NOT use a busy lock here - "Options" dialog and others will lock up - 19nov2023
 //check
 if (iacount<=0) then exit;
-//if (iacount<=0) or iabusy then exit else iabusy:=true;//???????????????????????
 //init
 xshift :=false;
 xctrl  :=false;
@@ -80193,8 +84451,6 @@ else showerror('Unknown action style "'+xstyle+'"');
 if (iacount>=1) and (ms64<=xtimerfast) then goto redo;
 skipend:
 except;end;
-//xxxxxxxxxxxxxxxxxx
-//try;iabusy:=false;except;end;
 end;
 //## mousedraggingout2 ##
 function tbasicsystem.mousedraggingout2(x:trect;xkeepchecking,xfine:boolean):boolean;
@@ -80253,6 +84509,16 @@ end;
 function tbasicsystem.mouseupstroke:boolean;
 begin
 try;result:=(not imousedown) and imousewasdown;except;end;
+end;
+//## mousedownonce ##
+function tbasicsystem.mousedownonce:boolean;//strictly excludes ANY move events - triggers ONLY once - 19nov2023
+begin
+try;result:=(not imousemoved) and imousedown and (not imousewasdown);except;end;
+end;
+//## mouseuponce ##
+function tbasicsystem.mouseuponce:boolean;//strictly excludes ANY move events - triggers ONLY once - 19nov2023
+begin
+try;result:=(not imousemoved) and (not imousedown) and imousewasdown;except;end;
 end;
 //## mousenone ##
 function tbasicsystem.mousenone:boolean;
@@ -80457,7 +84723,7 @@ var
    var
       xonce,xhandled:boolean;
       xhelp:string;
-      a:tbasiccontrol;
+      a:tbasicscroll;
    begin
    //defaults
    xhandled:=false;
@@ -80486,7 +84752,7 @@ var
    //root form
    _onnotifylast(self,xhandled);
    //update realtime help - 07sep2020
-   if zzok(s,7151) and s.visible and s.xwindow(a) and zzok(a,7409) and (a as tbasicscroll).xhavehelp then (a as tbasicscroll).xhelp.text:=xhelp;
+   if zzok(s,7151) and s.visible and s.xwindow2(a) and a.xhavehelp then a.xhelp.text:=xhelp;
    end;
    //## xshortcut ##
    procedure xshortcut(s:tbasiccontrol);
@@ -80511,6 +84777,7 @@ var
       end;
    //root form
    if (not xhandled) then xhandled:=_onshortcut(self);
+   if (not xhandled) and assigned(fonshortcut) then xhandled:=fonshortcut(self);//11feb2023
    end;
 begin
 try
@@ -80971,6 +85238,8 @@ imakemode:=0;//default control, 1=imageviewer
 omade:=made_none;//23mar2022
 ominimal:=false;
 ioffloading:=false;//07mar2021
+irichstart:=low__sparkleuniquestart;//03dec2023
+oheadbase:=0;//03dec2023
 osoftclose:=false;
 obold:=false;//03mar2021
 otab:=tbNone;
@@ -80985,6 +85254,7 @@ fonvalue:=nil;
 fonfindheight:=nil;//06jul2021
 iwinstyle:=wmControl;
 oroundstyle:=corRound;
+osquareframe:=false;//02dec2023
 ishowmenu:=nil;//optional menu pointer -> for displaying "popup" menus
 ocanshowmenu:=false;//disable "showmenu" by default
 iid:=low__newid;//system id
@@ -81139,6 +85409,63 @@ try
 //called after "destroychildren", use to destroy special support controls etc
 except;end;
 end;
+//-- shared handlers -----------------------------------------------------------
+//## make__backgroundhead ##
+procedure tbasiccontrol.make__backgroundhead;
+begin
+try
+bordersize:=0;
+osquareframe:=true;//02dec2023
+oheadbase:=1;
+except;end;
+end;
+//## make__backgroundhead ##
+procedure tbasiccontrol.make__backgroundbase;
+begin
+try
+bordersize:=0;
+osquareframe:=true;//02dec2023
+oheadbase:=2;
+except;end;
+end;
+//## background__head ##
+procedure tbasiccontrol.background__head(da:trect;xback:longint;xround:boolean;var xsparkle:longint);
+begin
+try;xsparkle:=visparkle;lds2(da,low__dc(xback,-20),xback,clnone,xsparkle,'g50',xround);except;end;
+end;
+//## background__head1 ##
+procedure tbasiccontrol.background__head1(da:trect;xback:longint;xround:boolean;var xsparkle:longint);
+var
+   int1:longint;
+begin
+try
+xsparkle:=visparkle;
+if vishadeglow then int1:=xback else int1:=low__dc(xback,-20);
+lds2(da,int1,int1,clnone,xsparkle,'g50',xround);
+except;end;
+end;
+//## background__head2 ##
+procedure tbasiccontrol.background__head2(da:trect;xback:longint;xround:boolean;var xsparkle:longint);
+begin
+try;xsparkle:=visparkle;lds2(da,xback,low__dc(xback,-20),clnone,xsparkle,'g50',xround);except;end;
+end;
+//## background__realtimehelp ##
+procedure tbasiccontrol.background__realtimehelp(da:trect;xback:longint;xround:boolean);
+begin
+try;lds2(da,low__dc(xback,-10),xback,clnone,0,'g20',xround);except;end;
+end;
+//## background__title ##
+procedure tbasiccontrol.background__title(da:trect;xback:longint;xround:boolean);
+begin
+try;lds2(da,low__dc(xback,-10),xback,xback,0,'g50',xround);except;end;
+end;
+//## background__toolbar ##
+procedure tbasiccontrol.background__toolbar(da:trect;xback,xback2:longint;xround:boolean);
+begin
+try;lds2(da,xback2,xback,xback,0,vishadestyle,xround);except;end;
+end;
+
+//-- other ---------------------------------------------------------------------
 //## xwound_wheel ##
 procedure tbasiccontrol.xwound_wheel(xtimems:longint);//04oct2022
 begin
@@ -81582,6 +85909,11 @@ procedure tbasiccontrol.ainc;
 begin
 try;low__iroll(iaid,1);except;end;
 end;
+//## iswin ##
+function tbasiccontrol.iswin:boolean;
+begin
+try;result:=(iwinstyle>=wmFullwin);except;end;
+end;
 //## setwinstyle ##
 procedure tbasiccontrol.setwinstyle(x:longint);
 begin
@@ -81641,7 +85973,7 @@ begin
 try;result:=tbasiccontrol.create(self);except;end;
 end;
 //## nlabel ##
-function tbasiccontrol.nlabel(xcap,xhelp:string):tbasiccontrol;
+function tbasiccontrol.nlabel(xcap,xhelp:string):tbasictitle;
 begin
 try;result:=tbasictitle.create(self,false,true,xcap);result.help:=xhelp;except;end;
 end;
@@ -81761,10 +86093,20 @@ function tbasiccontrol.ncolor(xcap,xhelp:string):tbasiccolor;
 begin
 try;result:=ncolor2(xcap,xhelp,true,0);except;end;
 end;
+//## ncolor1 ##
+function tbasiccontrol.ncolor1(xcap,xhelp:string;xuse32:boolean):tbasiccolor;
+begin
+try;result:=ncolor3(xcap,xhelp,true,0,xuse32);except;end;
+end;
 //## ncolor2 ##
 function tbasiccontrol.ncolor2(xcap,xhelp:string;xvert:boolean;hsp:longint):tbasiccolor;
 begin
-try;result:=tbasiccolor.create(self,xcap);result.help:=xhelp;result.oalignvert:=xvert;result.oseph:=hsp;except;end;
+try;result:=ncolor3(xcap,xhelp,xvert,hsp,false);except;end;
+end;
+//## ncolor3 ##
+function tbasiccontrol.ncolor3(xcap,xhelp:string;xvert:boolean;hsp:longint;xuse32:boolean):tbasiccolor;
+begin
+try;result:=tbasiccolor.create(self,xcap);result.help:=xhelp;result.oalignvert:=xvert;result.oseph:=hsp;result.use32:=xuse32;except;end;
 end;
 //## nscrollbar ##
 function tbasiccontrol.nscrollbar(xhelp:string;xvert:boolean):tbasicscrollbar;
@@ -81838,11 +86180,20 @@ if xretaindata then//by default "low__wordcore..4()" wipes or alters inbound dat
    begin
    a:=bnew;
    a.add(xdata);
-   result.ioset3(a,-1,-1,-1,-1,xtransform,xwebimages);
+   result.ioset3(a,-1,-1,-1,-1,-1,xtransform,xwebimages);
    end
-else result.ioset3(xdata,-1,-1,-1,-1,xtransform,xwebimages);
+else result.ioset3(xdata,-1,-1,-1,-1,-1,xtransform,xwebimages);
 except;end;
 try;bfree(a);except;end;
+end;
+//## nbwpbar ##
+function tbasiccontrol.nbwpbar(xbox:tbasicbwp;xsysbox:boolean):tbwpbar;//14nov2023
+begin
+try
+result:=tbwpbar.create(self);
+result.box:=xbox;
+result.osysbox:=xsysbox;
+except;end;
 end;
 //## nmenu ##
 function tbasiccontrol.nmenu(xcap,xhelp:string):tbasicmenu;
@@ -81918,7 +86269,12 @@ end;
 //## nsetcolor ##
 function tbasiccontrol.nsetcolor:tbasicsetcolor;//27feb2021
 begin
-try;result:=tbasicsetcolor.create(self);except;end;
+try;result:=tbasicsetcolor.create(self,false);except;end;
+end;
+//## nsetcolor2 ##
+function tbasiccontrol.nsetcolor2(xuse32:boolean):tbasicsetcolor;//27feb2021
+begin
+try;result:=tbasicsetcolor.create(self,xuse32);except;end;
 end;
 //## nbreak ##
 function tbasiccontrol.nbreak(xheight:longint):tbasicbreak;
@@ -81937,7 +86293,7 @@ try;if inormal then result:=@vinormal else result:=@vititle;except;end;
 end;
 //xxxxxxxxxxxxxxxxxxxxxxxxxxxxx//bbbbbbbbbbbbbbbbbbbbbbb
 //## rounded ##
-function tbasiccontrol.rounded:boolean;//05aug2020
+function tbasiccontrol.rounded:boolean;//this is for the control in general - 05aug2020
 begin
 //was: try;if (winstyle=wmfullwin) then result:=false else result:=viround;except;end;
 try;result:=viround and (oroundstyle>=corRound);except;end;
@@ -81945,7 +86301,7 @@ end;
 //## info_round ##
 function tbasiccontrol.info_round:boolean;
 begin
-try;result:=rounded;except;end;
+try;result:=rounded and (not osquareframe);except;end;
 end;
 //## info_cs ##
 function tbasiccontrol.info_cs:trect;
@@ -82064,6 +86420,13 @@ end;
 //## infovars2 ##
 procedure tbasiccontrol.infovars2(var xinfo:pvirtualinfo;var xclientspace,xclientinner:trect;var fn,fb,fnH,fbH,fnbH,xclientwidth,xclientheight,xfont,xfontdisable,xfont2,xback,xback2,xborder,xhover,xfontheight,xfeather,xbordersize:longint;var xenabled,xround,xnormal:boolean);
 var
+   xback3,xborder3:longint;
+begin
+try;infovars3(xinfo,xclientspace,xclientinner,fn,fb,fnH,fbH,fnbH,xclientwidth,xclientheight,xfont,xfontdisable,xfont2,xback,xback2,xback3,xborder,xborder3,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);except;end;
+end;
+//## infovars3 ##
+procedure tbasiccontrol.infovars3(var xinfo:pvirtualinfo;var xclientspace,xclientinner:trect;var fn,fb,fnH,fbH,fnbH,xclientwidth,xclientheight,xfont,xfontdisable,xfont2,xback,xback2,xback3,xborder,xborder3,xhover,xfontheight,xfeather,xbordersize:longint;var xenabled,xround,xnormal:boolean);
+var
    xcolortheshade:boolean;
 begin
 try
@@ -82073,12 +86436,24 @@ xcolortheshade:=xenabled and vispecialcolors and ((ospbackcolor<>clnone) or (osp
 if xcolortheshade then xfont:=low__dc(xback,-200);
 xfont2:=xfont;
 xback2:=xback;
+xback3:=xback;
+xborder3:=xborder;
 if vienhanced then
    begin
 //was: if (xfont2<>clnone) then xfont2:=low__dc(xfont2,100);
    if (xfont2<>clnone) then xfont2:=low__dc(xfont2,60);
-   if (xback2<>clnone) then xback2:=low__dc(xback2,-20);//was -30 -> a bit too heavy - 18aug2020
+   if (xback2<>clnone) then
+      begin
+      xback2:=low__dc(xback2,-20);//was -30 -> a bit too heavy - 18aug2020
+      xback3:=low__colsplice1(0.7,low__dc(xback,50),xhover);//a subtle mix of background shade and hover color without being to overpowering - 17nov2023
+      xborder3:=low__colsplice1(0.2,low__dc(xback,30),xhover);//a subtle mix of background shade and hover color without being to overpowering - 17nov2023
+      end;
    if xcolortheshade then xfont2:=low__dc(xback,-140);//xback;//low__dc(xfont,xback);
+   end
+else
+   begin
+   //.back3 must be slightly different from background for enough constrast in non-enhanced mode to highlight a button area - 19nov2023
+   xback3:=low__dc(xback,20);//back3 and border3 designed to be more resilliant against many more colors with subtle highlight properties
    end;
 except;end;
 end;
@@ -82453,6 +86828,23 @@ var
 begin
 try;result:=xwindow(a) and (a.coreindex=gui.winfocus);except;end;
 end;
+//## xwindow2 ##
+function tbasiccontrol.xwindow2(var x:tbasicscroll):boolean;//return our containing window
+var
+   a:tbasiccontrol;
+begin
+try
+//defaults
+result:=false;
+x:=nil;
+//get
+if xwindow(a) and (a<>nil) and (a is tbasicscroll) then
+   begin
+   result:=true;
+   x:=(a as tbasicscroll);
+   end;
+except;end;
+end;
 //## xwindow ##
 function tbasiccontrol.xwindow(var x:tbasiccontrol):boolean;//return our containing window
 label
@@ -82825,11 +87217,16 @@ if (xbordersize>=1) then
    //control frame
    else
       begin
-      ldf(cs,xborder,low__dc(xback,-20),xbordersize,nil,xround);//26feb2022
+      ldf(cs,xborder,low__dc(xback,-20),xbordersize,nil,roundframe);//26feb2022
       end;
    end;
 xparentcorners;
 except;end;
+end;
+//## roundframe ##
+function tbasiccontrol.roundframe:boolean;//used to signal to paint proc to draw a square frame even though the control itself and it's children maybe round - 02dec2023
+begin
+try;result:=rounded and (not osquareframe);except;end;
 end;
 //## xparentcorners ##
 procedure tbasiccontrol.xparentcorners;
@@ -83012,7 +87409,20 @@ end;
 //## ldv2 ##
 procedure tbasiccontrol.ldv2(dx,dy,dy2,dcol:longint;xdot,xround:boolean);
 begin
-try;if gui.painting then low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,low__aorbchar('v','V',xdot),iclientarea,ipaintarea,rect(dx+iclientarea.left,dy+iclientarea.top,dx+iclientarea.left,dy2+iclientarea.top),dcol,clnone,clnone,0,0,0,0,nil,nil,oroundstyle,xround);except;end;
+try;ldv3(maxarea,dx,dy,dy2,dcol,xdot,xround);except;end;
+end;
+//## ldv3 ##
+procedure tbasiccontrol.ldv3(dcliparea:trect;dx,dy,dy2,dcol:longint;xdot,xround:boolean);
+begin
+try
+//range
+if (dy2<dy) or (dx>dcliparea.right) or (dx<dcliparea.left) or (dy>dcliparea.bottom) or (dy2<dcliparea.top) or (dcliparea.right<dcliparea.left) or (dcliparea.bottom<dcliparea.top) then exit;
+dy:=frcrange(dy,dcliparea.top,dcliparea.bottom);
+dy2:=frcrange(dy2,dcliparea.top,dcliparea.bottom);
+if (dy2<dy) then exit;
+//set
+if gui.painting then low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,low__aorbchar('v','V',xdot),iclientarea,ipaintarea,rect(dx+iclientarea.left,dy+iclientarea.top,dx+iclientarea.left,dy2+iclientarea.top),dcol,clnone,clnone,0,0,0,0,irichstart,nil,nil,oroundstyle,xround);
+except;end;
 end;
 //## ldh ##
 procedure tbasiccontrol.ldh(dx,dx2,dy,dcol:longint;xround:boolean);
@@ -83022,20 +87432,60 @@ end;
 //## ldh2 ##
 procedure tbasiccontrol.ldh2(dx,dx2,dy,dcol:longint;xdot,xround:boolean);
 begin
-try;if gui.painting then low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,low__aorbchar('h','H',xdot),iclientarea,ipaintarea,rect(dx+iclientarea.left,dy+iclientarea.top,dx2+iclientarea.left,dy+iclientarea.top),dcol,clnone,clnone,0,0,0,0,nil,nil,oroundstyle,xround);except;end;
+try;ldh3(maxarea,dx,dx2,dy,dcol,xdot,xround);except;end;
+end;
+//## ldh3 ##
+procedure tbasiccontrol.ldh3(dcliparea:trect;dx,dx2,dy,dcol:longint;xdot,xround:boolean);
+begin
+try
+//range
+if (dx2<dx) or (dy>dcliparea.bottom) or (dy<dcliparea.top) or (dx>dcliparea.right) or (dx2<dcliparea.left) or (dcliparea.right<dcliparea.left) or (dcliparea.bottom<dcliparea.top) then exit;
+dx:=frcrange(dx,dcliparea.left,dcliparea.right);
+dx2:=frcrange(dx2,dcliparea.left,dcliparea.right);;
+if (dx2<dx) then exit;
+//set
+if gui.painting then low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,low__aorbchar('h','H',xdot),iclientarea,ipaintarea,rect(dx+iclientarea.left,dy+iclientarea.top,dx2+iclientarea.left,dy+iclientarea.top),dcol,clnone,clnone,0,0,0,0,irichstart,nil,nil,oroundstyle,xround);
+except;end;
 end;
 //## ldso ##
 procedure tbasiccontrol.ldso(darea:trect;dborder,dback:longint;xround:boolean);
 begin
 try;ldso2(darea,dborder,clnone,dback,clnone,clnone,0,'',xround);except;end;
 end;
+//## ldsob ##
+procedure tbasiccontrol.ldsob(dcliparea,darea:trect;dborder,dback:longint;xround:boolean);
+begin
+try;ldso2b(dcliparea,darea,dborder,clnone,dback,clnone,clnone,0,'',xround);except;end;
+end;
 //## ldso2 ##
 procedure tbasiccontrol.ldso2(darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround:boolean);
 begin
 try;ldso3(true,darea,dborder,dborder2,dback,dback2,dback3,drich,xoptions,xround,false);except;end;
 end;
+//## ldso2ex ##
+procedure tbasiccontrol.ldso2ex(var xbackref:longint;darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround:boolean);
+begin
+try;xbackref:=dback;ldso3(true,darea,dborder,dborder2,dback,dback2,dback3,drich,xoptions,xround,false);except;end;
+end;
+//## ldso2b ##
+procedure tbasiccontrol.ldso2b(dcliparea,darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround:boolean);
+begin
+try;ldso3b(true,dcliparea,darea,dborder,dborder2,dback,dback2,dback3,drich,xoptions,xround,false);except;end;
+end;
 //## ldso3 ##
 procedure tbasiccontrol.ldso3(xdyanmicCorners:boolean;darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround,xdarktolight:boolean);
+begin
+try;ldso4(xdyanmicCorners,maxarea,darea,dborder,dborder2,dback,dback2,dback3,drich,xoptions,xround,xdarktolight);except;end;
+end;
+//## ldso3b ##
+procedure tbasiccontrol.ldso3b(xdyanmicCorners:boolean;dcliparea,darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround,xdarktolight:boolean);
+begin
+try;ldso4(xdyanmicCorners,dcliparea,darea,dborder,dborder2,dback,dback2,dback3,drich,xoptions,xround,xdarktolight);except;end;
+end;
+//## ldso4 ##
+procedure tbasiccontrol.ldso4(xdyanmicCorners:boolean;dcliparea,darea:trect;dborder,dborder2,dback,dback2,dback3,drich:longint;xoptions:string;xround,xdarktolight:boolean);//improved clip handling - 02dec2023
+const
+   xallowance=30;
 var//Note: dback3 is the outside-corner fill color - optional
    str2:tstr8;
    p:longint;
@@ -83044,19 +87494,27 @@ try
 if not gui.painting then exit;
 str2:=nil;
 if (xoptions<>'') then str2:=bnewstr(xoptions);
-inc(darea.left,iclientarea.left);
-inc(darea.right,iclientarea.left);
-inc(darea.top,iclientarea.top);
-inc(darea.bottom,iclientarea.top);
+//clip area
+if (darea.right<darea.left) or (darea.bottom<darea.top) or (darea.right<dcliparea.left) or (darea.left>dcliparea.right) or (darea.bottom<dcliparea.top) or (darea.top>dcliparea.bottom) then exit;
+//.restrict "darea" to a close approximation of "dcliparea" -> not too tight, else the curve will be shrunk in and we want this if required, to run off the edge of the cliparea, hence the "xallowance" of +/-30 px in every direction
+darea.left:=frcrange(darea.left,dcliparea.left-xallowance,dcliparea.right+xallowance);
+darea.right:=frcrange(darea.right,dcliparea.left-xallowance,dcliparea.right+xallowance);
+darea.top:=frcrange(darea.top,dcliparea.top-xallowance,dcliparea.bottom+xallowance);
+darea.bottom:=frcrange(darea.bottom,dcliparea.top-xallowance,dcliparea.bottom+xallowance);
+//scale
+dcliparea:=low__shiftarea(dcliparea,iclientarea.left,iclientarea.top);
+darea:=low__shiftarea(darea,iclientarea.left,iclientarea.top);
 if xdarktolight then
    begin
    if (low__brightness2b(dborder2)<low__brightness2b(dborder)) then low__swapint(dborder,dborder2);//27mar2021
    if (low__brightness2b(dback2)<low__brightness2b(dback)) then low__swapint(dback,dback2);//27mar2021
    end;
-if (dback<>clnone)   then low__draw(xdyanmicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'s',iclientarea,ipaintarea,darea,dback,dback2,dback3,0,0,0,drich,nil,str2,oroundstyle,xround);
+//was: if (dback<>clnone)   then low__draw(xdyanmicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'s',iclientarea,ipaintarea,darea,dback,dback2,dback3,0,0,0,drich,nil,str2,oroundstyle,xround);
+if (dback<>clnone)   then low__draw(xdyanmicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'s',dcliparea,ipaintarea,darea,dback,dback2,dback3,0,0,0,drich,irichstart,nil,str2,oroundstyle,xround);
 if (dborder<>clnone) then
    begin
-   for p:=0 to (vizoom-1) do low__draw(xdyanmicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'o',iclientarea,ipaintarea,rect(darea.left+p,darea.top+p,darea.right-p,darea.bottom-p),dborder,dborder2,dback3,0,0,0,drich,nil,str2,oroundstyle,xround);
+   //was: for p:=0 to (vizoom-1) do low__draw(xdyanmicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'o',iclientarea,ipaintarea,rect(darea.left+p,darea.top+p,darea.right-p,darea.bottom-p),dborder,dborder2,dback3,0,0,0,drich,nil,str2,oroundstyle,xround);
+   for p:=0 to (vizoom-1) do low__draw(xdyanmicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'o',dcliparea,ipaintarea,rect(darea.left+p,darea.top+p,darea.right-p,darea.bottom-p),dborder,dborder2,dback3,0,0,0,drich,irichstart,nil,str2,oroundstyle,xround);
    end;
 except;end;
 try;freeobj(@str2);except;end;
@@ -83091,8 +87549,15 @@ try;lds2(darea,dcol,clnone,clnone,0,'',xround);except;end;
 end;
 //## lds2 ##
 procedure tbasiccontrol.lds2(darea:trect;dcol,dcol2,dcol3,drich:longint;xoptions:string;xround:boolean);
+var
+   int1:longint;
 begin
-try;lds3(true,darea,dcol,dcol2,dcol3,drich,xoptions,xround,false);except;end;
+try;lds2ex(int1,darea,dcol,dcol2,dcol3,drich,xoptions,xround);except;end;
+end;
+//## lds2ex ##
+procedure tbasiccontrol.lds2ex(var xbackref:longint;darea:trect;dcol,dcol2,dcol3,drich:longint;xoptions:string;xround:boolean);
+begin
+try;xbackref:=dcol;lds3(true,darea,dcol,dcol2,dcol3,drich,xoptions,xround,false);except;end;
 end;
 //## lds3 ##
 procedure tbasiccontrol.lds3(xdyanmicCorners:boolean;darea:trect;dcol,dcol2,dcol3,drich:longint;xoptions:string;xround,xdarktolight:boolean);
@@ -83108,7 +87573,7 @@ inc(darea.right,iclientarea.left);
 inc(darea.top,iclientarea.top);
 inc(darea.bottom,iclientarea.top);
 if xdarktolight and (low__brightness2b(dcol2)<low__brightness2b(dcol)) then low__swapint(dcol,dcol2);//27mar2021
-low__draw(xdyanmicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'s',iclientarea,ipaintarea,darea,dcol,dcol2,dcol3,0,0,0,drich,nil,str2,oroundstyle,xround);
+low__draw(xdyanmicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'s',iclientarea,ipaintarea,darea,dcol,dcol2,dcol3,0,0,0,drich,irichstart,nil,str2,oroundstyle,xround);
 except;end;
 try;freeobj(@str2);except;end;
 end;
@@ -83137,7 +87602,7 @@ inc(darea.right,iclientarea.left);
 inc(darea.top,iclientarea.top);
 inc(darea.bottom,iclientarea.top);
 if xdarktolight and (low__brightness2b(dcol2)<low__brightness2b(dcol)) then low__swapint(dcol,dcol2);//27mar2021
-for p:=0 to (vizoom-1) do low__draw(xdyanmicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'o',iclientarea,ipaintarea,rect(darea.left+p,darea.top+p,darea.right-p,darea.bottom-p),dcol,dcol2,dcol3,0,0,0,drich,nil,str2,oroundstyle,xround);
+for p:=0 to (vizoom-1) do low__draw(xdyanmicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'o',iclientarea,ipaintarea,rect(darea.left+p,darea.top+p,darea.right-p,darea.bottom-p),dcol,dcol2,dcol3,0,0,0,drich,irichstart,nil,str2,oroundstyle,xround);
 except;end;
 try;freeobj(@str2);except;end;
 end;
@@ -83167,14 +87632,14 @@ inc(darea.bottom,iclientarea.top);
 //all at once
 if (dcolTL=dcolTR) and (dcolTL=dcolBL) and (dcolTL=dcolBR) then
    begin
-   if (dcolTL<>clnone) then low__draw(xdynamicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'r',iclientarea,ipaintarea,darea,dcolTL,clnone,clnone,0,0,0,drich,nil,str2,oroundstyle,xround);
+   if (dcolTL<>clnone) then low__draw(xdynamicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'r',iclientarea,ipaintarea,darea,dcolTL,clnone,clnone,0,0,0,drich,irichstart,nil,str2,oroundstyle,xround);
    end
 else
    begin//one at a time
-   if (dcolTL<>clnone) then low__draw(xdynamicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'0',iclientarea,ipaintarea,darea,dcolTL,clnone,clnone,0,0,0,drich,nil,str2,oroundstyle,xround);
-   if (dcolTR<>clnone) then low__draw(xdynamicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'1',iclientarea,ipaintarea,darea,dcolTR,clnone,clnone,0,0,0,drich,nil,str2,oroundstyle,xround);
-   if (dcolBL<>clnone) then low__draw(xdynamicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'2',iclientarea,ipaintarea,darea,dcolBL,clnone,clnone,0,0,0,drich,nil,str2,oroundstyle,xround);
-   if (dcolBR<>clnone) then low__draw(xdynamicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'3',iclientarea,ipaintarea,darea,dcolBR,clnone,clnone,0,0,0,drich,nil,str2,oroundstyle,xround);
+   if (dcolTL<>clnone) then low__draw(xdynamicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'0',iclientarea,ipaintarea,darea,dcolTL,clnone,clnone,0,0,0,drich,irichstart,nil,str2,oroundstyle,xround);
+   if (dcolTR<>clnone) then low__draw(xdynamicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'1',iclientarea,ipaintarea,darea,dcolTR,clnone,clnone,0,0,0,drich,irichstart,nil,str2,oroundstyle,xround);
+   if (dcolBL<>clnone) then low__draw(xdynamicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'2',iclientarea,ipaintarea,darea,dcolBL,clnone,clnone,0,0,0,drich,irichstart,nil,str2,oroundstyle,xround);
+   if (dcolBR<>clnone) then low__draw(xdynamicCorners,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'3',iclientarea,ipaintarea,darea,dcolBR,clnone,clnone,0,0,0,drich,irichstart,nil,str2,oroundstyle,xround);
    end;
 except;end;
 try;freeobj(@str2);except;end;
@@ -83211,7 +87676,7 @@ dec(darea.right,bs);
 inc(darea.top,bs);
 dec(darea.bottom,bs);
 //all at once
-low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'r',a.clientarea,a.paintarea,darea,dcol,clnone,clnone,0,0,0,drich,nil,nil,a.oroundstyle,xround);
+low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'r',a.clientarea,a.paintarea,darea,dcol,clnone,clnone,0,0,0,drich,irichstart,nil,nil,a.oroundstyle,xround);
 except;end;
 end;
 //## ldf ##
@@ -83244,8 +87709,8 @@ inc(darea.right,iclientarea.left);
 inc(darea.top,iclientarea.top);
 inc(darea.bottom,iclientarea.top);
 case (xframecode<>nil) and (xframecode.len>=1) of
-true: low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'g',iclientarea,ipaintarea,darea,dcol,dcol2,dcol3,dsize,dbrightness,dbrightnessDARK,drich,xframecode,str2,oroundstyle,xround);
-false:low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'f' ,iclientarea,ipaintarea,darea,dcol,dcol2,dcol3,dsize,dbrightness,dbrightnessDARK,drich,nil,str2,oroundstyle,xround);
+true: low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'g',iclientarea,ipaintarea,darea,dcol,dcol2,dcol3,dsize,dbrightness,dbrightnessDARK,drich,irichstart,xframecode,str2,oroundstyle,xround);
+false:low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'f' ,iclientarea,ipaintarea,darea,dcol,dcol2,dcol3,dsize,dbrightness,dbrightnessDARK,drich,irichstart,nil,str2,oroundstyle,xround);
 end;//case
 except;end;
 try;freeobj(@str2);except;end;
@@ -83264,7 +87729,7 @@ inc(darea.left,iclientarea.left);
 inc(darea.right,iclientarea.left);
 inc(darea.top,iclientarea.top);
 inc(darea.bottom,iclientarea.top);
-low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'m',iclientarea,ipaintarea,darea,clnone,clnone,dcol3,0,0,0,0,nil,nil,oroundstyle,xround);
+low__draw(true,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'m',iclientarea,ipaintarea,darea,clnone,clnone,dcol3,0,0,0,0,irichstart,nil,nil,oroundstyle,xround);
 except;end;
 end;
 //## ldi ##
@@ -83278,7 +87743,7 @@ inc(darea.left,iclientarea.left);
 inc(darea.right,iclientarea.left);
 inc(darea.top,iclientarea.top);
 inc(darea.bottom,iclientarea.top);
-low__draw2(true,tbnone,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'i',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,dtep,clnone,clnone,0,nil,nil,oroundstyle,xround,xfocus,xgrey,false,false);
+low__draw2(clnone,true,tbnone,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'i',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,dtep,clnone,clnone,0,irichstart,nil,nil,oroundstyle,xround,xfocus,xgrey,false,false);
 except;end;
 end;
 //## ldi2 ##
@@ -83292,7 +87757,7 @@ inc(darea.left,iclientarea.left);
 inc(darea.right,iclientarea.left);
 inc(darea.top,iclientarea.top);
 inc(darea.bottom,iclientarea.top);
-low__draw2(true,tbnone,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'i',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,dtep,dcol2,clnone,0,nil,nil,oroundstyle,xround,xfocus,xgrey,false,false);
+low__draw2(clnone,true,tbnone,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'i',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,dtep,dcol2,clnone,0,irichstart,nil,nil,oroundstyle,xround,xfocus,xgrey,false,false);
 except;end;
 end;
 //## ldis ##
@@ -83306,7 +87771,15 @@ inc(darea.left,iclientarea.left);
 inc(darea.right,iclientarea.left);
 inc(darea.top,iclientarea.top);
 inc(darea.bottom,iclientarea.top);
-low__draw3(true,vicoloriseimages,true,tbnone,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'j',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,dtep,low__aorb(clnone,info.background,vicoloriseimages),clnone,0,nil,nil,oroundstyle,xround,xfocus,xgrey,false,false);
+low__draw3(clnone,true,vicoloriseimages,true,tbnone,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'j',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,dtep,low__aorb(clnone,info.background,vicoloriseimages),clnone,0,irichstart,nil,nil,oroundstyle,xround,xfocus,xgrey,false,false);
+except;end;
+end;
+//## ldis_e ##
+procedure tbasiccontrol.ldis_e(xbackref:longint;darea:trect;dx,dy,dcol,dtep:longint;xfocus,xgrey,xround:boolean);//system version
+begin
+try
+if viEmboss then ldis(darea,dx-vizoom,dy-vizoom,low__dc(xbackref,-20),dtep,xfocus,xgrey,xround);
+ldis(darea,dx,dy,dcol,dtep,xfocus,xgrey,xround);
 except;end;
 end;
 //## ldis2 ##
@@ -83320,7 +87793,7 @@ inc(darea.left,iclientarea.left);
 inc(darea.right,iclientarea.left);
 inc(darea.top,iclientarea.top);
 inc(darea.bottom,iclientarea.top);
-low__draw3(true,vicoloriseimages,true,tbnone,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'j',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,dtep,dcol2,clnone,0,nil,nil,oroundstyle,xround,xfocus,xgrey,false,false);
+low__draw3(clnone,true,vicoloriseimages,true,tbnone,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'j',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,dtep,dcol2,clnone,0,irichstart,nil,nil,oroundstyle,xround,xfocus,xgrey,false,false);
 except;end;
 end;
 //## ltea ##
@@ -83334,7 +87807,7 @@ inc(darea.left,iclientarea.left);
 inc(darea.right,iclientarea.left);
 inc(darea.top,iclientarea.top);
 inc(darea.bottom,iclientarea.top);
-low__draw3(xdynamicCorners,xcolorise,xsyszoom,tbnone,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'a',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,0,clnone,clnone,0,xteadata,nil,oroundstyle,xround,xfocus,xgrey,false,false);
+low__draw3(clnone,xdynamicCorners,xcolorise,xsyszoom,tbnone,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'a',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,0,clnone,clnone,0,irichstart,xteadata,nil,oroundstyle,xround,xfocus,xgrey,false,false);
 except;end;
 end;
 //## lteas ##
@@ -83371,7 +87844,6 @@ ddy:=ddy+ipaintarea.top-ys;
 //miscopyareaxx8(darea,ddx,ddy,ddw,ddh,sa,gui.buffer,s,nil,nil,nil,nil,nil,gui.mask,gui.maskval,0,false,xpower255,xtrans,xtc,xoptions,0,0,nil,nil,nil,nil,nil,nil,nil,xusealpha);
 //miscopyareaxx9(clnone,clnone,da_clip,ddx,ddy,ddw,ddh,sa,d,s,dm,dm2,sm,sm2,sselshow,dmask,dmaskval,xselshowSTRIDE,xselshowEVENINIT,xpower255,xtrans,xtc,xoptions,xscroll,yscroll,refOP,refRGB,refR,refG,refB,refX,refY,xusealpha);except;end;
 miscopyareaxx10(clnone,clnone,darea,ddx,ddy,ddw,ddh,sa,gui.buffer,s,nil,nil,nil,nil,nil,gui.mask,gui.maskval,0,false,xpower255,xtrans,xtc,xwriteShadesofcolor,xoptions,0,0,nil,nil,nil,nil,nil,nil,nil,xusealpha);
-
 except;end;
 end;
 //## ldcs ##
@@ -83406,20 +87878,25 @@ end;
 //## ldt ##
 procedure tbasiccontrol.ldt(darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xround:boolean);
 begin
-try;ldtTAB2(tbnone,darea,dx,dy,dcol,xline,xfontindex,xfeather,false,false,false,false,xround);except;end;
+try;ldtTAB2(clnone,tbnone,darea,dx,dy,dcol,xline,xfontindex,xfeather,false,false,false,false,xround);except;end;
+end;
+//## ldt1 ##
+procedure tbasiccontrol.ldt1(xbackref:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xround:boolean);//emboss version - 18nov2023
+begin
+try;ldtTAB2(xbackref,tbnone,darea,dx,dy,dcol,xline,xfontindex,xfeather,false,false,false,false,xround);except;end;
 end;
 //## ldtTAB ##
-procedure tbasiccontrol.ldtTAB(xtab:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xround:boolean);
+procedure tbasiccontrol.ldtTAB(xbackref,xtab:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xround:boolean);
 begin
-try;ldtTAB2(xtab,darea,dx,dy,dcol,xline,xfontindex,xfeather,false,false,false,false,xround);except;end;
+try;ldtTAB2(xbackref,xtab,darea,dx,dy,dcol,xline,xfontindex,xfeather,false,false,false,false,xround);except;end;
 end;
 //## ldt2 ##
-procedure tbasiccontrol.ldt2(darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
+procedure tbasiccontrol.ldt2(xbackref:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
 begin
-try;ldtTAB2(tbnone,darea,dx,dy,dcol,xline,xfontindex,xfeather,xbold,xitalic,xunderline,xstrikeout,xround);except;end;
+try;ldtTAB2(xbackref,tbnone,darea,dx,dy,dcol,xline,xfontindex,xfeather,xbold,xitalic,xunderline,xstrikeout,xround);except;end;
 end;
 //## ldtTAB2 ##
-procedure tbasiccontrol.ldtTAB2(xtab:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
+procedure tbasiccontrol.ldtTAB2(xbackref,xtab:longint;darea:trect;dx,dy,dcol:longint;xline:string;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
 var
    str2:tstr8;
 begin
@@ -83429,7 +87906,7 @@ str2:=nil;
 if (xline<>'') then
    begin
    str2:=bnewstr(xline);
-   ldtTAB4(xtab,darea,dx,dy,dcol,str2,xfontindex,xfeather,xbold,xitalic,xunderline,xstrikeout,xround);
+   ldtTAB4(xbackref,xtab,darea,dx,dy,dcol,str2,xfontindex,xfeather,xbold,xitalic,xunderline,xstrikeout,xround);
    end;
 except;end;
 try;freeobj(@str2);except;end;
@@ -83437,20 +87914,20 @@ end;
 //## ldt3 ##
 procedure tbasiccontrol.ldt3(darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xround:boolean);
 begin
-try;ldtTAB4(tbnone,darea,dx,dy,dcol,xline,xfontindex,xfeather,false,false,false,false,xround);except;end;
+try;ldtTAB4(clnone,tbnone,darea,dx,dy,dcol,xline,xfontindex,xfeather,false,false,false,false,xround);except;end;
 end;
 //## ldtTAB3 ##
-procedure tbasiccontrol.ldtTAB3(xtab:longint;darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xround:boolean);
+procedure tbasiccontrol.ldtTAB3(xbackref,xtab:longint;darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xround:boolean);
 begin
-try;ldtTAB4(xtab,darea,dx,dy,dcol,xline,xfontindex,xfeather,false,false,false,false,xround);except;end;
+try;ldtTAB4(xbackref,xtab,darea,dx,dy,dcol,xline,xfontindex,xfeather,false,false,false,false,xround);except;end;
 end;
 //## ldt4 ##
 procedure tbasiccontrol.ldt4(darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
 begin
-try;ldtTAB4(tbnone,darea,dx,dy,dcol,xline,xfontindex,xfeather,xbold,xitalic,xunderline,xstrikeout,xround);except;end;
+try;ldtTAB4(clnone,tbnone,darea,dx,dy,dcol,xline,xfontindex,xfeather,xbold,xitalic,xunderline,xstrikeout,xround);except;end;
 end;
 //## ldtTAB4 ##
-procedure tbasiccontrol.ldtTAB4(xtab:longint;darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
+procedure tbasiccontrol.ldtTAB4(xbackref,xtab:longint;darea:trect;dx,dy,dcol:longint;xline:tstr8;xfontindex,xfeather:longint;xbold,xitalic,xunderline,xstrikeout,xround:boolean);
 label
    skipend;
 begin
@@ -83465,7 +87942,7 @@ inc(darea.top,iclientarea.top);
 inc(darea.bottom,iclientarea.top);
 xfontindex:=low__fontdata(xfontindex);
 if (xfontindex<>0) and (sysfont_data[xfontindex].count<=0) then xfontindex:=0;//revert to "root/0" font when something goes wrong
-low__draw2(true,xtab,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'t',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,xfeather,0,0,0,sysfont_data[xfontindex],xline,oroundstyle,xround,xbold,xitalic,xunderline,xstrikeout);
+low__draw2(low__aorb(clnone,xbackref,viemboss),true,xtab,gui.bits,gui.width,gui.height,gui.rows,gui.mask,gui.maskval,'t',iclientarea,ipaintarea,darea,dcol,dcol,clnone,dx,dy,xfeather,0,0,0,irichstart,sysfont_data[xfontindex],xline,oroundstyle,xround,xbold,xitalic,xunderline,xstrikeout);
 skipend:
 except;end;
 try;bunlockautofree(xline);except;end;
@@ -83505,6 +87982,8 @@ begin
 satinc(satHead,1);
 inherited create2(xparent,false);
 //vars
+oroothead:=false;
+irootheadREF:='';
 ocanshowmenu:=true;
 osmall:=false;
 istyle:=wuClose;
@@ -83665,6 +88144,8 @@ if (xms64>itimer250) then
    str1:='';
    for p:=0 to high(ibuttep) do str1:=str1+inttostr(p)+pcRefsep+inttostr(ibuttep[p])+pcRefsep+bnc(ibutenb[p])+bnc(ibutvis[p])+pcRefsep;
    if low__setstr(iinforef,str1+pcRefsep+bnc(xwindowindex=gui.winfocus)+bnc(inormal)+pcRefsep+inttostr(oiconpad)+pcRefsep+inttostr(findbordersize)+pcRefsep+inttostr(displaysize)) then xmustpaint:=true;
+   //gui.fullscreen_hidehead
+   if oroothead and gui.fullscreen and low__setstr(irootheadREF,bnc(gui.fullscreen_hidehead)) then gui.fullalignpaint;
    //reset
    itimer250:=xms64+250;
    end;
@@ -83741,7 +88222,7 @@ end;
 //## getalignheight ##
 function tbasichead.getalignheight(xclientwidth:longint):longint;
 begin
-try;result:=frcmin((displaysize*vizoom)+(2*findbordersize),0);except;end;
+try;if oroothead and gui.fullscreen and gui.fullscreen_hidehead then result:=0 else result:=frcmin((displaysize*vizoom)+(2*findbordersize),0);except;end;
 end;
 //## displaysize ##
 function tbasichead.displaysize:longint;
@@ -83804,10 +88285,10 @@ var
    a:pvirtualinfo;
    xparent:tbasiccontrol;
    cs,ci:trect;
-   fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xback,xborder,xhover,xfontheight,xfeather,xbordersize:longint;
+   fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfont2,xfontdisable,xback,xback2,xback3,xborder,xborder3,xhover,xfontheight,xfeather,xbordersize:longint;
    xenabled,xround,xnormal:boolean;
    //other
-   dbutw,xfonthighlight,xzoom,wback,xhoverindex,fc,int1,xstyle,xdownoffset,p,dh,xiconpad,xtc,xsize,ddx,ddy,dx,dy:longint;
+   int1,dbutw,xfonthighlight,xzoom,wback,xhoverindex,fc,xstyle,xdownoffset,p,dh,xiconpad,xtc,xsize,ddx,ddy,dx,dy:longint;
    xcaption,str1,e:string;
    xheadcenter,xtouch,xfocused,xhavefocus,xfocus,xdown,xact,bol1:boolean;
    shiftby,sp,xpad,xbutpad,xbutclickw:longint;
@@ -83846,7 +88327,7 @@ sp         :=2*xzoom;
 xpad       :=4*xzoom;//was 7
 xbutpad    :=20*xzoom;
 xbutclickw :=5*xzoom;
-infovars(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xback,xborder,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);
+infovars3(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xfont2,xback,xback2,xback3,xborder,xborder3,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);
 dh:=frcmin(ch-(2*xbordersize),1);
 xiconpad:=frcrange(oiconpad*xzoom,0,round(dh*0.5));
 xsize:=frcmax(frcmin(dh-(2*xiconpad),1),32*xzoom);
@@ -83877,7 +88358,7 @@ else
 xhoverindex:=xfind(mousemovexy.x,mousemovexy.y);//need update-to-date info because "normalise/max" button can make window change size causing the cursor to be suddenly outside of this control with a correct update - 18apr2020
 
 //cls
-lds2(cs,low__dc(xback,-20),xback,clnone,visparkle,'g50',xround);
+background__head(cs,xback,roundframe,int1);
 
 //dx
 dx:=xbordersize+(1*xzoom);//minor left-side pad -> space it spaced away from inner edge of round corner curve for neatness - 11apr2020
@@ -83893,7 +88374,7 @@ if (itep<>tepnone) then
 //title
 xcaption:=low__udv(caption,low__programname)+icaption2;//18jun2021
 inc(dx,xbordersize+xpad);
-ldt(ci,low__aorb(dx,frcmin(dx,(cw-low__fonttextwidth2(fc,xcaption)) div 2),xheadcenter),(ch-low__fontmaxh(fc)) div 2,xfont,xcaption,fc,xfeather,xround);//06nov2022, 11oct2022
+ldt1(xback,ci,low__aorb(dx,frcmin(dx,(cw-low__fonttextwidth2(fc,xcaption)) div 2),xheadcenter),(ch-low__fontmaxh(fc)) div 2,xfont,xcaption,fc,xfeather,xround);//06nov2022, 11oct2022
 
 //window buttons -> right-to-left
 dx:=cw-xbordersize-xbutclickw-(2*xzoom);
@@ -83910,15 +88391,14 @@ if (ibuttep[p]<>tepnone) and ibutvis[p] and (ibutw[p]>=1) and (ibuth[p]>=1) and 
    dec(dx,dbutw*xzoom);
    ddx:=dx+xdownoffset;
    ddy:=dy+xdownoffset;
-   //.color
-   if xhavefocus       then int1:=xfonthighlight//xhover
-   else if ibutenb[p]  then int1:=xfont
-   else                     int1:=xfontdisable;
    //get
    ibutare[p]:=rect(ddx-xbutclickw,ddy,ddx+((dbutw-1)*xzoom)+xbutclickw,ddy+((ibuth[p]-1)*xzoom)+xbutclickw);//on
 //was: if xhavefocus then lds(ibutare[p],low__dc(xback,30),xround);//07sep2020
-   if xhavefocus then lds(ibutare[p],xhover,xround);//07sep2020
-   ldis(ci,ddx+(((dbutw*xzoom)-(ibutw[p]*xzoom)) div 2),ddy+(((ibutare[p].bottom-ibutare[p].top)-(ibuth[p]*xzoom)) div 2),int1,ibuttep[p],false,false,xround);
+//   if xhavefocus then lds(ibutare[p],xhover,xround);//07sep2020
+//   if xhavefocus then lds(ibutare[p],low__dc(xback,-30),xround);//07sep2020
+   //was: if xhavefocus then lds(ibutare[p],xback3,xround);//color updated 02dec2023, 07sep2020
+   if xhavefocus then ldso4(true,ibutare[p],ibutare[p],clnone,clnone,xback3,xback,clnone,visparkle,vishadestyle,xround,true);
+   ldis(ci,ddx+(((dbutw*xzoom)-(ibutw[p]*xzoom)) div 2),ddy+(((ibutare[p].bottom-ibutare[p].top)-(ibuth[p]*xzoom)) div 2),xfont,ibuttep[p],false,false,xround);
    //sep
    dec(dx,xbutpad);
    if (p=vclo) then dec(dx,xbutpad div 2);
@@ -83926,7 +88406,7 @@ if (ibuttep[p]<>tepnone) and ibutvis[p] and (ibutw[p]>=1) and (ibuth[p]>=1) and 
 else ibutare[p]:=rect(0,0,0,0);//off
 end;//p
 //frame
-if (xbordersize>=1) then ldf2(cs,xborder,xborder,clnone,xbordersize,0,'',nil,xround);
+if (xbordersize>=1) then ldf2(cs,xborder,xborder,clnone,xbordersize,0,'',nil,roundframe);
 xparentcorners;//Note: System._onpaint() now uses winLdr to maintain the inner roundness of it's frame
                //      and thus all controls are free to paint square and the system will correct afterwards - 01aug2021
 except;end;
@@ -84085,8 +88565,30 @@ function tbasichead.canmen:boolean;
 begin
 try;result:=(istyle=wuAll);except;end;
 end;
+//## app__setwindowstyle ##
+procedure app__setwindowstyle(gui:tbasicsystem;xcmd:string);
+begin
+try
+//check
+if (gui=nil) then exit;
+//range
+xcmd:=low__lowercase(xcmd);
+//get
+if (xcmd='n') then gui.gstate:=gsNormal;//window
+if (xcmd='-') and (application.mainform<>nil) then application.minimize;//minimise
+if (xcmd='+') then//maximise
+   begin
+   gui.fullscreen_hidehead:=false;//12feb2023
+   if gui.xnormal then gui.gstate:=gsMax else gui.gstate:=gsNormal;//toggle
+   //was: if (gui.host.windowstate=wsNormal) then gui.gstate:=gsMax else gui.gstate:=gsNormal;//toggle
+   end;
+if (xcmd='f') then gui.fullscreen:=true;//full screen
+except;end;
+end;
 //## xcmd ##
 procedure tbasichead.xcmd(x:string);
+label
+   skipend;
 var
    a:tbasiccontrol;
    int1:longint;
@@ -84095,25 +88597,24 @@ begin
 try
 //init
 if not xwindow(a) then exit;
+if siclosing then exit;//17nov2023
 //filter
 x:=low__lowercase(x);
 //window commands
 if (a.winstyle=wmfullwin) then
    begin
 {$ifdef D3}
-   if (x='-') and canmin then application.minimize;
-   if (x='n') and cannor then gui.gstate:=gsNormal;
-   if (x='+') and canmax then
-      begin
-      if gui.xnormal then gui.gstate:=gsMax else gui.gstate:=gsNormal;//toggle
-      //was: if (gui.host.windowstate=wsNormal) then gui.gstate:=gsMax else gui.gstate:=gsNormal;//toggle
-      end;
+   if (x='-') and canmin then app__setwindowstyle(gui,x);//minimise
+   if (x='n') and cannor then app__setwindowstyle(gui,x);//windowise
+   if (x='+') and canmax then app__setwindowstyle(gui,x);//maximise
 {$endif}
    if (x='i') and canmen then showmenu;
    if (x='x') and canclo then
       begin
       if (gui.host=application.mainform) then siCloseprompt(gui)//26aug2021
       else if zzok(gui.host,7197) then gui.host.visible:=false;
+      //check
+      if siclosing then goto skipend;
       end;
    end
 else
@@ -84130,6 +88631,7 @@ else
 //sync
 ibutenb[vmin]:=(gui.host.windowstate<>wsMinimized);
 buttep[vmax]:=low__aorb(tepNormal,tepMaximise,gui.gstate<>gsMax);//14mar2021
+skipend:
 except;end;
 end;
 //## showmenuFill ##
@@ -84147,9 +88649,9 @@ scheck(programwebname,programwebname_check);
 scheck(programversion,programversion_check);
 
 //get
-low__menutitle(xmenudata,tepnone,protect_text(16771544,'Visit Blaiz Enterprises'),'');
-low__menuitem2(xmenudata,tepBE20,programname+' Website','Visit '+programname+' Website','nprogram',100,aknone,true);
-low__menuitem2(xmenudata,tepBE20,protect_text(16771815,'Portal - www.BlaizEnterprises.com'),'Visit Blaiz Enterprises'' Portal Website','be',100,aknone,true);
+//low__menutitle(xmenudata,tepnone,protect_text(16771544,'Visit Blaiz Enterprises'),'');
+
+
 //low__menuitem2(xmenudata,tepBE20,protect_text(16771088,'Software Collection'),'Visit Blaiz Enterprises'' Software Collection','software',100,aknone,true);
 //low__menuitem2(xmenudata,tepBE20,protect_text(16771434,'Vintage Software Collection'),'Visit Blaiz Enterprises'' Vintage Software Collection','vintage',100,aknone,true);
 
@@ -84158,16 +88660,30 @@ low__menuitem2(xmenudata,tepBE20,protect_text(16771815,'Portal - www.BlaizEnterp
 //was: low__menuitem2(m,tepBE20,'Facebook','Visit Blaiz Enterprises on Facebook','facebook',100,aknone,true);
 //was: low__menuitem2(m,tepBE20,'Twitter','Visit Blaiz Enterprises on Twitter','twitter',100,aknone,true);
 
+
+low__menutitle(xmenudata,tepnone,'Online Resources','');
+low__menuitem2(xmenudata,tepNext20,programname+' Online','Visit the '+programname+' Web Page','nprogram',100,aknone,true);
+low__menuitem2(xmenudata,tepAbout20,protect_text(16770837,'About'),'Show program information','about',100,aknone,true);
+low__menuitem2(xmenudata,tepBE20,'Blaiz Enterprises'' Web Portal','Visit the Blaiz Enterprises'' Web Portal www.blaizenterprises.com','be',100,aknone,true);
+low__menuitem2(xmenudata,tepInstagram20,'Blaiz on Instagram','Visit Blaiz Enterprises on Instagram','instagram',100,aknone,true);
+low__menuitem2(xmenudata,tepFacebook20,'Blaiz on Facebook','Visit Blaiz Enterprises on Facebook','facebook',100,aknone,true);
+low__menuitem2(xmenudata,tepTwitter20,'Blaiz on X','Visit Blaiz Enterprises on X / Twitter','twitter',100,aknone,true);
+low__menuitem2(xmenudata,tepSourceforge20,'Blaiz on Sourceforge','Visit Blaiz Enterprises on Sourceforge','sourceforge',100,aknone,true);
+low__menuitem2(xmenudata,tepGitHub20,'Blaiz on GitHub','Visit Blaiz Enterprises on GitHub','github',100,aknone,true);
+low__menuitem2(xmenudata,tepTXT20,'Contact Us','Contact us via our online contact form','contact',100,aknone,true);
+
+
 low__menutitle(xmenudata,tepnone,'Settings and Information','');
+low__menuitem2(xmenudata,tepCopy20,'Snapshot','Take a snapshot of program and copy to Clipboard','snapshot.program',100,aknone,true);
 low__menuitem2(xmenudata,tep__yes(viOntop),protect_text(16770953,'On Top'),'Toggle On Top','toggle.ontop',100,aknone,true);
 low__menuitem2(xmenudata,tep__yes(viTouch),protect_text(16771309,'Touch'),'Toggle Touch','toggle.touch',100,aknone,true);
-low__menuitem2(xmenudata,tepOptions20,protect_text(16770856,'Options'),'Show Options window','options',100,aknone,true);
+if viMaster then low__menuitem2(xmenudata,tepOptions20,protect_text(16770856,'Options'),'Show Options window','options',100,aknone,true);
 if mm_ok or mid_ok or wav_ok then low__menuitem2(xmenudata,tepVol20,'Mixer','Show Mixer','mixer',100,aknone,low__canshowvol);
 
-low__menuitem2(xmenudata,tepHelp20,protect_text(16771312,'Help'),'Show / Hide Built-in Help','help',100,aknone,true);//24jul2021
-low__menuitem2(xmenudata,tepAbout20,protect_text(16770837,'About'),'Show About window','about',100,aknone,true);
+if (sizeof(programhelp)>=2) and viMaster then low__menuitem2(xmenudata,tepHelp20,protect_text(16771312,'Help'),'Show / Hide Built-in Help','help',100,aknone,true);//24jul2021
+//low__menuitem2(xmenudata,tepAbout20,protect_text(16770837,'About'),'Show About window','about',100,aknone,true);
 low__menuitem2(xmenudata,tepRefresh20,protect_text(16771388,'Restore Default Zoom...'),'Restore default zoom','defaultzoom',100,aknone,vizoom__root<>0);
-low__menuitem2(xmenudata,tepRefresh20,protect_text(16771396,'Restore Defaults...'),'Restore default settings','defaults',100,aknone,true);
+if viMaster then low__menuitem2(xmenudata,tepRefresh20,protect_text(16771396,'Restore Defaults...'),'Restore default settings','defaults',100,aknone,true);
 
 //.position
 bol1:=gui.canposition;
@@ -84214,6 +88730,7 @@ else if (xcode2='toggle.touch') then//27mar2022
    syssettings.b['touch']:=not syssettings.b['touch'];
    viSyncandsave;
    end
+else if (xcode2='snapshot.program') then gui.xsnapshot//03nov2023
 else if (xcode2='options') then gui.xshowoptions
 else if (xcode2='mixer') then low__showvol//06nov2022
 else if (xcode2='help') then gui.xshowhelp
@@ -84221,6 +88738,7 @@ else if (xcode2='defaultzoom') then gui.xdefaultzoom
 else if (xcode2='defaults') then gui.xdefaults
 //visit blaiz enterprises
 else if (xcode2='be') then low__plat('portal','',true)
+else if (xcode2='contact') then low__plat('contact','',true)
 else if (xcode2='vintage') then low__plat('vintage','',true)
 else if (xcode2='software') then low__plat('software','',true)
 else if (xcode2='nprogram') then low__plat('nprogram','',true)//new program
@@ -84228,6 +88746,8 @@ else if (xcode2='vprogram') then low__plat('vprogram','',true)//vintage program
 else if (xcode2='instagram') then low__plat('instagram','',true)
 else if (xcode2='facebook') then low__plat('facebook','',true)
 else if (xcode2='twitter') then low__plat('twitter','',true)
+else if (xcode2='sourceforge') then low__plat('sourceforge','',true)//02dec2023
+else if (xcode2='github') then low__plat('github','',true)//02dec2023
 //position
 else if low__comparetext(strcopy1(xcode2,1,9),'position.') then gui.position(xcode2)//27feb2022
 //window - 06nov2022
@@ -84841,8 +89361,8 @@ var
    try
    //was: 0=Internet:
    //was: xadd([21,0,0,0,159,214,17,48,48,177,74,58,83,15,121,35,234,93,197,240,107,83,233,126,48,71,183,5,133,78,215,102,29,62,118,53,167,84,41,252,197,210,122,244,101,38,61,139,182,255]);
-   //0=Internet Portal:
-   xadd([28,0,0,0,159,214,17,48,48,177,74,58,83,15,121,35,234,93,197,240,107,83,233,126,48,71,183,5,133,78,215,102,29,62,118,53,167,84,41,252,197,222,248,207,183,38,210,4,92,73,197,41,214,122,125,40,218,226,210,149,26,215,223,255]);
+   //0=Web Portal:
+   xadd([47,0,0,0,246,20,245,11,243,4,113,158,117,164,58,201,111,216,84,199,172,228,115,243,237,96,40,159,237,147,27,164,8,147,193,63,93,23,101,219,132,187,30,120,28,39,123,63,127,90,67,7,10,134,226,84,150,100,40,25,24,231,131,70,139,253,169,81,236,49,157,42,166,186,47,178,7,228,253,216,169,232,205,158,101,239,188,239,76,90,17,181,179,37,205,247,159,204,78,243,141,255]);
    str2:=low__plat('portal','',false);
    if low__comparetext(strcopy1(str2,1,7),'http://') then strdel1(str2,1,7);
    xvalue:=xvalue+str2;//27mar2022
@@ -85145,9 +89665,11 @@ end;
 procedure tbasicsplash.xabout;
 var
    int1,xpreviousfocus:longint;
+   xpreviouscontrol:tbasiccontrol;
    da:trect;
 begin
 try
+xpreviouscontrol:=gui.focuscontrol;
 ishowstyle:=1;//about
 iiconartref:='';
 idelaytimer:=ms64+programsplash_scrollpause;
@@ -85189,7 +89711,7 @@ end;
 xsetclientarea(da);
 gui.xcenter(self);
 gui.focuscontrol:=self;
-gui.xshowwait(self,ipreviousfocus);
+gui.xshowwait(self,xpreviouscontrol,ipreviousfocus);
 visible:=false;//hide
 itimeout:=ms64+1;
 ipreviousfocus:=-1;//off
@@ -86960,8 +91482,13 @@ case zzok(ihead,7218) of
 true:result:=ihead;
 false:begin
    ihead:=tbasichead.create(self);
-   //ihead.osyssize:=true;//01mar2022
    result:=ihead;
+   with result do
+   begin
+   oroothead:=true;
+   bordersize:=0;//02dec2023
+   osquareframe:=true;//02dec2023
+   end;
    end;
 end;//case
 except;end;
@@ -86976,6 +91503,11 @@ true:result:=ihelp;
 false:begin
    ihelp:=tbasichelp.create(self);
    result:=ihelp;
+   if iswin then
+      begin
+      result.osquareframe:=true;//02dec2023
+      result.oheadbase:=1;
+      end;
    end;
 end;//case
 except;end;
@@ -86992,6 +91524,7 @@ true:result:=itoolbar;
 false:begin
    itoolbar:=tbasictoolbar.create(self);
    result:=itoolbar;
+   if iswin then result.make__backgroundhead;
    end;
 end;//case
 except;end;
@@ -87006,6 +91539,7 @@ true:result:=itoolbar2;
 false:begin
    itoolbar2:=tbasictoolbar.create(self);
    result:=itoolbar2;
+   if iswin then result.make__backgroundbase;
    with result do
    begin
    omarkcleanly:=false;//03mar2021
@@ -87114,6 +91648,7 @@ true:result:=istatus;
 false:begin
    istatus:=tbasicstatus.create(self);
    result:=istatus;
+   if iswin then result.make__backgroundhead;
    end;
 end;//case
 except;end;
@@ -87128,6 +91663,7 @@ true:result:=istatus2;
 false:begin
    istatus2:=tbasicstatus.create(self);
    result:=istatus2;
+   if iswin then result.make__backgroundbase;
    end;
 end;//case
 except;end;
@@ -87224,8 +91760,13 @@ try;result:=zzok(istatus,7241);except;end;
 end;
 
 //## tbasicsetcolor ############################################################
+//## create ##
+constructor tbasicsetcolor.create(xparent:tobject;xuse32:boolean);
+begin
+create2(xparent,false,xuse32,true);
+end;
 //## create2 ##
-constructor tbasicsetcolor.create2(xparent:tobject;xscroll,xstart:boolean);
+constructor tbasicsetcolor.create2(xparent:tobject;xscroll,xuse32,xstart:boolean);
 var
    xtmp:tbasiccontrol;
 begin
@@ -87234,6 +91775,7 @@ inherited create2(xparent,false,false);//force "xscroll=false" - fixed 02aug2021
 //vars
 ilocksync:=false;
 icanfillundo:=true;
+iuse32:=xuse32;
 //controls
 //.toolbar
 xtoolbar.add('Revert',tepRefresh20,0,'revert','Revert to orginal color');
@@ -87255,12 +91797,13 @@ ntitle(false,'Color Levels','Click and drag to adjust the red, green and blue el
 ir:=nint2('Red','Adjust red level 0-255',0,255,127,0,'red');
 ig:=nint2('Green','Adjust green level 0-255',0,255,127,0,'green');
 ib:=nint2('Blue','Adjust blue level 0-255',0,255,127,0,'blue');
+ia:=nint2('Alpha','Adjust alpha level 0-255',0,255,127,0,'alpha');
 end;
 
 with xhigh2.xcolsh.cols2[1,50,false] do
 begin
 ntitle(false,'Color / Shade','Current color and shade range');
-ic:=ncolor('Color','Current color');
+ic:=ncolor1('Color','Current color',iuse32);
 ic.opopcolor:=false;
 ic.oautoheight:=true;
 end;
@@ -87269,12 +91812,13 @@ end;
 icolor:=0;
 irevertcolor:=0;
 iundocolor:=0;
-color:=low__rgb(127,127,127);//sync all controls
+color:=low__rgba(127,127,127,255);//sync all controls - 17nov2023
 
 //events
 ir.onvalue2:=__oncolor;
 ig.onvalue2:=__oncolor;
 ib.onvalue2:=__oncolor;
+ia.onvalue2:=__oncolor;
 im.oncolor:=__oncolor;
 ic.oncolor:=__oncolor;
 xtoolbar.onclick:=__onclick;
@@ -87282,10 +91826,12 @@ xtoolbar.onclick:=__onclick;
 ir.onnotify:=ext__onnotify;
 ig.onnotify:=ext__onnotify;
 ib.onnotify:=ext__onnotify;
+ia.onnotify:=ext__onnotify;
 im.onnotify:=ext__onnotify;
 ic.onnotify:=ext__onnotify;
 
 //defaults
+ia.visible:=iuse32;
 clientheight:=32;
 help:='Click on color matrix to acquire color | Hold down and drag to continuously acquire color | Alternatively drag outside matrix to acquire screen color';
 
@@ -87327,6 +91873,28 @@ procedure tbasicsetcolor.getparams(var xcolor,xrevertcolor:longint;var xpage:str
 begin
 try;xcolor:=color;xrevertcolor:=irevertcolor;xpage:=page;except;end;
 end;
+//## setcolor24 ##
+procedure tbasicsetcolor.setcolor24(x:longint);
+var
+   s,d:tcolor32;
+begin
+try
+s:=low__intrgba32(icolor);
+d:=low__intrgba32(x);
+color:=low__rgba(d.r,d.g,d.b,s.a);//retain s.a alpha value - 17nov2023
+except;end;
+end;
+//## getcolor24 ##
+function tbasicsetcolor.getcolor24:longint;
+var
+   s,d:tcolor32;
+begin
+try
+d:=low__intrgba32(icolor);
+d.a:=255;
+result:=low__rgba(d.r,d.g,d.b,d.a);
+except;end;
+end;
 //## setcolor ##
 procedure tbasicsetcolor.setcolor(x:longint);
 var
@@ -87348,6 +91916,7 @@ if low__setint(icolor,x) then
    if zzok(ir,7250) then ir.val:=v.r;
    if zzok(ig,7251) then ig.val:=v.g;
    if zzok(ib,7252) then ib.val:=v.b;
+   if iuse32 and zzok(ia,7252) then ia.val:=v.a;//17nov2023
    if zzok(im,7253) then im.color:=v.val;
    if zzok(ic,7254) then ic.color:=v.val;
    except;end;
@@ -87376,14 +91945,17 @@ if xhavetoolbar and (sender=xtoolbar) then
       begin
       icanfillundo:=true;
       int1:=icolor;
-      if gui.popcolorstatic(int1) then color:=int1;
+      if gui.popcolorstatic(int1) then color24:=int1;
       icanfillundo:=true;
       end
    else if (n='history') then
       begin
       icanfillundo:=true;
       int1:=icolor;
-      if gui.popcolorhistory(int1) then color:=int1;
+      if gui.popcolorhistory(int1,iuse32) then
+         begin
+         if iuse32 then color:=int1 else color24:=int1;
+         end;
       icanfillundo:=true;
       end
    else if (n='revert') then
@@ -87395,7 +91967,7 @@ if xhavetoolbar and (sender=xtoolbar) then
    else if (n='invert') then
       begin
       icanfillundo:=true;
-      color:=low__invertb(color);
+      color24:=low__invertb(color);
       icanfillundo:=true;
       end
    else if (n='undo') then
@@ -87411,18 +91983,32 @@ end;
 procedure tbasicsetcolor.__oncolor(sender:tobject;xval:longint);
 var
    v:tint4;
+   a:byte;
 begin
 try
 //check
 if ilocksync then exit;
 //init
 v.val:=icolor;
+a:=v.a;
 //get
 if      (sender=ir) then v.r:=ir.val
 else if (sender=ig) then v.g:=ig.val
 else if (sender=ib) then v.b:=ib.val
-else if (sender=im) then v.val:=im.color
-else if (sender=ic) then v.val:=ic.color;
+else if (sender=ia) then
+   begin
+   if iuse32 then v.a:=ia.val;
+   end
+else if (sender=im) then
+   begin
+   v.val:=im.color;
+   v.a:=a;
+   end
+else if (sender=ic) then
+   begin
+   v.val:=ic.color;
+   if not iuse32 then v.a:=a;
+   end;
 //set
 color:=v.val;
 except;end;
@@ -87503,6 +92089,7 @@ inherited create2(xparent,false);
 //vars
 fonact:=nil;//19jun2022
 imustscrollv:=-1;//off
+imustscrollv_px:=-1;//off
 imustscrollh:=-1;//off
 imustpos:=-1;//off
 imustpos2:=-1;//off
@@ -87512,13 +92099,18 @@ ocanshowmenu:=true;
 ibuildingcontrol:=true;
 irevertdata:=nil;
 omenustyles:=false;
-ocopystyles:=true;
+ocopystyles:=false;//05feb2023
 orows:=false;
 inormal:=true;
 ibordersize:=1;
 islowdownref:=ms64;
 itimersync:=ms64;
 itimersync_fastcount:=0;
+iwordcount:=0;
+inewcount:=0;
+inewpos:=0;
+inewid:=0;
+inewword:=false;
 //.margin
 imleft:=2;
 imright:=2;
@@ -87557,11 +92149,134 @@ destructor tbasicbwp.destroy;
 begin
 try
 ibuildingcontrol:=true;
+if (sysbox=self) then sysbox:=nil;//disconnect
 low__wordcore(icore,'free',nil);
 bfree(irevertdata);
 inherited destroy;
 satinc(satBWP,-1);
 except;end;
+end;
+//## setstyle ##
+procedure tbasicbwp.setstyle(x:longint);
+var
+   w,s:longint;
+begin
+try
+//get
+if (x=0) then
+   begin
+   w:=0;
+   s:=1;
+   end
+else if (x=1) then
+   begin
+   w:=1;
+   s:=1;
+   end
+else if (x=2) then
+   begin
+   w:=2;
+   s:=1;
+   end
+else if (x=3) then
+   begin
+   w:=2;
+   s:=2;
+   end
+else if (x=4) then
+   begin
+   w:=3;
+   s:=2;
+   end
+else
+   begin
+   w:=0;
+   s:=1;
+   end;
+//set
+wrap:=w;
+linespacing:=s;
+except;end;
+end;
+//## getstyle ##
+function tbasicbwp.getstyle:longint;
+var
+   w,s:longint;
+begin
+try
+//init
+result:=0;
+//get
+w:=frcrange(wrap,0,3);
+s:=frcrange(linespacing,1,2);
+//set
+if      (w=0) and (s=1) then result:=0
+else if (w=1) and (s=1) then result:=1
+else if (w=2) and (s=1) then result:=2
+else if (w=2) and (s=2) then result:=3
+else if (w=3) and (s=2) then result:=4
+else                         result:=0;
+except;end;
+end;
+//## canfind ##
+function tbasicbwp.canfind:boolean;
+begin
+try;result:=enabled;except;end;
+end;
+//## findpop ##
+procedure tbasicbwp.findpop;
+begin
+try
+if not canfind then exit;
+sysfind_handler:=icore.ofindhandler;
+sysfind_cmd:='find.pop';
+except;end;
+end;
+//## find ##
+procedure tbasicbwp.find;
+begin
+try
+if not canfind then exit;
+sysfind_handler:=icore.ofindhandler;
+sysfind_cmd:=low__aorbstr('find','find.pop',(sysfind_text=''));
+except;end;
+end;
+//## pages ##
+function tbasicbwp.pages:longint;
+var
+   xtotalheight,xpageheight:longint;
+begin
+try
+xtotalheight:=icore.totalheight;
+xpageheight:=frcmin(icore.pageheight,1);
+result:=frcmin(xtotalheight div xpageheight,1);
+if ((result*xpageheight)<>xtotalheight) then inc(result);//round up to nearest page
+except;end;
+end;
+//## page ##
+function tbasicbwp.page:longint;
+var
+   int1:longint;
+begin
+try;int1:=pages;result:=frcrange(1+trunc((line/(1+maxline))*int1),1,int1);except;end;
+end;
+//## getcanspell ##
+function tbasicbwp.getcanspell:boolean;
+begin
+try;result:=icore.odic;except;end;
+end;
+//## setcanspell ##
+procedure tbasicbwp.setcanspell(x:boolean);
+begin
+try
+icore.odic:=x;
+if x then dic_init;
+except;end;
+end;
+//## spell ##
+procedure tbasicbwp.spell;
+begin
+try;if canspell then low__wordcore_str(icore,'spell','');except;end;
 end;
 //## getundoenabled ##
 function tbasicbwp.getundoenabled:boolean;
@@ -87571,7 +92286,7 @@ end;
 //## setundoenabled ##
 procedure tbasicbwp.setundoenabled(x:boolean);
 begin
-try;low__wordcore(icore,low__aorbstr('undooff','undoon',x),nil);except;end;
+try;low__wordcore(icore,low__aorbstr('undooff','undoon',x and viMaster),nil);except;end;
 end;
 //## undoclear ##
 procedure tbasicbwp.undoclear;
@@ -87666,7 +92381,7 @@ case frcmax(low__wordcore__findformatlevel(icore),icore.maxformatlevel) of//0=pl
 else xformat:='txt';
 end;
 
-xformat:='multi';//xxxxxxxxxxxxxxxxxxxx
+//xformat:='multi';//xxxxxxxxxxxxxxxxxxxx//testing only
 //get
 if (x='undo') or (x='redo') or (x='copy') or (x='copyall') or (x='paste') or (x='pastereplace') or (x='deleteall') or (x='clearall') then
    begin
@@ -87736,6 +92451,15 @@ procedure tbasicbwp.makebwpFull;
 begin
 makexxx(2,0,false);
 end;
+//## makebwpFull2 ##
+procedure tbasicbwp.makebwpFull2;//14nov2023
+begin
+try
+makexxx(2,0,false);
+icore.pageoverride2:=false;
+icore.oviewurl:=true;
+except;end;
+end;
 //## makexxx ##
 procedure tbasicbwp.makexxx(xformatlevel:longint;xuseonefont:longint;xviewurl:boolean);//12jun2022
 begin
@@ -87780,15 +92504,24 @@ var
 begin
 try
 int1:=low__wordcore_str2(icore,'pos>line',inttostr(xpos));
-scrollto(int1,-1,-1,-1,false);
+scrollto(-1,int1,-1,-1,-1,false);
 except;end;
 end;
 //## scrollto ##
-procedure tbasicbwp.scrollto(_vpos,_hpos,_pos,_pos2:longint;xforcewrapall:boolean);
+procedure tbasicbwp.scrollto(_vpos_px,_vpos,_hpos,_pos,_pos2:longint;xforcewrapall:boolean);
 begin
 try
 if xforcewrapall then low__wordcore(icore,'wrapall',nil);//wrap will complete BEFORE any scrolling is performed - 18dec2021
-imustscrollv:=_vpos;
+if (_vpos_px>=0) then
+   begin
+   imustscrollv_px:=_vpos_px;
+   imustscrollv:=-1;
+   end
+else
+   begin
+   imustscrollv_px:=-1;
+   imustscrollv:=_vpos;
+   end;
 imustscrollh:=_hpos;
 imustpos:=_pos;
 imustpos2:=_pos2;
@@ -88004,6 +92737,16 @@ function tbasicbwp.getwrapreadonly:boolean;
 begin
 try;result:=icore.wrapreadonly;except;end;
 end;
+//## setlinespacing ##
+procedure tbasicbwp.setlinespacing(x:longint);
+begin
+try;low__wordcore_str(icore,'linespacing',inttostr(frcrange(x,1,4)));except;end;
+end;
+//## getlinespacing ##
+function tbasicbwp.getlinespacing:longint;
+begin
+try;result:=frcrange(icore.olinespacing,1,4);except;end;
+end;
 //## getroundstyle ##
 function tbasicbwp.getroundstyle:longint;
 begin
@@ -88088,27 +92831,27 @@ end;
 //## ioset ##
 function tbasicbwp.ioset(xdata:tstr8):boolean;
 begin
-try;result:=ioset3(xdata,-1,-1,-1,-1,false,false);except;end;
+try;result:=ioset3(xdata,-1,-1,-1,-1,-1,false,false);except;end;
 end;
 //## ioset2 ##
-function tbasicbwp.ioset2(xdata:tstr8;xvpos:longint):boolean;
+function tbasicbwp.ioset2(xdata:tstr8;xvpos_px,xvpos:longint):boolean;
 begin
-try;result:=ioset3(xdata,xvpos,-1,-1,-1,false,false);except;end;
+try;result:=ioset3(xdata,xvpos_px,xvpos,-1,-1,-1,false,false);except;end;
 end;
 //## ioset3 ##
-function tbasicbwp.ioset3(xdata:tstr8;xvpos,xhpos,xpos,xpos2:longint;xtransform,xwebimages:boolean):boolean;
+function tbasicbwp.ioset3(xdata:tstr8;xvpos_px,xvpos,xhpos,xpos,xpos2:longint;xtransform,xwebimages:boolean):boolean;
 begin
 try
 low__wordcore_str(icore,'clear2','');//leaves UNDO alone - 27sep2022
 result:=low__wordcore(icore,'ioset',xdata);
 if xtransform then low__wordcore(icore,'transform'+low__insstr('.webimages',xwebimages),nil);//25jul2021, 15may2021
 low__wordcore_str(icore,'cursorpos','0');
-low__wordcore_str(icore,'vpos',inttostr(frcmin(xvpos,0)));//may not always work due to wordwrap needing to calc in realtime before this can be probably applied - 06oct2020
-low__wordcore_str(icore,'hpos',inttostr(frcmin(xhpos,0)));//may not always work due to wordwrap needing to calc in realtime before this can be probably applied - 06oct2020
+if (xvpos_px>=0) then low__wordcore_str(icore,'vpos.px',inttostr(frcmin(xvpos_px,0))) else low__wordcore_str(icore,'vpos',inttostr(frcmin(xvpos,0)));
+low__wordcore_str(icore,'hpos',inttostr(frcmin(xhpos,0)));
 undoclear;//wipe undo - 26sep2022
 xsync;//12mar2021
 //.delayed scroll - 18dec2021
-if (xvpos>=0) or (xhpos>=0) or (xpos>=0) or (xpos2>=0) then scrollto(xvpos,xhpos,xpos,xpos2,true);
+if (xvpos_px>=0) or (xvpos>=0) or (xhpos>=0) or (xpos>=0) or (xpos2>=0) then scrollto(xvpos_px,xvpos,xhpos,xpos,xpos2,true);
 itimersync_fastcount:=20;//20 fast cycles
 except;end;
 end;
@@ -88132,22 +92875,22 @@ end;
 //## iosettxt ##
 function tbasicbwp.iosettxt(xdata:tstr8):boolean;
 begin
-try;result:=ioset2(xdata,0);except;end;
+try;result:=ioset2(xdata,0,-1);except;end;
 end;
 //## iosetbwd ##
 function tbasicbwp.iosetbwd(xdata:tstr8):boolean;
 begin
-try;result:=ioset2(xdata,0);except;end;
+try;result:=ioset2(xdata,0,-1);except;end;
 end;
 //## iosetbwp ##
 function tbasicbwp.iosetbwp(xdata:tstr8):boolean;
 begin
-try;result:=ioset2(xdata,0);except;end;
+try;result:=ioset2(xdata,0,-1);except;end;
 end;
 //## iosetrtf ##
 function tbasicbwp.iosetrtf(xdata:tstr8):boolean;
 begin
-try;result:=ioset2(xdata,0);except;end;
+try;result:=ioset2(xdata,0,-1);except;end;
 end;
 //## iogettxt ##
 function tbasicbwp.iogettxt(xdata:tstr8):boolean;
@@ -88168,6 +92911,16 @@ end;
 function tbasicbwp.iogetrtf(xdata:tstr8):boolean;
 begin
 try;result:=ioget(xdata,'rtf');except;end;
+end;
+//## line ##
+function tbasicbwp.line:longint;//current line 1..N
+begin
+try;result:=1+low__wordcore_str2(core^,'pos>line',inttostr(cpos));except;end;
+end;
+//## maxline ##
+function tbasicbwp.maxline:longint;
+begin
+try;result:=1+low__wordcore_str2(core^,'pos>line',inttostr(maxint));except;end;
 end;
 //## setpos ##
 procedure tbasicbwp.setpos(x:longint);
@@ -88247,8 +93000,9 @@ function tbasicbwp._onshortcut(sender:tobject):boolean;
 begin
 try
 result:=false;//not handled
-if enabled and (not oreadonly) and (gui.key<>aknone) and low__wordcore_str(icore,'haveshortcut',inttostr(gui.key)) then
+if enabled and focused and (not oreadonly) and (gui.key<>aknone) and low__wordcore_str(icore,'haveshortcut',inttostr(gui.key)) then
    begin
+   if (gui.key=akF3) or (gui.key=akF4) then sysfind_handler:=icore.ofindhandler;
    low__wordcore__keyboard2(icore,gui.key);
    result:=true;//handled
    end;
@@ -88312,7 +93066,8 @@ end;
 //## xwordcoretimer ##
 procedure tbasicbwp.xwordcoretimer(xsyncnow:boolean);
 var
-   int1,xdir:longint;
+   p,int1,xdir:longint;
+   bol1:boolean;
 begin
 try
 //check
@@ -88346,12 +93101,36 @@ if low__wordcore(icore,'canpaint',nil) and low__wordcore(icore,'mustpaint',nil) 
    low__wordcore_str(icore,'mustpaint','0');
    paintnow;
    end;
+
+//realtime word counter - 05feb2023
+if olivewordcount and visible and ((inewpos>0) or low__setint(inewid,icore.dataid3)) then
+   begin
+   for p:=1 to 50000 do
+   begin
+   bol1:=low__wordcore_docsep(icore,inewpos);
+   if (bol1<>inewword) then
+      begin
+      inewword:=bol1;
+      if not inewword then inc(inewcount);
+      end;
+   inc(inewpos);
+   if (inewpos>=blen(icore.data)) then
+      begin
+      iwordcount:=inewcount;
+      inewpos:=0;
+      inewcount:=0;
+      inewword:=false;
+      break;
+      end;
+   end;//p
+   end;
+
 except;end;
 end;
 //## xsync ##
 procedure tbasicbwp.xsync;
 var//Note: Using "breuse()" proc greatly reduces the number of tstr8 objects needed to be created per second - 05jul2022
-   int1,int2,int3,int4:longint;
+   int0,int1,int2,int3,int4:longint;
    xmousedown:boolean;
    v:tstr8;
 begin
@@ -88361,15 +93140,21 @@ v:=nil;
 xmousedown:=gui.mousedown;
 //get
 //.imustscrollto - delayed vertical scroll - 18dec2021
-if ((imustscrollv>=0) or (imustscrollh>=0) or (imustpos>=0) or (imustpos2>=0)) and (low__wordcore2(icore,'wrapbusy',nil)=0) then
+if ((imustscrollv_px>=0) or (imustscrollv>=0) or (imustscrollh>=0) or (imustpos>=0) or (imustpos2>=0)) and (low__wordcore2(icore,'wrapbusy',nil)=0) then
    begin
-   int1:=imustscrollv; imustscrollv:=-1;
-   int2:=imustscrollh; imustscrollh:=-1;
-   int3:=imustpos;     imustpos:=-1;
-   int4:=imustpos2;    imustpos2:=-1;
+   int0:=imustscrollv_px; imustscrollv_px:=-1;
+   int1:=imustscrollv;    imustscrollv:=-1;
+   int2:=imustscrollh;    imustscrollh:=-1;
+   int3:=imustpos;        imustpos:=-1;
+   int4:=imustpos2;       imustpos2:=-1;
+   //.cursorpos/2
    if (int3>=0) then low__wordcore(icore,'cursorpos',breuse(v,inttostr(int3)));
    if (int4>=0) then low__wordcore(icore,'cursorpos2',breuse(v,inttostr(int4)));
+   //.force above cursor tasks to COMPLETE before issuing below h/vpos tasks - 07feb2023
+   low__wordcore_str(icore,'timer','');
+   //.h/vpos
    if (int1>=0) then low__wordcore(icore,'vpos',breuse(v,inttostr(int1)));
+   if (int0>=0) then low__wordcore(icore,'vpos.px',breuse(v,inttostr(int0)));//07feb2023
    if (int2>=0) then low__wordcore(icore,'hpos',breuse(v,inttostr(int2)));
    end;
 
@@ -88422,11 +93207,11 @@ var
    //infovars
    a:pvirtualinfo;
    cs,ci:trect;
-   fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xback,xborder,xhover,xfontheight,xfeather,xbordersize:longint;
+   lrpad,dleft,dright,pw,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xback,xborder,xhover,xfontheight,xfeather,xbordersize:longint;
    xenabled,xround,xnormal:boolean;
    //other
    da:trect;
-   xrowcolor,xroundstyle,int1:longint;
+   xrowcolor,xroundstyle,int1,int2:longint;
 begin
 try
 //check
@@ -88438,9 +93223,13 @@ if ibuildingcontrol or (not low__wordcore_str(icore,'paintlock','1')) then
 
 //init
 xsync;
+lrpad:=vizoom*10;
 infovars(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xback,xborder,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);
 xroundstyle:=oroundstyle;
 if orows then xrowcolor:=low__dc(xback,-10) else xrowcolor:=clnone;
+dleft:=imleft+lrpad;
+dright:=imright+lrpad;
+pw:=icore.pagewidth;
 
 //cls
 if ousepagecolor and (not icore.pageoverride2) and (icore.pagecolor<>clnone) then xback:=icore.pagecolor;
@@ -88448,7 +93237,7 @@ lds(cs,xback,xround);
 
 //paint -> updated to handle wwsNone, wwsWindow and wwsPage - 12mar2021
 case icore.wrapstyle of
-wwsPage:begin
+wwsPage,wwsPage2:begin
    da.left:=iclientarea.left+xbordersize+imleft;
    if (icore.pagewidth<icore.viewwidth) then inc(da.left,(icore.viewwidth-icore.pagewidth) div 2);//center the page when page is smaller than the viewing width
    end;
@@ -88462,6 +93251,16 @@ case gui.bits of
 32:low__wordcore__paint2432(icore,gui.width,gui.height,da,ipaintarea,nil             ,gui.rows.prows32,gui.buffer,gui.mask,gui.maskval,xround,xroundstyle,xrowcolor);
 24:low__wordcore__paint2432(icore,gui.width,gui.height,da,ipaintarea,gui.rows.prows24,nil             ,gui.buffer,gui.mask,gui.maskval,xround,xroundstyle,xrowcolor);
 end;
+
+//draw page edges
+if (icore.pagewidth<icore.viewwidth) and (icore.wrapstyle>=2) then
+   begin
+   int1:=low__dc(xback,-10);
+   int2:=((cs.right-cs.left-iv.clientwidth)-pw) div 2;
+   lds(rect(cs.left,cs.top,int2-dleft,cs.bottom),int1,false);
+   lds(rect(cs.right-int2-iv.clientwidth+1,cs.top,cs.right-int2-iv.clientwidth+dright,cs.bottom),xback,false);//patch vertical area with background - rows overwrite to far right of control - 04feb2023
+   lds(rect(cs.right-int2-iv.clientwidth+dright,cs.top,iv.left-1,cs.bottom),int1,false);
+   end;
 
 //frame
 if (xbordersize>=1) then ldf(cs,xborder,low__dc(xback,-20),xbordersize,nil,xround);
@@ -88523,6 +93322,7 @@ ishadeused:=false;
 opopcolor:=true;
 oshaderange:=true;//false;
 inormal:=true;
+iuse32:=false;
 icolor:=low__rgb(255,255,255);
 ibordersize:=1;
 //defaults
@@ -88536,6 +93336,28 @@ begin
 try
 inherited destroy;
 satinc(satColor,-1);
+except;end;
+end;
+//## setcolor24 ##
+procedure tbasiccolor.setcolor24(x:longint);
+var
+   s,d:tcolor32;
+begin
+try
+s:=low__intrgba32(icolor);
+d:=low__intrgba32(x);
+color:=low__rgba(d.r,d.g,d.b,s.a);//retain s.a alpha value - 17nov2023
+except;end;
+end;
+//## getcolor24 ##
+function tbasiccolor.getcolor24:longint;
+var
+   s,d:tcolor32;
+begin
+try
+d:=low__intrgba32(icolor);
+d.a:=255;
+result:=low__rgba(d.r,d.g,d.b,d.a);
 except;end;
 end;
 //## setcolor ##
@@ -88620,19 +93442,22 @@ if gui.mousedownstroke then
 if gui.mousemoved and enabled and gui.mousedown and gui.mouseleft then
    begin
    case oshaderange and ishadeused of
-   true:color:=low__capcolor(0,0,true);
-   false:if gui.mousedraggingout(self,true,true) then color:=low__capcolor(0,0,true);
+   true:color24:=low__capcolor(0,0,true);
+   false:if gui.mousedraggingout(self,true,true) then color24:=low__capcolor(0,0,true);
    end;//case
    end;
 
 //mouse up
 if gui.mouseupstroke and enabled and gui.mouseleft and (not gui.mousewasdraggingout) then
    begin
-   if oshaderange then color:=low__capcolor(0,0,true)
+   if oshaderange then color24:=low__capcolor(0,0,true)
    else if opopcolor then
       begin
       int1:=icolor;
-      if gui.popcolor(int1) then color:=int1;
+      if gui.popcolor2(int1,iuse32) then
+         begin
+         if iuse32 then color:=int1 else color24:=int1;
+         end;
       end;
    end;
 
@@ -88707,39 +93532,57 @@ if      (xcode2='paste') then
       z:=low__pastetxt2b;;
       z:=low__firstline(z);
       //decide
-      //.hex
-      if (strcopy1(z,1,1)='#') then color:=low__hextorgb(z,low__rgb(127,127,127))
+      //.hex -> accepts #fff / fff / #fffa / fffa / #ffffff / ffffff - mixture of 24bit and 32bit hex colors with or without leading hash - 17nov2023
+      if (strcopy1(z,1,1)='#') then color:=low__hextorgba(z,low__rgba(127,127,127,255))
       //.rgb
       else if (low__findchar(z,',')>=1) then
          begin
          //init
          c:=createstringlist;
          swapchars(z,',',#10);
-         c.text:=z+rcode+'0'+rcode+'0'+rcode+'0';
-         if (c.count>=3) then
+         c.text:=z;
+         if (c.count>=4) and iuse32 then
             begin
-            a.a:=0;
             a.r:=frcrange(strint(c.strings[0]),0,255);
             a.g:=frcrange(strint(c.strings[1]),0,255);
             a.b:=frcrange(strint(c.strings[2]),0,255);
+            a.a:=frcrange(strint(c.strings[3]),0,255);
             color:=a.val;
+            end
+         else
+            begin
+            c.text:=z+rcode+'0'+rcode+'0'+rcode+'0'+rcode+'0';
+            a.r:=frcrange(strint(c.strings[0]),0,255);
+            a.g:=frcrange(strint(c.strings[1]),0,255);
+            a.b:=frcrange(strint(c.strings[2]),0,255);
+            color24:=a.val;
             end;
          end
       //.number
       else
          begin
-         a.val:=frcmin(strint(z),0);//0..maxint
-         a.a:=0;
-         color:=a.val;
+         case iuse32 of
+         true:color:=strint(z);
+         false:color24:=frcmin(strint(z),0);
+         end;
          end;
       end;
    end
 //was:
-else if (xcode2='copyhex') then low__copytxt2b(low__rgbtohex(icolor))
+else if (xcode2='copyhex') then
+   begin
+   case iuse32 of
+   true:low__copytxt2b(low__rgbatohex(icolor,true));
+   false:low__copytxt2b(low__rgbtohex(icolor));
+   end;
+   end
 else if (xcode2='copyrgb') then
    begin
    a.val:=icolor;
-   low__copytxt2b(inttostr(a.r)+','+inttostr(a.g)+','+inttostr(a.b));
+   case iuse32 of
+   false:low__copytxt2b(inttostr(a.r)+','+inttostr(a.g)+','+inttostr(a.b));
+   true:low__copytxt2b(inttostr(a.r)+','+inttostr(a.g)+','+inttostr(a.b)+','+inttostr(a.a));
+   end;//case
    end
 else if (xcode2='copynum') then low__copytxt2b(inttostr(icolor))
 else if (xcode2='copypix') then
@@ -88754,7 +93597,7 @@ else if (xcode2='copypix') then
 {}//xxxxxxxxxxx
 
    end
-else if (xcode2='invert') then color:=low__invertb(color);
+else if (xcode2='invert') then color24:=low__invertb(color);
 except;end;
 try
 freeobj(@b);
@@ -88775,6 +93618,7 @@ var
    pcount,xcolor,xshadecolor,int1,int2,xlast,c1,c2,xtextheight,tw,dx,dy,p:longint;
    z,e:string;
    a1,a2,a3:trect;
+   c32:tcolor32;
    //## pdraw ##
    procedure pdraw(sc,dc:longint);
    var
@@ -88799,6 +93643,13 @@ try
 infovars(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xback,xborder,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);
 xcolor:=icolor;
 xshadecolor:=ishadecolor;
+
+//apply alpha when use32=true - 17nov2023
+if iuse32 then
+   begin
+   c32:=low__intrgba32(xcolor);
+   xcolor:=low__colsplice1((255-c32.a)/255,low__rgb(c32.r,c32.g,c32.b),low__rgb(255,255,255));
+   end;
 //cls
 if oshaderange then
    begin
@@ -88968,6 +93819,16 @@ function tbasichelp.getalignheight(xclientwidth:longint):longint;
 begin
 try;result:=frcmin((2*findbordersize)+largest(vifontheight,iimgh),0);except;end;
 end;
+//## _onnotify ##
+function tbasichelp._onnotify(sender:tobject):boolean;
+var
+   a:tbasiccontrol;
+begin
+try
+result:=true;
+if xwindow(a) and (a is tbasicscroll) and (a as tbasicscroll).xhavehead then (a as tbasicscroll).xhead.xdragthewindow;
+except;end;
+end;
 //## _onpaint ##
 procedure tbasichelp._onpaint(sender:tobject);
 var
@@ -88977,7 +93838,7 @@ var
    fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xback,xborder,xhover,xfontheight,xfeather,xbordersize:longint;
    xenabled,xround,xnormal:boolean;
    //other
-   dimgw,dimgh,dx:longint;
+   int1,dimgw,dimgh,dx:longint;
 begin
 try
 //init
@@ -88985,9 +93846,10 @@ infovars(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xback,xborder,xhove
 dimgw:=iimgw*vizoom;
 dimgh:=iimgh*vizoom;
 //cls
-//was:
-//lds2(cs,xback,clnone,clnone,0,'h-12',false);
-lds2(cs,low__dc(xback,-10),xback,clnone,0,'g20',xround);
+case oheadbase of
+1:background__head1(cs,xback,roundframe,int1);
+else background__realtimehelp(cs,xback,roundframe);
+end;
 
 //image
 dx:=1;
@@ -88997,7 +93859,7 @@ if (iimg<>tepnone) then
    inc(dx,dimgw+2);
    end;
 //text
-ldt(ci,dx,(ch-fnH) div 2,xfont,strcopy1(itext,ipos,length(itext)),fn,xfeather,xround);
+ldt1(clnone,ci,dx,(ch-fnH) div 2,xfont,strcopy1(itext,ipos,length(itext)),fn,xfeather,xround);
 //was: xparentcorners; and all procs did use "false" for "xround"
 except;end;
 end;
@@ -89081,6 +93943,14 @@ tep__delall20(iownerid2);//delete any images done by use - 14apr2021
 //other
 inherited destroy;
 satinc(satNav,-1);
+except;end;
+end;
+//## xfocusname ##
+function tbasicnav.xfocusname:boolean;//11feb2023
+begin
+try
+result:=(iname<>nil) and iname.visible;
+if result then gui.focuscontrol:=iname;
 except;end;
 end;
 //## getitemindex ##
@@ -90079,6 +94949,11 @@ else if (sender=ilist) then
 skipend:
 gui.xfireevent(self,fonclick);//supports closelock - 03apr2021
 except;end;
+end;
+//## make__backgroundhead ##
+procedure tbasicnav.make__backgroundhead;//03dec2023
+begin
+try;if (ibar<>nil) then ibar.make__backgroundhead;except;end;
 end;
 //## _onalign ##
 procedure tbasicnav._onalign(sender:tobject);
@@ -91211,7 +96086,7 @@ if (xtep<>tepnone) then
 //caption
 z:=xlang(icaption);
 dy:=(ch-fnH) div 2;
-if xmustpaint then ldt2(cs,dx,dy,xfont,z,fn,xfeather,false,false,xenabled and xmouseinside,false,xround);
+if xmustpaint then ldt2(clnone,cs,dx,dy,xfont,z,fn,xfeather,false,false,xenabled and xmouseinside,false,xround);
 //frame
 if xmustpaint and (xbordersize>=1) then ldf(cs,xborder,low__dc(xback,-20),xbordersize,nil,xround);
 if xmustpaint then xparentcorners;
@@ -91509,6 +96384,7 @@ begin
 satinc(satEdit,1);
 inherited create2(xparent,false);
 //vars
+osysfind_textsync:=false;
 omoreoptions:=true;
 ocanshowmenu:=true;
 idropstatic:=false;
@@ -91546,6 +96422,7 @@ fonchange:=nil;//13mar2022
 onshowpass:=nil;//19jun2022
 //defaults
 clientheight:=20;
+xfindsync;
 //start
 if xstart then start;
 end;
@@ -91560,6 +96437,28 @@ fonclick1:=nil;
 inherited destroy;
 satinc(satEdit,-1);
 except;end;
+end;
+//## makefind ##
+procedure tbasicedit.makefind;
+begin
+try
+osysfind_textsync:=true;
+omoreoptions:=true;
+ocanshowmenu:=true;
+idropstatic:=false;
+oreadonly:=false;
+opassword:=false;
+oborder2:=false;
+tep:=tepnone;
+tep2:=tepnone;
+xfindsync;
+paintnow;
+except;end;
+end;
+//xfindsync ##
+procedure tbasicedit.xfindsync;
+begin
+try;if osysfind_textsync then sysfind_text:=ivalue;except;end;
 end;
 //## canundo ##
 function tbasicedit.canundo:boolean;
@@ -91977,6 +96876,8 @@ if low__setstr(ivalue,x) then
    paintnow;
    xchanged;
    end;
+//.findsync
+xfindsync;
 except;end;
 end;
 //## xchanged ##
@@ -92098,7 +96999,7 @@ lds3(true,cs,xback,xback2,clnone,0,vishadestyle,xround,true);//27mar2021
 if (atitleheight>=1) then
    begin
    dy:=(ch-fnH) div 2;
-   ldt(ta,ta.left,dy,low__dc(xback,70),z,fn,xfeather,false);
+   ldt1(xback,ta,ta.left,dy,low__dc(xback,70),z,fn,xfeather,false);
    end;
 //image - left
 dx:=xbordersize+xpad0;
@@ -92147,7 +97048,7 @@ if (xtitle<>'') then
    begin
    z:=xlang(xtitle);
    dy:=xbordersize;
-   ldt(ta,ta.left,dy,xfont,z,fn,xfeather,false);
+   ldt1(xback,ta,ta.left,dy,xfont,z,fn,xfeather,false);
    end;
 //caption
 if (xvalue='') and (xcap<>'') then
@@ -92155,7 +97056,7 @@ if (xvalue='') and (xcap<>'') then
    z:=xlang(xcap);
 //was:   dy:=(ch-fnH) div 2;
    dy:=atitleheight+((ah-fnH) div 2);
-   ldt(ta,ta.left,dy,low__dc(xback,70),z,fn,xfeather,false);
+   ldt1(xback,ta,ta.left,dy,low__dc(xback,70),z,fn,xfeather,false);
    end;
 //value
 int2:=0;
@@ -92167,7 +97068,7 @@ if (xvalue<>'') then
    tw:=low__fonttextwidth2(fn,xvalue);
    int1:=(ta.right-ta.left)+1;
    if (tw>int1) then int2:=-(tw-int1);
-   ldt(ta,ta.left+int2,dy,xfont,xvalue,fn,xfeather,false);
+   ldt1(xback,ta,ta.left+int2,dy,xfont,xvalue,fn,xfeather,false);
    end;
 //cursor
 if ashowcursor then
@@ -92323,6 +97224,7 @@ end;
 itext:=xcaption;
 iinforef:='';
 olarge:=xlarge;
+ocentertext:=false;
 //controls
 clientheight:=20;
 //start
@@ -92423,7 +97325,8 @@ end;
 
 //text
 dx:=xbordersize+5;
-ldt(ci,dx,ci.top+((dh-low__fontmaxh(fc)) div 2),xfont,itext,fc,xfeather,xround);//up 1px - 24feb2021
+if ocentertext then dx:=frcmin((cw-low__fonttextwidth2(fc,itext)) div 2,dx);
+ldt1(xback,ci,dx,ci.top+((dh-low__fontmaxh(fc)) div 2),xfont,itext,fc,xfeather,xround);//up 1px - 24feb2021
 
 //frame
 if (xbordersize>=1) then ldf2(cs,xborder,xborder,clnone,xbordersize,0,'',nil,xround);
@@ -92700,6 +97603,7 @@ begin
 //self
 inherited create2(xparent,false);
 //vars
+ocenter:=true;
 inormal:=false;
 ibordersize:=3;
 itimer250:=ms64;
@@ -92710,10 +97614,17 @@ for p:=0 to high(icellwidth) do
 begin
 icellref[p]:='';
 icellwidth[p]:=0;
+icellleft[p]:=0;
+icellright[p]:=-1;
 icellpert[p]:=0;
 icelltext[p]:='';
+icellname[p]:='';
 icellflash[p]:=false;
+icellmark[p]:=false;
 end;//p
+iclickindex:=-1;
+iclickname:='';
+fclickcell:=nil;
 //controls
 clientheight:=20;
 //start
@@ -92724,6 +97635,42 @@ destructor tbasicstatus.destroy;
 begin
 try
 inherited destroy;
+except;end;
+end;
+//## _onnotify ##
+function tbasicstatus._onnotify(sender:tobject):boolean;
+var
+   dindex,sx,p:longint;
+begin
+try
+//defaults
+result:=false;
+dindex:=-1;
+//find
+sx:=mousexy.x;
+for p:=0 to high(icellwidth) do
+begin
+if (icellwidth[p]>=1) and (sx>=icellleft[p]) and (sx<=icellright[p]) then
+   begin
+   dindex:=p;
+   break;
+   end;
+end;//p
+//help
+if (dindex>=0) then help2:=icellhelp[dindex] else help2:='';
+//get
+if gui.mouseupstroke then//and (not gui.mousewasdown) then
+   begin
+   //init
+   result:=true;
+   //get
+   iclickindex:=dindex;
+   if (dindex>=0) then iclickname:=icellname[dindex] else iclickname:='';
+   //event
+   if (dindex>=0) then low__fireevent(self,fclickcell);
+   end;
+//self
+result:=inherited _onnotify(sender);
 except;end;
 end;
 //## _ontimer ##
@@ -92779,8 +97726,13 @@ except;end;
 end;
 //## getalignheight ##
 function tbasicstatus.getalignheight(xclientwidth:longint):longint;
+var
+   v:longint;
 begin
-try;result:=frcmin((2*findbordersize)+4+vifontheight,0);except;end;
+try
+v:=2*findbordersize;
+result:=frcmin(v+4+vifontheight,v+(24*vizoom));
+except;end;
 end;
 //## _onpaint ##
 procedure tbasicstatus._onpaint(sender:tobject);
@@ -92790,32 +97742,77 @@ var
    //infovars
    a:pvirtualinfo;
    cs,ci:trect;
-   xsepwidth,dcellwidth,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xback,xborder,xhover,xfontheight,xfeather,xbordersize:longint;
+   int1,xsepwidth,dcellwidth,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfont2,xfontdisable,xback,xback2,xback3,xborder,xborder3,xhover,xfontheight,xfeather,xbordersize:longint;
    xflash,xenabled,xround,xnormal:boolean;
+   gstyle:string;
    //other
    da,pa:trect;
-   dcol0,dcol1,dcol2,p2,px,xzoom,xlast,dx,dy,p:longint;
+   xsparkle,dcol0,dcol1,dcol2,p2,px,xzoom,xlast,dx,dy,p:longint;
    dpert:double;
-   dflash,dround:boolean;
+   smark,sflash,dswapcols,dflash,dround:boolean;
+   dleft:array[0..high(icellleft)] of longint;
+   dright:array[0..high(icellleft)] of longint;
    //## xcellwidth ##
    function xcellwidth(x:longint):longint;
    begin
    result:=icellwidth[x];
    if (result>=1) then result:=frcmin(round(icellwidth[x]*xzoom*vifontwidthratio),1);
    end;
+   //## dxalign ##
+   function dxalign(x:string):longint;
+   begin
+   try
+   result:=0;
+   if ocenter then result:=frcmin(((da.right-da.left+1)-low__fonttextwidth2(fn,x)) div 2,0)
+   except;end;
+   end;
 begin
 try
 //init
 xzoom:=vizoom;
-infovars(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xback,xborder,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);
-//cls
-case vienhanced of
-true:lds2(cs,low__dc(xback,10),xback,clnone,0,'g50',xround);
-false:lds2(cs,xback,xback,clnone,0,vishadestyle,xround);//21feb2021
-end;
-xflash:=(iflashcount>=1) and ilastflash;
-xsepwidth:=2*xzoom;
+infovars3(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xfont2,xback,xback2,xback3,xborder,xborder3,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);
+xsparkle:=0;
+gstyle:='g90';
+dswapcols:=true;
+{
+case ibackstyle of
+0:begin
+   dspark:=0;
+   gstyle:='g90';
+   dswapcols:=false;
+   end;
+1:begin
+   dspark:=low__insint(visparkle,vienhanced);
+   gstyle:='g10';
+   dswapcols:=true;
+   end;
+end;//case
+{}
 
+//cls
+//   if (oheadbase=1)             then background__head2(cs,xback,roundframe,xsparkle)
+
+case oheadbase of
+1:begin
+   background__head(cs,xback,roundframe,xsparkle);
+   dswapcols:=false;
+   end;
+2:background__head2(cs,xback,roundframe,xsparkle);
+else lds2(cs,low__dc(xback,50),xback,clnone,0,vishadestyle,xround);//'g50',xround);
+end;
+
+//was: true:lds2(cs,low__dc(xback,50),xback,clnone,0,vishadestyle,xround);//'g50',xround);
+//ldso4(true,cs,cs,clnone,clnone,xback,xback2,clnone,dspark,gstyle,roundframe,dswapcols);
+
+
+xflash:=(iflashcount>=1) and ilastflash;
+xsepwidth:=low__aorb(1,2,xbordersize>=1)*xzoom;
+//.dleft
+for p:=0 to high(dleft) do
+begin
+dleft[p]:=0;
+dright[p]:=-1;
+end;//p
 //find last
 for p:=high(icellwidth) downto 0 do
 begin
@@ -92826,10 +97823,12 @@ end;//p
 dx:=xbordersize+1+sp;
 px:=xbordersize;
 dy:=(ch-fnH) div 2;
-for p:=0 to high(icellwidth) do if (icellwidth[p]>=1) or (icelltext[0]<>'') or (icellpert[p]>0) then
+for p:=0 to high(icellwidth) do if (icellwidth[p]>=1) or (icelltext[0]<>'') or (icellpert[p]>0) or (icellmark[p]) then
    begin
    //init
-   dflash:=icellflash[p] and xflash;
+   smark:=icellmark[p];
+   sflash:=icellflash[p];
+   dflash:=sflash and xflash;
    dcellwidth:=xcellwidth(p);
    dpert:=icellpert[p];
    da.left:=dx;
@@ -92837,6 +97836,8 @@ for p:=0 to high(icellwidth) do if (icellwidth[p]>=1) or (icelltext[0]<>'') or (
    da.right:=frcmax(da.right,cs.right-xbordersize);
    da.top:=xbordersize;
    da.bottom:=ch-1-xbordersize;
+   dleft[p]:=da.left;
+   dright[p]:=da.right;
    //get
    //.progress bar
    if (dpert>0) then
@@ -92865,48 +97866,80 @@ for p:=0 to high(icellwidth) do if (icellwidth[p]>=1) or (icelltext[0]<>'') or (
          end;
       end;//case
       //.fill first 3px with square to make it look good
-      if dround then lds2(rect(pa.left,pa.top,pa.left+low__cornerMaxwidth,pa.bottom),dcol1,dcol2,clnone,0,vishadestyle,false);
+      //if dround then lds2(rect(pa.left,pa.top,pa.left+low__cornerMaxwidth,pa.bottom),dcol1,dcol2,clnone,0,vishadestyle,false);
 
       //.because FLASH progress bar uses xback color as the text color we need to fill the background with a modified text color to give sufficent contrast - 29dec2021
-      if dflash then lds2(rect(dx,pa.top,da.right,pa.bottom),low__dc(dcol2,-20),low__dc(dcol2,0),clnone,0,vishadestyle,dround);//21feb2021
+      //if dflash then lds2(rect(dx,pa.top,da.right,pa.bottom),low__dc(dcol2,-20),low__dc(dcol2,0),clnone,0,vishadestyle,dround);//21feb2021
 
       //.round or square shade progress bar - 07jul2021
-      lds2(pa,dcol1,dcol2,clnone,0,vishadestyle,dround);//21feb2021
+      //lds2(pa,dcol1,dcol2,clnone,0,vishadestyle,dround);//21feb2021
+
+      //.progress color
+      if (not sflash) or dflash then ldso4(true,pa,pa,clnone,clnone,xback3,xback,clnone,xsparkle,gstyle,false,dswapcols);
+
       //.text
-      ldt(da,da.left,dy,dcol0,icelltext[p],fn,xfeather,false);//flash support - 29dec2021
+      ldt1(xback,da,da.left+dxalign(icelltext[p]),dy,xfont,icelltext[p],fn,xfeather,false);//flash support - 29dec2021
       end
-   else if dflash then
+   else if dflash or (smark and (not sflash)) then
       begin
       pa:=da;
       pa.left:=px;
       //.background
-      lds2(pa,xfont,xfont,clnone,0,vishadestyle,false);//flash support - 29dec2021
+      ldso4(true,pa,pa,clnone,clnone,xback3,xback,clnone,xsparkle,gstyle,false,dswapcols);
       //.text
-      ldt(da,da.left,dy,xback,icelltext[p],fn,xfeather,false);//flash support - 29dec2021
+      ldt1(xback,da,da.left+dxalign(icelltext[p]),dy,xfont,icelltext[p],fn,xfeather,false);//flash support - 29dec2021
       end
    else//normal
       begin
-      ldt(da,da.left,dy,xfont,icelltext[p],fn,xfeather,false);
+      ldt1(clnone,da,da.left+dxalign(icelltext[p]),dy,xfont,icelltext[p],fn,xfeather,false);
       end;
 
    //vertical dividers -> 2px wide
    px:=da.right;
-   if (xbordersize>=1) and (p<xlast) and (xsepwidth>=1) then
+   if (p<xlast) and (xsepwidth>=1) then
       begin
-      for p2:=1 to xsepwidth do ldv(da.right+p2-1,xbordersize,ch-1-xbordersize,xborder,xround);
+      for p2:=1 to xsepwidth do ldv2(da.right+p2-1,xbordersize,ch-1-xbordersize,xborder,false,xround);
       px:=da.right+xsepwidth;
       end;
    //inc
    inc(dx,dcellwidth+xsepwidth);
    end;
 //frame
-if (xbordersize>=1) then ldf(cs,xborder,low__dc(xback,-20),xbordersize,nil,xround);
+if (xbordersize>=1) then ldf(cs,xborder,low__dc(xback,-20),xbordersize,nil,roundframe)
+else if (oheadbase=1) then ldh(cs.left,cs.right,cs.bottom,xborder,false)//part of window head
+else if (oheadbase=2) then ldh(cs.left,cs.right,cs.top,xborder,false);//part of window base
+//set
+for p:=0 to high(dleft) do
+begin
+icellleft[p]:=dleft[p];
+icellright[p]:=dright[p];
+end;//p
 except;end;
 end;
 //## xcellok ##
 function tbasicstatus.xcellok(x:longint):boolean;
 begin
 try;result:=(x>=0) and (x<=high(icellwidth));except;end;
+end;
+//## setcellname ##
+procedure tbasicstatus.setcellname(x:longint;y:string);
+begin
+try;if xcellok(x) then icellname[x]:=y;except;end;
+end;
+//## getcellname ##
+function tbasicstatus.getcellname(x:longint):string;
+begin
+try;if xcellok(x) then result:=icellname[x] else result:='';except;end;
+end;
+//## setcellhelp ##
+procedure tbasicstatus.setcellhelp(x:longint;y:string);
+begin
+try;if xcellok(x) then icellhelp[x]:=y;except;end;
+end;
+//## getcellhelp ##
+function tbasicstatus.getcellhelp(x:longint):string;
+begin
+try;if xcellok(x) then result:=icellhelp[x] else result:='';except;end;
 end;
 //## setcelltext ##
 procedure tbasicstatus.setcelltext(x:longint;y:string);
@@ -92957,10 +97990,20 @@ if xcellok(x) and (icellflash[x]<>y) then
    end;
 except;end;
 end;
-//## getcellflash ##
+//## getcellmark ##
 function tbasicstatus.getcellflash(x:longint):boolean;
 begin
 try;if xcellok(x) then result:=icellflash[x] else result:=false;except;end;
+end;
+//## setcellmark ##
+procedure tbasicstatus.setcellmark(x:longint;y:boolean);
+begin
+try;if xcellok(x) and low__setbol(icellmark[x],y) then paintnow;except;end;
+end;
+//## getcellmark ##
+function tbasicstatus.getcellmark(x:longint):boolean;
+begin
+try;if xcellok(x) then result:=icellmark[x] else result:=false;except;end;
 end;
 
 //## tbasictoolbar #############################################################
@@ -92986,6 +98029,7 @@ ocountdown_dlgcheck:=true;
 oautoheight:=true;
 orighttoleft:=false;
 oasbuttons:=false;
+odownsubtle:=false;
 owrap:=true;
 oindex:=-1;
 ocode:=0;
@@ -93045,6 +98089,7 @@ icountdown[p]:=0;//off
 end;//p
 
 //controls
+bordersize:=0;//03dec2023
 clientheight:=20;
 //start
 if xstart then start;
@@ -93077,12 +98122,12 @@ end;
 //## xaddoptions2 ##
 procedure tbasictoolbar.xaddoptions2(xcmd:string);
 begin
-try;add('Options',tepoptions20,0,low__udv(xcmd,scOptions),'Show Options | Adjust coloring, font size and various settings');except;end;
+try;if viMaster then add('Options',tepoptions20,0,low__udv(xcmd,scOptions),'Show Options | Adjust coloring, font size and various settings');except;end;
 end;
 //## xaddhelp ##
 procedure tbasictoolbar.xaddhelp;
 begin
-try;add('Help',tephelp20,0,scHelp,'Show / Hide Built-in Help');except;end;//24jul2021
+try;if (sizeof(programhelp)>=2) and viMaster then add('Help',tephelp20,0,scHelp,'Show / Hide Built-in Help');except;end;//03nov2023, 24jul2021
 end;
 //## xaddabout ##
 procedure tbasictoolbar.xaddabout;
@@ -93192,7 +98237,8 @@ end;
 //## xrowheight ##
 function tbasictoolbar.xrowheight:longint;
 begin
-try;result:=(frcmin(ovpad,0)*vizoom)+largest(largest(itepheight*vizoom,vifontheight),low__insint(low__touchsmall,vitouch))+(irowpad*vizoom)+low__insint(2*ibuttonvpad*vizoom,oasbuttons);except;end;
+//was: try;result:=(frcmin(ovpad,0)*vizoom)+largest(largest(itepheight*vizoom,vifontheight),low__insint(low__touchsmall,vitouch))+(irowpad*vizoom)+low__insint(2*ibuttonvpad*vizoom,oasbuttons);except;end;
+try;result:=(frcmin(ovpad,0)*vizoom)+largest(largest(largest(itepheight*vizoom,vifontheight),28*vizoom),low__insint(low__touchsmall,vitouch))+(irowpad*vizoom)+low__insint(2*ibuttonvpad*vizoom,oasbuttons);except;end;
 end;
 //## xrowcount ##
 function tbasictoolbar.xrowcount:longint;
@@ -93360,7 +98406,7 @@ try
 //defaults
 result:=-1;
 //find
-for p:=0 to high(icap) do if (xcode=icode[p]) and (xcapok2(p) or xtepok2(p)) then
+for p:=0 to high(icap) do if (xcode=icode[p]) and (xcapok2(p,true) or xtepok2(p)) then
    begin
    result:=p;
    break;
@@ -93381,13 +98427,13 @@ try
 //defaults
 result:=-1;
 //ultra-fast
-if (ilastfindbycode2>=0) and (ilastfindbycode2<=high(icap)) and low__comparetext(xcode2,icode2[ilastfindbycode2]) and (xcapok2(ilastfindbycode2) or xtepok2(ilastfindbycode2)) then
+if (ilastfindbycode2>=0) and (ilastfindbycode2<=high(icap)) and low__comparetext(xcode2,icode2[ilastfindbycode2]) and (xcapok2(ilastfindbycode2,true) or xtepok2(ilastfindbycode2)) then
    begin
    result:=ilastfindbycode2;
    exit;
    end;
 //find                       //icanarea[p] and
-for p:=0 to high(icap) do if low__comparetext(xcode2,icode2[p]) and (xcapok2(p) or xtepok2(p)) then
+for p:=0 to high(icap) do if low__comparetext(xcode2,icode2[p]) and (xcapok2(p,true) or xtepok2(p)) then
    begin
    result:=p;
    break;
@@ -93422,6 +98468,7 @@ function tbasictoolbar._onnotify(sender:tobject):boolean;
 var
    xclickindex,int1:longint;
    xmustreset,xmustpaint:boolean;
+   a:tbasicscroll;
 begin
 try
 //defaults
@@ -93462,6 +98509,9 @@ if gui.mousemoved and (not gui.mousedown) then
    begin
    if xok(int1) then help2:=ibuthelp[int1] else help2:='';
    end;
+
+//drag the window with blank space
+if (idownindex<0) and xwindow2(a) and a.xhavehead and a.xhavetoolbar and (a.xtoolbar=self) then a.xhead.xdragthewindow;
 
 //xmustpaint
 if xmustpaint then paintnow;
@@ -93531,6 +98581,9 @@ if enabled and xok(xindex) and ienableds[xindex] and ivisibles[xindex] then
    else if low__comparetext(ocode2,scsplash) then gui.xshowsplash
    //.sys:mixer -> show mixer
    else if low__comparetext(ocode2,scmixer) then low__showvol
+   //.sys:find -> signal system find handler var - 18feb2023
+   else if low__comparetext(ocode2,scFindpop)  then sysfind_cmd:='find.pop'
+   else if low__comparetext(ocode2,scfind) then sysfind_cmd:='find'
    //.sys:ontop -> toggle ontop
    else if low__comparetext(ocode2,scontop) then
       begin
@@ -93553,9 +98606,9 @@ begin
 try;result:=((istyle=0) or (istyle=2)) and xok(xindex) and ivisibles[xindex] and (icap[xindex]<>'');except;end;
 end;
 //## xcapok2 ##
-function tbasictoolbar.xcapok2(xindex:longint):boolean;
+function tbasictoolbar.xcapok2(xindex:longint;xallowemptyCAP:boolean):boolean;
 begin
-try;result:=((istyle=0) or (istyle=2)) and xok(xindex) and (icap[xindex]<>'');except;end;
+try;result:=((istyle=0) or (istyle=2)) and xok(xindex) and (xallowemptyCAP or (icap[xindex]<>''));except;end;
 end;
 //## xtepok ##
 function tbasictoolbar.xtepok(xindex:longint):boolean;
@@ -93581,6 +98634,11 @@ end;
 function tbasictoolbar.maketitle3(xcap:string;xlarge,xright:boolean):tbasictoolbar;
 begin
 try;result:=self;otitle:=true;olarge:=xlarge;orighttoleft:=xright;ibordersize:=1;caption:=xcap;except;end;
+end;
+//## makelinksSubtle ##
+function tbasictoolbar.makelinksSubtle:tbasictoolbar;//11feb2023
+begin
+try;result:=self;otitle:=false;olarge:=false;orighttoleft:=false;ibordersize:=0;odownsubtle:=true;oasbuttons:=false;omarkcleanly:=true;except;end;
 end;
 //## xtitleheight ##
 function tbasictoolbar.xtitleheight:longint;
@@ -93626,18 +98684,24 @@ end;
 procedure tbasictoolbar.xpaintcalc(sender:tobject;xclientwidth:longint;xmustpaint:boolean);//08mar2021, 21feb2021, 23apr2020
 label
    skipdone,skipend,redo,redoEqualscan;
+const
+   bnorm=0;
+   bhove=1;
+   bdown=2;
+   bpert=3;
+   dmax=3;
 var
    //infovars
    a:pvirtualinfo;
-   barea,cs,ci:trect;
-   fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xfont2,xback,xback2,xborder,xhover,xfontheight,xfeather,xbordersize:longint;
+   dtmp,barea,cs,ci:trect;
+   fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xfont2,xback,xback2,xback3,xborder,xborder3,xhover,xfontheight,xfeather,xbordersize:longint;
    xonce,xenabled,xround,xnormal:boolean;
    //other
    pa:trect;
    sp,pad1,pad2,shiftby:longint;
-   xequalwidth,xmaxwidth,xfontcol,xzoom,caw,cah,xcapwidth,dback,fc,xtep,xfonthover,xdisablefont,xbutpadding,xbutwidth,xrowh,arowcount,xstyle,xdownoffset,dx,dy,yteb,ycap,sx,xtepheight,xtebcount,bw,bh,int1,int1b,int2,int2b,int3,int4,xlast,p:longint;
+   xsparkle,v,bmode,xequalwidth,xmaxwidth,xzoom,caw,cah,xcapwidth,dback,fc,xtep,xbutpadding,xbutwidth,xrowh,arowcount,xstyle,xdownoffset,dx,dy,yteb,ycap,sx,xtepheight,xtebcount,bw,bh,xlast,p,int1,int2,int3,int4:longint;
    str1,e:string;
-   xhighlight,xcolorise,xflash,xenhanced,xtitle,xmouseleft,xbutpad,ximgright,xwrap,xrighttoleft,xasbuttons,xscan,atep,acap,xdown,xhavefocus,bol1,bol2:boolean;
+   bborders,xhighlight,xcolorise,xflash,xenhanced,xtitle,xmouseleft,xbutpad,ximgright,xwrap,xrighttoleft,xdownsubtle,xscan,atep,acap,xdown,xhavefocus,bol1,bol2:boolean;
    //## xmap ##
    function xmap(x:longint):longint;
    begin
@@ -93649,7 +98713,7 @@ var
    //## dx0 ##
    function dx0:longint;
    begin
-   result:=ci.left+low__insint(pad1,not xasbuttons);
+   result:=ci.left+low__insint(pad1,not bborders);
    end;
    //## __bmaxwidth ##
    function __bmaxwidth:longint;
@@ -93733,13 +98797,12 @@ xenhanced:=vienhanced;
 xzoom    :=vizoom;
 sp       :=2*xzoom;
 pad1     :=4*xzoom;//space between image and caption (if both present)
-pad2     :=10*xzoom;//space between last item and next item
+pad2     :=8*xzoom;//was 10*xzoom 09dec2023 - space between last item and next item
 shiftby  :=2*xzoom;//space to shift down and to right when "down" or "marked"
 
 //init
 //infovars(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xback,xborder,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);
-infovars2(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xfont2,xback,xback2,xborder,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);
-
+infovars3(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xfont2,xback,xback2,xback3,xborder,xborder3,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);
 //.use system supplied "clientwidth" to properly calculate width/height - 23apr2020
 if not xmustpaint then
    begin
@@ -93755,30 +98818,30 @@ xcapwidth:=0;
 xtitle:=otitle;
 xmouseleft:=gui.mouseleft;
 xbutpadding:=ibuttonpad*xzoom;//20mar2021
-xasbuttons:=oasbuttons;
+bborders:=oasbuttons;
+
+//bborders:=true;
+//xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+xdownsubtle:=odownsubtle;
 xrighttoleft:=orighttoleft;
 xtebcount:=0;
 xstyle:=istyle;
 xrowh:=xrowheight;
 xwrap:=owrap;
 xtepheight:=itepheight*xzoom;
-xdisablefont:=a.disablefont;
 xflash:=iflash;
 xonce:=false;
 xcolorise:=vicoloriseimages;
-//was: if xasbuttons then xfonthover:=xfont else xfonthover:=xhover;
-xfonthover:=a.fonthighlight;
-//was: if xenabled and (not low__cv(xfonthover,xback,90)) then xfonthover:=low__dc(xfonthover,90);
-
+xsparkle:=0;
 //cls
 //was: if xmustpaint then lds2(cs,xback,low__dc(xback,10),xback,0,'',xround);
 if xmustpaint then
    begin
-   case xtitle and xenhanced of
-   true:lds2(cs,low__dc(xback,-10),xback,xback,0,'g50',xround);//match title background exactly - 11oct2020
-   false:lds2(cs,xback2,xback,xback,0,vishadestyle,xround);
+   if (oheadbase=1)             then background__head2(cs,xback,roundframe,xsparkle)
+   else if xtitle and xenhanced then background__title(cs,xback,roundframe)//match title background exactly - 11oct2020
+   else                              background__toolbar(cs,xback,xback2,roundframe);
    end;
-   end;//if
 
 //caption -> optional -> 11oct2020
 str1:=caption;
@@ -93788,7 +98851,7 @@ if (str1<>'') then
    //was: int1:=1+((cah-low__fontmaxh(fc)) div 2);
    int1:=(cah-low__fontmaxh(fc)) div 2;//lines up perfectly with a "tbasictitle" - 26mar2022
    xcapwidth:=(5*xzoom)+low__fonttextwidth2(fc,str1)+(5*xzoom);//5px horizontal pad - zomed - 20mar2021
-   if xmustpaint then ldt2(ci,ci.left+5,ci.top+int1,xfont,str1,fc,xfeather,false,false,false,false,xround);
+   if xmustpaint then ldt2(xback,ci,ci.left+5,ci.top+int1,xfont,str1,fc,xfeather,false,false,false,false,xround);
    //shift links/buttons to right by width of caption
    cw:=frcmin(cw-xcapwidth,0);
    ci.left:=frcmax(ci.left+xcapwidth,ci.right);
@@ -93897,6 +98960,8 @@ ycap:=dy+((xrowh-fnH) div 2);
 //draw
 for p:=0 to high(icap) do
 begin
+//xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx//yyyyyyyyyyyyyyyyyyyyyyyy
+bmode:=bnorm;
 dback:=clnone;
 xtep:=itep[p];
 atep:=xtepok(p);
@@ -93937,56 +99002,33 @@ else if atep or acap then
    begin
    //init
    xhavefocus:=(p=ihoverindex) or (gui.mousedown and (p=idownindex));
-   xdown:=xmouseleft and (gui.mousedown and (p=idownindex)) or imarked[p];
+   xdown:=(xmouseleft and (gui.mousedown and (p=idownindex))) or imarked[p];
    if xdown then xdownoffset:=shiftby else xdownoffset:=0;
    xhighlight:=ihighlight[p];
+   //.button mode
+   bmode:=bnorm;
+   if (ipert[p]>=1)                    then bmode:=bpert
+   else if xdown and ienableds[p]      then bmode:=bdown
+   else if xhavefocus and ienableds[p] then bmode:=bhove
+   else if xhighlight                  then bmode:=bhove;//09dec2023
+
    //get
-   //.background color/border
+   //.background pert/hover
    if xmustpaint and (not xscan) then
       begin
-      //init
-      int1:=clnone;
-      int2:=clnone;
-      //links
-      if (not xasbuttons) and (not xhighlight) then
-         begin
-         if enabled and ienableds[p] and (xdown or xhighlight) and (not omarkcleanly) then int2:=a.highlight;
-         end
-      //buttons
-      else if not ienableds[p] then
-         begin
-         int1:=a.disableborder;
-         int2:=clnone;
-         end
-      else if xhavefocus then
-         begin
-         int1:=xhover;
-         int2:=a.highlight;
-         end
-      else
-         begin
-         int1:=xborder;
-         if enabled and (xdown or xhighlight) then int2:=a.highlight;
+      case bmode of
+      bpert:begin//.optional progress bar
+         pa:=rect(xmap(1+dx+xdownoffset),1+dy+xdownoffset-1,xmap(dx+xdownoffset+xbutwidth-1),dy+xdownoffset-1+xrowh);
+         pa.right:=frcrange(pa.left+round((pa.right-pa.left)*(ipert[p]/100)),pa.left,pa.right);
+         lds2(pa,xback3,xback,clnone,xsparkle,vishadestyle,xround);//02dec2023, 21feb2021
          end;
+      bdown,bhove:lds3(true,low__rect(xmap(1+dx+xdownoffset),1+dy+xdownoffset-1,xmap(dx+xdownoffset+xbutwidth-1),dy+xdownoffset-1+xrowh),xback3,xback,clnone,xsparkle,vishadestyle,xround,true);
+      end;//case
 
-      //set
-//was:if (int1<>clnone) or (int2<>clnone) then ldso(rect(xmap(1+dx+xdownoffset),1+dy+xdownoffset-1,xmap(dx+xdownoffset+xbutwidth-1),dy+xdownoffset-1+xrowh),int1,int2,xround);
-      if (int1<>clnone) or (int2<>clnone) or (ipert[p]>=1) then
-         begin                                                  //was: -20 on 06oct2020
-         if (int2<>clnone) and vienhanced then int2b:=low__dc(int2,-10) else int2b:=int2;
-         dback:=int2;
-         int1b:=int1;
-         if xenhanced then int1b:=low__dc(int1,-40);
-//was:   ldso2(rect(xmap(1+dx+xdownoffset),1+dy+xdownoffset-1,xmap(dx+xdownoffset+xbutwidth-1),dy+xdownoffset-1+xrowh),int1,int1,int2b,int2,clnone,0,vishadestyle,xround);
-//was: 07jul2021:         ldso2(rect(xmap(1+dx+xdownoffset),1+dy+xdownoffset-1,xmap(dx+xdownoffset+xbutwidth-1),dy+xdownoffset-1+xrowh),int1,int1b,int2b,int2,clnone,0,vishadestyle,xround);
-         //.optional progress bar
-         if (ipert[p]>=1) then
-            begin
-            pa:=rect(xmap(1+dx+xdownoffset),1+dy+xdownoffset-1,xmap(dx+xdownoffset+xbutwidth-1),dy+xdownoffset-1+xrowh);
-            pa.right:=frcrange(pa.left+round((pa.right-pa.left)*(ipert[p]/100)),pa.left,pa.right);
-            lds2(pa,low__dc(xback,50),xback,clnone,0,vishadestyle,xround);//21feb2021
-            end
-         else ldso2(rect(xmap(1+dx+xdownoffset),1+dy+xdownoffset-1,xmap(dx+xdownoffset+xbutwidth-1),dy+xdownoffset-1+xrowh),int1,int1b,int2b,int2,clnone,0,vishadestyle,xround);
+      //.draw border
+      if bborders then
+         begin
+         ldo2(low__rect(xmap(1+dx+xdownoffset),1+dy+xdownoffset-1,xmap(dx+xdownoffset+xbutwidth-1),dy+xdownoffset-1+xrowh),xborder,low__aorb(xborder,xborder3,(bmode=bdown) or (bmode=bhove)),clnone,xsparkle,vishadestyle,xround);
          end;
       end;
 
@@ -93995,22 +99037,16 @@ else if atep or acap then
       begin
       inc(dx,iusex[p]);
       end;
-   //.font color
-   case ienableds[p] of
-   true:if xenabled and ienableds[p] and (xhavefocus or xhighlight) then xfontcol:=xfonthover else xfontcol:=xfont;
-   false:xfontcol:=xdisablefont;
-   end;//case
 
-   //.realtime "font" color check -> prevents MOST collisions - 11oct2020
-   if (dback<>clnone) then xfontcol:=low__ecv(xfontcol,dback,20);
    //.leading button pad
-   if xasbuttons or xbutpad then inc(dx,xbutpadding);
+   //was: if bborders or xbutpad then inc(dx,xbutpadding);
+   inc(dx,xbutpadding);
 
    //-- left aligned tep (tep+cap) ---------------------------------------------
    //.image -> required "buffer=true" to work
    if (not ximgright) and atep then
       begin                              //flash support 24feb2021
-      if xmustpaint and (not xscan) and ((not xflash) or (not iflasher[p])) then ldis2(ci,xmap(dx+xdownoffset),yteb+xdownoffset,xfontcol,low__aorb(clnone,xback,xcolorise),xtep,xenabled and ienableds[p] and xhavefocus,(not xenabled) or (not ienableds[p]),xround);
+      if xmustpaint and (not xscan) and ((not xflash) or (not iflasher[p])) then ldis2(ci,xmap(dx+xdownoffset),yteb+xdownoffset,xfont,low__aorb(clnone,xback,xcolorise),xtep,xenabled and ienableds[p] and xhavefocus,(not xenabled) or (not ienableds[p]),xround);
       inc(dx,ximgw(p));
       end;
    //.padding
@@ -94021,21 +99057,8 @@ else if atep or acap then
       begin
       //draw caption + countdown caption - 05sep2020
       str1:=xcap(p);
-      if (not xscan) and xmustpaint then ldt2(ci,xmap(dx+xdownoffset),ycap+xdownoffset,xfontcol,str1,fn,xfeather,false,false,xenabled and ienableds[p] and (xhavefocus or (xdown and omarkcleanly)),false,xround);
+      if (not xscan) and xmustpaint then ldt2(xback,ci,xmap(dx+xdownoffset),ycap+xdownoffset,xfont,str1,fn,xfeather,false,false,xenabled and ienableds[p] and (xhavefocus or (xdown and omarkcleanly)),false,xround);
       inc(dx,low__fonttextwidth2(fn,str1));
-
-{Not required/not needed - 21sep2021
-      barea:=ci;
-      if (isize[p]=0) and (xequalwidth>=1) then
-          begin
-          barea.left:=sx;
-          barea.right:=sx+xequalwidth;
-          barea.top:=ci.top;
-          barea.bottom:=ci.bottom;
-          end;
-      if (not xscan) and xmustpaint then ldt2(barea,xmap(dx+xdownoffset),ycap+xdownoffset,xfontcol,str1,fn,xfeather,false,false,xenabled and ienableds[p] and (xhavefocus or (xdown and omarkcleanly)),false,xround);
-      if (isize[p]=0) and (xequalwidth>=1) then inc(dx,frcmax(low__fonttextwidth2(fn,str1),xequalwidth)) else inc(dx,low__fonttextwidth2(fn,str1));
-{}//yyyyyyyyyyyyy
       end;
 
    //-- right aligned tep (cap+tep) --------------------------------------------
@@ -94044,13 +99067,15 @@ else if atep or acap then
    //.image -> required "buffer=true" to work
    if ximgright and atep then
       begin
-      if xmustpaint and (not xscan) then ldis2(ci,xmap(dx+xdownoffset),yteb+xdownoffset,xfontcol,low__aorb(clnone,xback,xcolorise),xtep,xenabled and ienableds[p] and xhavefocus,(not xenabled) or (not ienableds[p]),xround);
+      if xmustpaint and (not xscan) then ldis2(ci,xmap(dx+xdownoffset),yteb+xdownoffset,xfont,low__aorb(clnone,xback,xcolorise),xtep,xenabled and ienableds[p] and xhavefocus,(not xenabled) or (not ienableds[p]),xround);
       inc(dx,ximgw(p));
       end;
 
    //-- other ------------------------------------------------------------------
    //.trailing button pad
-   if xasbuttons or xbutpad then inc(dx,xbutpadding);
+   //was: if bborders or xbutpad then inc(dx,xbutpadding);
+   inc(dx,xbutpadding);
+
    //.xmaxwidth
    int1:=dx;
    if (dx<(sx+1+xmaxwidth)) then dx:=sx+1+xmaxwidth;
@@ -95289,10 +100314,11 @@ end;
 function tbasicmenu._onshortcut(sender:tobject):boolean;
 begin//store shortcut so we can transmitt it to our host form later (once we've closed the menu) - 02apr2020
 try
+result:=false;//not used -> do NOT handle, allow all shortcuts to flow back to system for processing - 11feb2023
+{//was:
 result:=true;
 gui.popshortcut:=gui.key;
-//.close form if the form is a popup related control -> popup menu etc
-//was: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx if gui.opopupcontrol then gui.showclose(mrcancel);
+{}
 except;end;
 end;
 //## _onnotify ##
@@ -95638,7 +100664,7 @@ var
    //other
    b:pvirtualinfo;
    ra:trect;
-   xteptmp,ximagealign,xzoom,xfonthighlight,xtab,dback,xtep,xtepcolor,findex,fcol,th,xmaxcutwidth,xmaxindentwidth,xmaxtepwidth,xmaxcapwidth,int1,int2,int3,int4,vc,xcode,xshortcut,xindent,rh,p,dx,dy:longint;
+   xbackref,xteptmp,ximagealign,xzoom,xfonthighlight,xtab,dback,xtep,xtepcolor,findex,fcol,th,xmaxcutwidth,xmaxindentwidth,xmaxtepwidth,xmaxcapwidth,int1,int2,int3,int4,vc,xcode,xshortcut,xindent,rh,p,dx,dy:longint;
    str1,str2,xcaption,xcaplabel,xhelp,xcode2:string;
    xmarkrow,bol1,bol2,xcolorise,xflashON,xflash,xflashing,funderline,xrowbol,xrows,xtitle,xsep:boolean;
    xstyle:byte;
@@ -95693,6 +100719,7 @@ xflashON:=not sysflash;
 xcolorise:=vicoloriseimages;
 //init
 infovars(a,cs,ci,fn,fb,fnH,fbH,fnbH,cw,ch,xfont,xfontdisable,xback,xborder,xhover,xfontheight,xfeather,xbordersize,xenabled,xround,xnormal);
+xbackref:=xback;
 b:=@vititle;
 th:=fnbH;//18apr2020
 xtab:=otab;//24feb2021
@@ -95731,6 +100758,7 @@ if (p>=0) and (p<icount) and (dy<=(ch-1-xbordersize)) and xgetitem(p,xtab,xtep,x
    findex:=fn;
    fcol:=xfont;
    dback:=clnone;
+   xbackref:=xback;
    funderline:=false;
    if xflash then xflashing:=true;//tell system we need flashing support - 25mar2021
    //ra
@@ -95741,12 +100769,14 @@ if (p>=0) and (p<icount) and (dy<=(ch-1-xbordersize)) and xgetitem(p,xtab,xtep,x
       findex:=fb;
       fcol:=b.font;
       ldso(rect(xbordersize,dy,cw-1-xbordersize,dy+rh-1),b.border,b.background,xround);
+      xbackref:=b.background;
       xrowbol:=false;
       end
    else if not xenabled then
       begin
       fcol:=a.disablefont;
       ldso(rect(xbordersize,dy,cw-1-xbordersize,dy+rh-1),clnone,a.disable,false);
+      xbackref:=a.disable;
       end
    else if (xstyle=lsmenu) and (p=ihoverindex) then
       begin
@@ -95754,6 +100784,7 @@ if (p>=0) and (p<icount) and (dy<=(ch-1-xbordersize)) and xgetitem(p,xtab,xtep,x
       fcol:=xfonthighlight;
       funderline:=ohoverunderline;
       xrowback(mhov,xhover,xround,false,false);
+      xbackref:=xhover;
       end
    else if (xstyle>=lslist) and (p>=iselstart) and (p<(iselstart+iselcount)) then
       begin
@@ -95762,6 +100793,7 @@ if (p>=0) and (p<icount) and (dy<=(ch-1-xbordersize)) and xgetitem(p,xtab,xtep,x
       fcol:=xfonthighlight;//09mar2021
       if (p=idownindex) and (xstyle=lsmany) then funderline:=ohoverunderline;//underline the focused item but ONLY in a multi-item selection
       xrowback(mhov,xhover,xround,false,false);
+      xbackref:=xhover;
       end
    else if (xstyle=lslist) and (p=ihoverindex) then//no hover highlight for lsmany - 07apr2020
       begin
@@ -95769,15 +100801,22 @@ if (p>=0) and (p<icount) and (dy<=(ch-1-xbordersize)) and xgetitem(p,xtab,xtep,x
       //fcol:=xfonthighlight;
       funderline:=ohoverunderline;
       case olisthover of
-      false:xrowback(mnor,xback,false,false,false);
+      false:begin
+         xrowback(mnor,xback,false,false,false);
+         xbackref:=xback;
+         end;
       true:begin
-         xrowback(mhov,low__ecv(xback,xhover,10),false,false,true);
+         xbackref:=low__ecv(xback,xhover,10);
+         xrowback(mhov,xbackref,false,false,true);
          xrowback(mhov,xhover,xround,true,false);//list "frame" hover highlight
          end;
       end;//case
       end
-   else if xrows then xrowback(mnor,xback,false,false,false);
-
+   else if xrows then
+      begin
+      xrowback(mnor,xback,false,false,false);
+      xbackref:=xback;
+      end;
    //.xmarkrow
    xmarkrow:=(ostyle=lsmany) and ((p=imanysel1) or (p=imanysel2)) and (imanysel1<>imanysel2) and (not xtitle);//for "select to here" visual markings - 28sep2022
 
@@ -95820,7 +100859,7 @@ if (p>=0) and (p<icount) and (dy<=(ch-1-xbordersize)) and xgetitem(p,xtab,xtep,x
          else if (onumberfrom2>=0) and (p>=onumberfrom2) then str1:=low__64(p-onumberfrom2+1)+'. '+str1
          else if (onumberfrom>=0)  and (p>=onumberfrom)  then str1:=low__64(p-onumberfrom+1)+'. '+str1;
          end;
-      ldtTAB2(xtab,ra,dx,dy+((rh-th) div 2),fcol,str1,findex,xfeather,false,false,funderline,false,xround);
+      ldtTAB2(clnone,xtab,ra,dx,dy+((rh-th) div 2),fcol,str1,findex,xfeather,false,false,funderline,false,xround);
       int1:=low__fonttextwidthTAB2(xtab,findex,str1);
       if (not xtitle) and (int1>xmaxcapwidth) then xmaxcapwidth:=int1;
       end;
@@ -95843,7 +100882,7 @@ if (p>=0) and (p<icount) and (dy<=(ch-1-xbordersize)) and xgetitem(p,xtab,xtep,x
    if (not xtitle) then
       begin
       inc(dx,xmaxcapwidth);
-      if low__akstr(xshortcut,str2) and (str2<>'') then ldt2(rect(dx,dy,cw-1-xbordersize,dy+rh-1),cw-1-xbordersize-xpad-largest(xmaxcutwidth,low__fonttextwidth2(findex,str2)),dy+((rh-th) div 2),fcol,str2,findex,xfeather,false,false,funderline,false,xround);
+      if low__akstr(xshortcut,str2) and (str2<>'') then ldt2(clnone,rect(dx,dy,cw-1-xbordersize,dy+rh-1),cw-1-xbordersize-xpad-largest(xmaxcutwidth,low__fonttextwidth2(findex,str2)),dy+((rh-th) div 2),fcol,str2,findex,xfeather,false,false,funderline,false,xround);
       end;
 
    //sep
@@ -95965,6 +101004,7 @@ oless2:=-10;
 ovalshow:=true;
 ovalmultiplier:=1;
 ovalunit:='';
+ovalunit_defshow:=true;
 ovalstyle:='';//05jul2021
 xnorects;
 //start
@@ -96257,7 +101297,7 @@ var//Supports enhanced shading
    //check
    if (not oshowdef) and (xname='def') then exit;//03mar2022
    //get
-   z:=#32+zname(xname)+low__insstr(ovalunit,(xname='def') and (odefcap=''))+#32;
+   z:=#32+zname(xname)+low__insstr(ovalunit,(xname='def') and (odefcap='') and ovalunit_defshow)+#32;
    tw:=low__fonttextwidth2(fn,z);
    atw:=tw;
    if xtouch then tw:=frcmin(tw,32*xzoom);//extra-wide buttons for touch screens - 03mar2022
@@ -96272,7 +101312,7 @@ var//Supports enhanced shading
       //.cls
       lds3(true,result,low__aorb(xback,xfont,zhighlight),low__aorb(xback2,xfont2,zhighlight),clnone,0,vishadestyle,xround,true);//27mar2021
       //.text
-      ldt(ci,dx+((tw-atw) div 2),dy+((int1-fnH) div 2),low__aorb(xfont,xback,zhighlight),z,fn,xfeather,xround);
+      ldt1(low__aorb(xback,xfont,zhighlight),ci,dx+((tw-atw) div 2),dy+((int1-fnH) div 2),low__aorb(xfont,xback,zhighlight),z,fn,xfeather,xround);
       //.area
       if      (xname='more2') then iamore2:=result
       else if (xname='less2') then ialess2:=result
@@ -96374,7 +101414,7 @@ if ovalshow then
    end;
 if (z<>'') then
    begin
-   ldt(ci,xcapright,ci.top,xfont,z,fn,xfeather,xround);
+   ldt1(xback,ci,xcapright,ci.top,xfont,z,fn,xfeather,xround);
    inc(xcapright,low__fonttextwidth2(fn,z)+2);
    end;
 //links
@@ -96520,6 +101560,7 @@ inherited create2(xparent,false);
 //vars
 itimer250:=ms64;
 ireloadid:=viloadid;
+oshowtitle:=true;
 oautoreload:=false;
 ovpad:=0;
 for p:=0 to high(icaps) do
@@ -96708,7 +101749,7 @@ end;
 //## getalignheight ##
 function tbasicset.getalignheight(xclientwidth:longint):longint;
 begin
-try;result:=frcmin( ((1+linecount)*vilineheight)+((2+ovpad)*frcmin(findbordersize,1)),ominheight*vizoom);except;end;
+try;result:=frcmin( ((low__insint(1,oshowtitle)+linecount)*vilineheight)+((2+ovpad)*frcmin(findbordersize,1)),ominheight*vizoom);except;end;
 end;
 //## xsynccount ##
 procedure tbasicset.xsynccount;
@@ -96908,7 +101949,7 @@ var//Supports enhanced shading
       //.cls
       lds3(true,result,low__aorb(xback,xfont,zhighlight),low__aorb(xback2,xfont2,zhighlight),clnone,0,vishadestyle,xround,true);//27mar2021
       //.text
-      ldt(result,dx+((xsetwidth-tw) div 2),dy+vsp+((int1-fnH) div 2),low__aorb(xfont,xback,zhighlight),z,fn,xfeather,xround);
+      ldt1(low__aorb(xback,xfont,zhighlight),result,dx+((xsetwidth-tw) div 2),dy+vsp+((int1-fnH) div 2),low__aorb(xfont,xback,zhighlight),z,fn,xfeather,xround);
       end;
    end;
 begin
@@ -96936,9 +101977,9 @@ lds3(true,cs,xback2,xback,clnone,0,vishadestyle,xround,true);//03mar2022
 //caption
 xcapright:=ci.left+(5*xzoom);
 z:=caption;
-if (z<>'') then
+if (z<>'') and oshowtitle then
    begin
-   ldt(ci,xcapright,ci.top,xfont,z,fn,xfeather,xround);
+   ldt1(xback,ci,xcapright,ci.top,xfont,z,fn,xfeather,xround);
    inc(xcapright,low__fonttextwidth2(fn,z)+hsp);
    end;
 //links
@@ -97049,6 +102090,7 @@ begin
 //self
 inherited create2(xparent,false);
 //vars
+oshowtitle:=true;
 iwasselected:=false;
 ireloadid:=viloadid;
 itimer500:=ms64;
@@ -97465,7 +102507,7 @@ end;
 //## getalignheight ##
 function tbasicsel.getalignheight(xclientwidth:longint):longint;
 begin
-try;result:=frcmin( ((1+linecount)*vilineheight)+(2*frcmin(findbordersize,1)),ominheight*vizoom);except;end;
+try;result:=frcmin( ((low__insint(1,oshowtitle)+linecount)*vilineheight)+(2*frcmin(findbordersize,1)),ominheight*vizoom);except;end;
 end;
 //## xclear ##
 procedure tbasicsel.xclear;
@@ -97612,7 +102654,7 @@ var
       //.cls
       lds3(true,result,low__aorb(xback,xfont,zhighlight),low__aorb(xback2,xfont2,zhighlight),clnone,0,vishadestyle,xround,true);
       //.text
-      ldt(result,dx+((xsetwidth-tw) div 2),dy+vsp+((int1-fnH) div 2),low__aorb(xfont,xback,zhighlight),z,fn,xfeather,xround);
+      ldt1(low__aorb(xback,xfont,zhighlight),result,dx+((xsetwidth-tw) div 2),dy+vsp+((int1-fnH) div 2),low__aorb(xfont,xback,zhighlight),z,fn,xfeather,xround);
       end;
    end;
 begin
@@ -97640,7 +102682,7 @@ lds3(true,cs,xback2,xback,clnone,0,vishadestyle,xround,true);//18sep2022
 //tep + caption
 xcapright:=ci.left+5;
 //.tep
-if (xtep<>tepNone) then
+if (xtep<>tepNone) and oshowtitle then
    begin
    tepinfo(xtep,true,int1,int2,bol1,bol2);
    dy:=(xlineheight-int2) div 2;
@@ -97649,9 +102691,9 @@ if (xtep<>tepNone) then
    end;
 //.caption
 z:=caption;
-if (z<>'') then
+if (z<>'') and oshowtitle then
    begin
-   ldt(ci,xcapright,ci.top,xfont,z,low__aorb(fn,fb,oboldhead),xfeather,xround);//12mar2022
+   ldt1(xback,ci,xcapright,ci.top,xfont,z,low__aorb(fn,fb,oboldhead),xfeather,xround);//12mar2022
    inc(xcapright,low__fonttextwidth2(low__aorb(fn,fb,oboldhead),z)+2);
    end;
 //links
@@ -99486,7 +104528,7 @@ var
          case xtightblocks of
          false:begin
             ldso(result,br,bc,viround);//color block
-            if oshowcaps then ldt(result,dx+((xsetwidth-tw) div 2),dy+((xlineheight-fnH) div 2),tc,z,fn,xfeather,xround);//text
+            if oshowcaps then ldt1(bc,result,dx+((xsetwidth-tw) div 2),dy+((xlineheight-fnH) div 2),tc,z,fn,xfeather,xround);//text
             end;
          true:begin                     //show the click
             ldso(result,low__aorb(bc,tc,oclicktouse and (zindex=idownindex)),bc,false);//color block
@@ -99505,7 +104547,7 @@ var
          //color block
          ldso(result,br,bc,viround);
          //text
-         ldt(result,result.left+2,dy+((xlineheight2-fnH) div 2),tc,z,fb,xfeather,xround);
+         ldt1(bc,result,result.left+2,dy+((xlineheight2-fnH) div 2),tc,z,fb,xfeather,xround);
          end;
       end;
    end;//case
@@ -99859,7 +104901,7 @@ lcount:=0;
 ltopicok:=false;
 for p:=1 to xlen do
 begin
-if low__wordcore__charinfo(ibwp.core^,p,c) then
+if low__wordcore__charinfo(ibwp.core^,p,1,c) then
    begin
    if (c.cs=wc_t) then
       begin
@@ -99872,7 +104914,7 @@ if low__wordcore__charinfo(ibwp.core^,p,c) then
             xstr.clear;
             for p2:=lp to (p-1) do
             begin
-            if not low__wordcore__charinfo(ibwp.core^,p2,c) then break;
+            if not low__wordcore__charinfo(ibwp.core^,p2,1,c) then break;
             if (c.cs=wc_t) then xstr.addbyt1(ibwp.core^.data.pbytes[p2-1])
             else if (c.cs=wc_i) then xstr.addbyt1(ssSpace);
             end;//p2
@@ -100030,6 +105072,4 @@ finalization
   siHalt;
 
 end.
-
-
 
