@@ -1,40 +1,9 @@
-<< Harmony v1.00.3320 - Chiming digital clock with alarms and reminders + ships bells >>
-
-
--- Code Information --
-
-Written in Object Pascal using Borland Delphi 3 (circa 1997)
-
-
--- Links --
-
-Information Page: 
-* http://blaizenterprises.com/harmony.html
-* http://blaiz.me/harmony.html
-
-Help Page:
-* http://blaizenterprises.com/harmony-help.html
-* http://blaiz.me/harmony-help.html
-
-Company Website:
-* http://blaizenterprises.com
-* http://blaiz.me
-
-
--- Information --
-
+# Harmony
 Digital display chiming clock with 100+ chimes and 50 alarms + reminders. Multiple chime styles of Melody, Ships Bells, British Royal Ships Bells, Grande Sonnerie and Petite Sonnerie. On-screen date / time / part of day. Custom coloring, time/date format and many options. Right click clock face for menu and select "Options" to customise.
 
-Free, fully functional, portable software program, with no installation or setup.  Your existing computer libraries/files remain unchanged/unmodified.  We take pride in this respect function.
+<img src="images/harmony-screenshot.jpg">
 
-Tip:
-Harmony is portable and will run from within the folder you downloaded to.
-
-![Harmony Screen Shot](harmony-screenshot.jpg?raw=true)
-
-
--- Features --
-
+# Features
 * 135+ built-in face colors + 10 custom - set clock text / background color
 * Brightness 10-100%
 * Frame Brightness 10-100%
@@ -48,11 +17,11 @@ Harmony is portable and will run from within the folder you downloaded to.
 * 16 Sonnerie (Grande + Petite) chimes
 * Quarterly chiming: 15m, 30m and 45m
 * Chime volume 0-200%
-* Chime speed 25-400%
+* Chime speed 25-400% 
 * Reduce Volume during evening hours (7 PM - 7 AM default)
 * Definable Playback Device
 * Chime Options: Always On Midi + Preview Sample Chime
-* 50 reminders - on-screen scrolling message
+* 50 reminders - on-screen scrolling message 
 * 50 alarms - flashing on-screen scrolling message + audio alert
 * 60+ Audio Alerts
 * Alarm Duration: 10 seconds to 2 hours in 10 second intervals
@@ -75,30 +44,26 @@ Harmony is portable and will run from within the folder you downloaded to.
 * No Internet Required - Run completely offline
 * Free To Use - 100% freeware, no cost, no membership, no nags, no strings attached
 
+# Download
+<a href="src/harmony.exe">harmony.exe</a> - windows all
 
--- Technicals --
+# Images
+<img src="images/harmony-screenshot2.jpg">
 
-* Name: Harmony
-* Version: 1.00.3320
-* Edition: Standard
-* Type: Desktop Application
-* Classification: Free for personal and business use
-* Status: New
-* Release Date: 15th November 2022
-* Portable: Yes
-* Code Foundation: 4th Generation (Gossamer)
-* Operating System(s): Microsoft Windows 95-11 and Wine (not Windows 10s/11s)
+<img src="images/harmony-screenshot3.jpg">
 
+<img src="images/harmony-screenshot4.jpg">
 
--- Screen Shots --
+<img src="images/harmony-screenshot5.jpg">
 
-![Harmony Screen Shot 2](harmony-screenshot2.jpg?raw=true)
-![Harmony Screen Shot 3](harmony-screenshot3.jpg?raw=true)
-![Harmony Screen Shot 4](harmony-screenshot4.jpg?raw=true)
-![Harmony Screen Shot 5](harmony-screenshot5.jpg?raw=true)
-![Harmony Screen Shot 6](harmony-screenshot6.jpg?raw=true)
-![Harmony Screen Shot 7](harmony-screenshot7.jpg?raw=true)
-![Harmony Screen Shot 8](harmony-screenshot8.jpg?raw=true)
-![Harmony Screen Shot 9](harmony-screenshot9.jpg?raw=true)
-![Harmony Screen Shot 10](harmony-screenshot10.jpg?raw=true)
-![Harmony Screen Shot 11](harmony-screenshot11.jpg?raw=true)
+<img src="images/harmony-screenshot6.jpg">
+
+<img src="images/harmony-screenshot7.jpg">
+
+<img src="images/harmony-screenshot8.jpg">
+
+<img src="images/harmony-screenshot9.jpg">
+
+<img src="images/harmony-screenshot10.jpg">
+
+<img src="images/harmony-screenshot11.jpg">
