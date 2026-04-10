@@ -42,7 +42,7 @@ OutputDir=
 UnitOutputDir=
 SearchPath=
 Packages=vclx30;VCL30;vcldb30;vcldbx30;VclSmp30;Qrpt30;IBEVNT30;teeui30;teedb30;tee30
-Conditionals=D3 jpeg mm chimes gif ico
+Conditionals=gui3
 DebugSourceDirs=
 UsePackages=0
 [Parameters]
