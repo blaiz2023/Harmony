@@ -1,5 +1,5 @@
 # Harmony
-Digital display chiming clock with 100+ chimes and 50 alarms + reminders. Multiple chime styles of Melody, Ships Bells, British Royal Ships Bells, Grande Sonnerie and Petite Sonnerie. On-screen date / time / part of day. Custom coloring, time/date format and many options.
+Digital chiming clock with 100+ chimes and 50 alarms + reminders. Multiple chime styles of Melody, Ships Bells, British Royal Ships Bells, Grande Sonnerie and Petite Sonnerie. On-screen date / time / part of day. Custom coloring, time / date format and many options.
 
 <img src="images/harmony-screenshot.jpg">
 
