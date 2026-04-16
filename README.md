@@ -81,7 +81,7 @@ Digital chiming clock with 100+ chimes and 50 alarms + reminders. Multiple chime
 * 64bit compilation in Lazarus 4.4+ (functional/work in progress)
 
 # Download
-<a href="src/harmony.exe">harmony.exe</a> - windows all
+<a href="src/harmony.exe">harmony.exe</a>  or from the "<a href="bin/">bin</a>" or "<a href="src/">src</a>" folders above
 
 # Images
 <img src="images/harmony-screenshot2.jpg">
