@@ -31,9 +31,9 @@ uses gosswin;
 //##
 //## ==========================================================================================================================================================================================================================
 //## Library.................. Text Pictures - System, Folder and App images (gossteps.pas)
-//## Version.................. 4.00.410 (+25)
+//## Version.................. 4.00.412 (+25)
 //## Items.................... 9
-//## Last Updated ............ 10apr2026, 03apr2026, 01apr2026, 26mar2026, 25mar2026, 23mar2026, 21mar2026, 20mar2026, 18mar2026, 10mar2026, 07mar2026
+//## Last Updated ............ 15apr2026, 10apr2026, 03apr2026, 01apr2026, 26mar2026, 25mar2026, 23mar2026, 21mar2026, 20mar2026, 18mar2026, 10mar2026, 07mar2026
 //## Lines of Code............ 3,600+
 //## Origin .................. Human generated and maintained
 //##
@@ -59,7 +59,7 @@ uses gosswin;
 //## | Name                   | Hierarchy         | Version   | Date        | Update history / brief description of function
 //## |------------------------|-------------------|-----------|-------------|--------------------------------------------------------
 //## | teplist__*             | family of procs   | 1.00.030  | 23mar2026   | Management procs for ttepinfo structure(s) - 21mar2026, 10mar2026
-//## | tep__*                 | family of procs   | 1.00.355  | 03apr2026   | TEP information/draw procs - 26mar2026, 25mar2026, 23mar2026, 20mar2026, 10mar2026
+//## | tep__*                 | family of procs   | 1.00.357  | 15apr2026   | TEP information/draw procs - 03apr2026, 26mar2026, 25mar2026, 23mar2026, 20mar2026, 10mar2026
 //## ==========================================================================================================================================================================================================================
 //## Image Format Note:
 //##
@@ -421,7 +421,9 @@ procedure tep__clearpersistentdata(const xindex:longint);
 procedure tep__setpersistentdata(const xindex:longint;const pdata:pointer;const adata:array of byte);
 
 function tep__info(const xindex:longint;var xwidth,xheight:longint):boolean;//15mar2026
+function tep__info2(const xindex:longint;var xwidth,xheight,xtype:longint):boolean;//15aar2026
 
+function tep__type(const xindex:longint):longint;//15apr2026
 function tep__width(const xindex:longint):longint;
 function tep__height(const xindex:longint):longint;
 function tep__bytes(const xindex:longint):longint;//10mar2026
@@ -1742,8 +1744,8 @@ xname:=strlow(xname);
 if (strcopy1(xname,1,9)='gossteps.') then strdel1(xname,1,9) else exit;
 
 //get
-if      (xname='ver')        then result:='4.00.410'
-else if (xname='date')       then result:='10apr2026'
+if      (xname='ver')        then result:='4.00.412'
+else if (xname='date')       then result:='15apr2026'
 else if (xname='name')       then result:='TEPs'
 else
    begin
@@ -1879,6 +1881,16 @@ end;//case
 
 end;
 
+function tep__type(const xindex:longint):longint;//15apr2026
+begin
+
+case tep__find(xindex) of
+true:result:=tep_core.it[xindex];
+else result:=it_none;
+end;//case
+
+end;
+
 function tep__width(const xindex:longint):longint;
 begin
 
@@ -1970,6 +1982,15 @@ if (a<>nil) then freeobj(@a);
 end;
 
 function tep__info(const xindex:longint;var xwidth,xheight:longint):boolean;//15mar2026
+var
+   int1:longint;
+begin
+
+result:=tep__info2(xindex,xwidth,xheight,int1);
+
+end;
+
+function tep__info2(const xindex:longint;var xwidth,xheight,xtype:longint):boolean;//15aar2026
 begin
 
 case tep__find(xindex) of
@@ -1977,6 +1998,7 @@ true:begin
 
    xwidth   :=tep_core.w[xindex];
    xheight  :=tep_core.h[xindex];
+   xtype    :=tep_core.it[xindex];
    result   :=true;
 
    end;
@@ -1984,6 +2006,7 @@ else begin
 
    xwidth   :=0;
    xheight  :=0;
+   xtype    :=it_none;
    result   :=false;
 
    end;

@@ -31,9 +31,9 @@ uses gosswin2, gossroot, gossfast, gosstext, gossimg, gossio {$ifdef snd},gosssn
 //##
 //## ==========================================================================================================================================================================================================================
 //## Library.................. GUI (gossgui.pas)
-//## Version.................. 4.00.33276 (+5927) (Build no reduced by 5611 due to WordCore (now TextCore) removed to dedicated unit gosstext.pas - 16feb2026)
+//## Version.................. 4.00.33280 (+5927) (Build no reduced by 5611 due to WordCore (now TextCore) removed to dedicated unit gosstext.pas - 16feb2026)
 //## Items.................... 46
-//## Last Updated ............ 11apr2026, 07apr2026, 03apr2026,
+//## Last Updated ............ 15apr2026, 11apr2026, 07apr2026, 03apr2026,
 //##                                      29mar2026, 26mar2026, 23mar2026, 18mar2026, 10mar2026, 06mar2026, 28feb2026, 26feb2026, 15feb2026, 01feb2026, 23jan2026, 13jan2026, 11jan2026, 07jan2026, 29dec2025, 27dec2025, 26dec2025, 17dec2025, 13dec2025, 12dec2025, 04dec2025, 01dec2025, 30nov2025, 28nov2025, 09nov2025, 06nov2025, 24oct2025, 08oct2025, 05oct2025, 29sep2025, 26sep2025, 18sep2025, 15sep2025, 09sep2025, 07sep2025, 28aug2025, 23aug2025, 15aug2025, 10aug2025, 08aug2025, 26jul2025, 24jul2025, 17jul2025, 14jul2025, 04jul2025, 16jun2025, 12jun2025, 09jun2025, 07jun2025, 03jun2025, 29may2025, 29apr2025, 13apr2025, 31mar2025, 24mar2025, 18feb2025, 28dec2024, 11dec2024, 29nov2024, 22nov2024, 15nov2024, 10nov2024, 04oct2024, 28aug2024, 01ug2024, 25jul2024, 28jun2024, 22mar2024, 09feb2024, 13dec2023, 25nov2023, 19may2023, 25feb2023, 30dec2022, 15nov2022, 06nov2022, 11oct2022, 28sep2022, 05jul2022, 29jun2022, 14jun2022, 31may2022, 14may2022, 30apr2022, 30mar2022, 27feb2022, 08feb2022, 31jan2021, 30dec2021,
 //##                                      19dec2021, 30sep2021, 29aug2021, 09aug2021, 27jul2021, 07jul2021, 20jun2021, 02jun2021, 30may2021, 12may2021, 10may2021, 30apr2021, 19apr2021, 14apr2021, 03apr2021, 31mar2021, 20mar2021, 08mar2021, 26feb2021, 01feb2021, 28jan2021, 11oct2020, 25sep2020, 07sep2020, 26aug2020, 22aug2020, 28jul2020, 23may2020, 10may2020
 //## Lines of Code............ 53,200+
@@ -92,7 +92,7 @@ uses gosswin2, gossroot, gossfast, gosstext, gossimg, gossio {$ifdef snd},gosssn
 //## | tbasictea              | tbasiccontrol     | 1.00.280  | 23mar2026   | Mini TEA image view and adjustment editor - 03mar2026, 11dec2025, 12jan2025, 2021
 //## | tbasiccolors           | tbasiccontrol     | 1.00.552  | 11dec2025   | Multi-color picker with system and static colors support - 24may2025, 09mar2025, 15mar2022, 19mar2021
 //## | tbasictoolbar          | tbasiccontrol     | 1.00.3390 | 20mar2026   | Toolbar with "title + links" support - 10dec2025, 28nov2025, 04sep2025, 20jul2025, 09jun2025, 26may2025, 24mar2025, 28dec2024, 27dec2024: upgraded to support Window Head functions, 21jul2024, 09dec2023, 03nov2023, 26sep2022, 28jun2022, 25mar2022, 19dec2021, 21sep2021, 07jul2021, 30may2021, 27mar2021, 21feb2021, 11oct2020, 22sep2020, 23apr2020, 29mar2020
-//## | tbasicmenu             | tbasiccontrol     | 1.00.2926 | 02apr2026   | Menu handler - 21mar2026, 26feb2026, 12dec2025, 04dec2025, 04sep2025, 28aug2025, 18aug2025, 03jul2025, 16may2025, 21dec2024, 17nov2024, 04oct2024, 20jul2024: soft back shade for title items, 28sep2022, 20mar2022, 26feb2022, 08jun2021, 27mar2021, 11oct2020, 13apr2020
+//## | tbasicmenu             | tbasiccontrol     | 1.00.2930 | 15apr2026   | Menu handler - 02apr2026, 21mar2026, 26feb2026, 12dec2025, 04dec2025, 04sep2025, 28aug2025, 18aug2025, 03jul2025, 16may2025, 21dec2024, 17nov2024, 04oct2024, 20jul2024: soft back shade for title items, 28sep2022, 20mar2022, 26feb2022, 08jun2021, 27mar2021, 11oct2020, 13apr2020
 //## | tbasicscrollbar        | tbasiccontrol     | 1.00.490  | 12dec2025   | Streamlined scrollbar with full and partial keyboard/wheel handling -> can pass critical handling to parent control for consistent operation - 13sep2025, 04oct2022, 03mar2022, 08feb2022, 25jul2021, 13apr2020
 //## | tbasicscroll           | tbasiccontrol     | 1.00.600  | 03apr2026   | Vertical scrollbox - 13jan2026, 19jul2025, 05jun2025, 14may2025, 17mar2025, 12jan2024, 17dec2024, 04oct2022, 02jun2021, 29may2021, 08mar2021, 25feb2021, 14aug2020, 05apr2020
 //## | tbasicsetcolor         | tbasicscroll      | 1.00.742  | 18sep2025   | Color picker and support for "popcolor" dlg - 05sep2025, 28may2025, 01feb2025, 28jul2024: head background style, 01mar2021: created
@@ -3853,7 +3853,7 @@ type
     property ongetitem:tbasicmenu_getitem read fongetitem write fongetitem;//1x tepcolor
     property ongetitem2:tbasicmenu_getitem2 read fongetitem2 write fongetitem2;//2x tepcolor
     procedure _ontimer(sender:tobject); override;
-    procedure _onpaint(sender:tobject); override;//01dec2025, 15may2025, 20jul2024: soft back shade for title items
+    procedure _onpaint(sender:tobject); override;//15apr2026, 01dec2025, 15may2025, 20jul2024: soft back shade for title items
     procedure _onalign(sender:tobject); override;
     function  _onnotify(sender:tobject):boolean; override;
     function  _onshortcut(sender:tobject):boolean; override;
@@ -6356,8 +6356,8 @@ xname:=strlow(xname);
 if (strcopy1(xname,1,8)='gossgui.') then strdel1(xname,1,8) else exit;
 
 //get
-if      (xname='ver')        then result:='4.00.33276'
-else if (xname='date')       then result:='11apr2026'
+if      (xname='ver')        then result:='4.00.33280'
+else if (xname='date')       then result:='15apr2026'
 else if (xname='name')       then result:='GUI'
 else
    begin
@@ -47560,7 +47560,7 @@ begin
 result:=(x>=0) and (x<icount);
 end;
 
-procedure tbasicmenu._onpaint(sender:tobject);//01dec2025, 15may2025, 20jul2024: soft back for title items
+procedure tbasicmenu._onpaint(sender:tobject);//15apr2026, 01dec2025, 15may2025, 20jul2024: soft back for title items
 label
    redo;
 const
@@ -47574,7 +47574,7 @@ var
    s:tclientinfo;
    ra:twinrect;
    cw,ch,findex:longint;
-   xoff,yoff,drowpad,xfont,xback,xteptmp,ximagealign,xtep,xtepcolor,xtepcolor2,th,xmaxcutwidth,xmaxindentwidth,xmaxtepwidth,xmaxcapwidth,int1,int2,int3,vc,xcode,xshortcut,xindent,rh,p,dx,dy:longint;
+   xtepType,xoff,yoff,drowpad,xfont,xback,xteptmp,ximagealign,xtep,xtepcolor,xtepcolor2,th,xmaxcutwidth,xmaxindentwidth,xmaxtepwidth,xmaxcapwidth,int1,int2,int3,vc,xcode,xshortcut,xindent,rh,p,dx,dy:longint;
    xtab,str1,str2,xcaption,xcaplabel,xhelp,xcode2:string;
    xenabled,xmarkrow,xflashON,xflash,xflashing,xrowbol,xrows,xtitle,xsep,xbold:boolean;
    xstyle:byte;
@@ -47585,6 +47585,15 @@ var
    begin
 
    result:=area__make(xoff+s.bs,yoff+dy+drowpad,xoff+cw-1-s.bs,yoff+dy+rh-1-drowpad);
+
+   end;
+
+   function xtepColorsNULL:boolean;
+   begin
+
+   result             :=true;
+   xtepColor          :=clnone;
+   xtepColor2         :=clnone;
 
    end;
 
@@ -47636,7 +47645,7 @@ redo:
 
 dx          :=s.bs+xpad;
 
-if (p>=0) and (p<icount) and (dy<=(ch-1-s.bs)) and xgetitem2(p,xtab,xtep,xtepcolor,xtepcolor2,xcaption,xcaplabel,xhelp,xcode2,xcode,xshortcut,xindent,xflash,xenabled,xtitle,xsep,xbold) then
+if (p>=0) and (p<icount) and (dy<=(ch-1-s.bs)) and xtepColorsNULL and xgetitem2(p,xtab,xtep,xtepcolor,xtepcolor2,xcaption,xcaplabel,xhelp,xcode2,xcode,xshortcut,xindent,xflash,xenabled,xtitle,xsep,xbold) then
    begin
 
    //down
@@ -47750,8 +47759,9 @@ if (p>=0) and (p<icount) and (dy<=(ch-1-s.bs)) and xgetitem2(p,xtab,xtep,xtepcol
    //tep
    if (xtep<>tepnone) then
       begin
+
       //.auto system-zooms tep dimensions - 19aug2024, 03aug2024
-      tep__info(xtep,int1,int2);//aw,ah
+      tep__info2(xtep,int1,int2,xtepType);//aw,ah
 
       case ximagealign of
       iaLeft    :xteptmp:=0;
@@ -47763,8 +47773,12 @@ if (p>=0) and (p<icount) and (dy<=(ch-1-s.bs)) and xgetitem2(p,xtab,xtep,xtepcol
       if (not xflash) or xflashON then
          begin
 
-         //updated 19mar2026, 04dec2025, fixed 13apr2021, 26mar2021 //was "s.border" - 01dec2025
-         ftep2(xtep,xoff+dx+xteptmp,yoff+dy+((rh-int2) div 2) ,xfont ,s.line,low__aorb(clwhite,xtepcolor,xtepcolor<>clnone) ,low__aorb(clblack,xtepcolor2,xtepcolor2<>clnone) ,255,xenabled);
+         //updated - 15apr2026, 19mar2026, 04dec2025, fixed 13apr2021, 26mar2021 //was "s.border" - 01dec2025
+
+         case xtepType of
+         it_rle8:ftep2(xtep,xoff+dx+xteptmp,yoff+dy+((rh-int2) div 2) ,low__aorb(xfont,xtepcolor,xtepcolor<>clnone) ,low__aorb(s.line,xtepcolor2,xtepcolor2<>clnone) ,low__aorb(clwhite,xtepcolor,xtepcolor<>clnone) ,low__aorb(clblack,xtepcolor2,xtepcolor2<>clnone) ,255 ,xenabled );
+         else    ftep2(xtep,xoff+dx+xteptmp,yoff+dy+((rh-int2) div 2) ,xfont ,s.line ,low__aorb(clwhite,xtepcolor,xtepcolor<>clnone) ,low__aorb(clblack,xtepcolor2,xtepcolor2<>clnone) ,255 ,xenabled );
+         end;//case
 
          end;
 

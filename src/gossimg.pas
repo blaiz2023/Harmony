@@ -31,9 +31,9 @@ uses gosswin2, gossroot, gossio, gosswin {$ifdef gui},gossdat{$endif}{$ifdef jpe
 //##
 //## ==========================================================================================================================================================================================================================
 //## Library.................. image/graphics (gossimg.pas)
-//## Version.................. 4.00.16293 (+410)
+//## Version.................. 4.00.16294 (+410)
 //## Items.................... 28
-//## Last Updated ............ 10apr2026, 09apr2026, 03apr2026, 23mar2026, 21mar2026, 19mar2026, 13mar2026, 10mar2026, 07mar2026, 03mar2026, 25feb2026, 01dec2025, 09nov2025, 08nov2025, 24oct2025, 05oct2025, 03oct2025, 26sep2025, 18sep2025, 13sep2025, 04sep2025, 27aug2025, 08aug2025, 25jul2025, 16jul2025, 19jun2025, 12jun2025, 09jun2025, 29may2025, 26apr2025, 23mar2025, 22feb2025, 05feb2025, 31jan2025, 02jan2025, 27dec2024, 27nov2024, 15nov2024, 18aug2024, 26jul2024, 17apr2024
+//## Last Updated ............ 16apr2026, 10apr2026, 09apr2026, 03apr2026, 23mar2026, 21mar2026, 19mar2026, 13mar2026, 10mar2026, 07mar2026, 03mar2026, 25feb2026, 01dec2025, 09nov2025, 08nov2025, 24oct2025, 05oct2025, 03oct2025, 26sep2025, 18sep2025, 13sep2025, 04sep2025, 27aug2025, 08aug2025, 25jul2025, 16jul2025, 19jun2025, 12jun2025, 09jun2025, 29may2025, 26apr2025, 23mar2025, 22feb2025, 05feb2025, 31jan2025, 02jan2025, 27dec2024, 27nov2024, 15nov2024, 18aug2024, 26jul2024, 17apr2024
 //## Lines of Code............ 31,900+
 //## Origin .................. Human generated and maintained
 //##
@@ -65,7 +65,7 @@ uses gosswin2, gossroot, gossio, gosswin {$ifdef gui},gossdat{$endif}{$ifdef jpe
 //## | mis*/mis__*            | family of procs   | 1.00.10645 | 03apr2026   | Graphic procs for working with multiple different image objects - 19mar2026, 07mar2026, 08nov2025, 18sep2025, 06jun2025, 09may2025, 27dec2024, 27nov2024
 //## | ref_*                  | family of procs   | 1.00.100   | 20jul2024   | Reference procs for image adjustment
 //## | canvas__*              | family of procs   | 1.00.045   | 18feb2025   | Indirect support for tcanvas - 28jun2024
-//## | gif__*                 | family of procs   | 1.00.914   | 13mar2026   | Read / write GIF images, static and animated, automatic on-the-fly optimisation (solid, transparent and mixed cell modes) - 08aug2025, 06aug2024
+//## | gif__*                 | family of procs   | 1.00.915   | 16apr2026   | Read / write GIF images, static and animated, automatic on-the-fly optimisation (solid, transparent and mixed cell modes) - 13mar2026, 08aug2025, 06aug2024
 //## | mask__*                | family of procs   | 1.00.132   | 10apr2026   | Mask related procs for working with alpha channel on 32bit images or 8bit images - 24oct2025, 08aug2025
 //## | bmp__*                 | family of procs   | 1.00.475   | 09nov2025   | Read / write BMP images - 32bit with alpha/DIB/clipboard formats - 12jun2025, 26may2025, 14may2025, 01may2025, 06aug2024
 //## | dib__*                 | family of procs   | 1.00.052   | 28may2025   | Read / write DIB images - 14may2025, 06aug2024
@@ -515,13 +515,18 @@ type
     phasharray=^thasharray;
     thashtable=class(tobjectex)//hash table for GIF compressor
     private
+
      hashtable:phasharray;
+
     public
+
      constructor create; virtual;
      destructor destroy; override;
+
      procedure clear;
      procedure insert(key:longint;code:smallint);
-     function lookup(key:longint):smallint;
+     function lookup(key:longInt):smallint;//updated - 16apr2026
+
     end;
 
 var
@@ -1548,8 +1553,8 @@ xname:=strlow(xname);
 if (strcopy1(xname,1,8)='gossimg.') then strdel1(xname,1,8) else exit;
 
 //get
-if      (xname='ver')        then result:='4.00.16293'
-else if (xname='date')       then result:='10apr2026'
+if      (xname='ver')        then result:='4.00.16294'
+else if (xname='date')       then result:='16apr2026'
 else if (xname='name')       then result:='Graphics'
 else
    begin
@@ -15279,38 +15284,57 @@ hashtable[hkey]:=(key shl gifcodebits) or (code and gifcodemask);
 except;end;
 end;
 
-function thashtable.lookup(key:longInt):smallint;
+function thashtable.lookup(key:longInt):smallint;//updated - 16apr2026
 var
 // Search for key in hash table.
 // Returns value if found or -1 if not
   hkey:smallint;
-  htkey:longInt;
+  xlimit,htkey:longint32;
+
 begin
-result:=-1;
+
+//defaults
+result      :=-1;
 
 try
+
 // Create hash key from prefix string
-HKey := HashKey(Key);
+HKey        :=HashKey(Key);
+
 // Scan table for key
 // HTKey := HashTable[HKey] SHR GIFCodeBits; { Unoptimized }
-Key := Key SHL GIFCodeBits; { Optimized }
-HTKey := HashTable[HKey] AND (HashEmpty SHL GIFCodeBits); { Optimized }
+Key         :=Key SHL GIFCodeBits; { Optimized }
+HTKey       :=HashTable[HKey] AND (HashEmpty SHL GIFCodeBits); { Optimized }
+xlimit      :=HashSize + 10;
+
 // while (HTKey <> HashEmpty) do { Unoptimized }
 while (HTKey <> HashEmpty SHL GIFCodeBits) do { Optimized }
 begin
+
 if (Key = HTKey) then
    begin
+
    // Extract and return value
-   Result := HashTable[HKey] AND GIFCodeMask;
+   result   :=HashTable[HKey] AND GIFCodeMask;
    exit;
+
    end;
+
 // Try next slot
-HKey := NextHashKey(HKey);
+HKey        :=NextHashKey(HKey);
+
 // HTKey := HashTable[HKey] SHR GIFCodeBits; { Unoptimized }
-HTKey := HashTable[HKey] AND (HashEmpty SHL GIFCodeBits); { Optimized }
+HTKey       :=HashTable[HKey] AND (HashEmpty SHL GIFCodeBits); { Optimized }
+
+//patch -> this loop fails to end under Lazarus 2+
+dec(xlimit);
+if (xlimit<0) then break;
+
 end;
+
 // Found empty slot - key doesn't exist
-Result := -1;
+result      :=-1;
+
 except;end;
 end;
 

@@ -352,6 +352,7 @@ const
 
 
    //.msix dependency tags
+   msixNULL             ='-';//15apr2026
    msixMIDI             ='M';//31jan2026
 
 
@@ -6120,9 +6121,17 @@ if (xtaglist<>'') then
 end;
 
 function msix__tagValid(const xtag:char):boolean;//31jan2026
+
+   function m(const n:string):boolean;
+   begin
+
+   result:=strmatch(n,xtag);
+
+   end;
+
 begin
 
-result:=strmatch(xtag,msixMIDI);
+result:=m(msixNULL) or m(msixMIDI);
 
 end;
 
