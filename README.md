@@ -48,7 +48,37 @@ Digital chiming clock with 100+ chimes and 50 alarms + reminders. Multiple chime
 * Straightforward, fuss-free operation
 * Options Window - Easily change app color, font and settings
 * Portable
-* Smart Source Code (Borland Delphi 3 and Lazarus 2.2/4.4)
+* Smart Source Code (Borland Delphi 3 and Lazarus 2.2/4.4/4.6)
+
+# App Changes
+* Modern GUI
+* Multi-monitor support
+* Integrated top toolbar with access to all clock settings
+* New render procs for improved performance
+* Fast resizing
+* Improved "Face Colors" list item color preview image / display
+* Click to show toolbar
+* Retain app position and size on screen
+* Animated background scheme support
+* Significant optimisations and improvements with an updated codebase
+
+# Codebase Changes
+* Optimised for 2K display (60fps+)
+* Functional on 4K display
+* General render improvements of ~300%
+* Text render improvements of ~200%
+* Smart font character caching with twin feather support
+* Increased background animation render rate to 60fps
+* Active GUI Scaling (60% - 200% of OS scaling, realtime adaptive)
+* TextCore (upgraded) - non-GUI and GUI text box engine (txt, bwd, bwp, rtf)
+* FastDraw (new) - GUI / general graphics work via high-level and low-level rapid-render procs for the CPU
+* Dynamic scaling and loading of System, Folder, and App images
+* New color-based animated background schemes / engine upgrade
+* Automatic MSIX handling (MS Store app/MSIX bundle) with seamless adaptive settings and temp file storage and management for restrictive access compliance
+* Source code supports both 32bit and 64bit
+* 32bit compilation in Borland Delphi 3 (stable)
+* 32bit compilation in Lazarus 2.2 (stable)
+* 64bit compilation in Lazarus 4.4+ (functional/work in progress)
 
 # Download
 <a href="src/harmony.exe">harmony.exe</a> - windows all
