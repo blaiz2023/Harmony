@@ -1,4 +1,4 @@
-# Harmony
+# Harmony v1.0.4226 / 17apr2026 / MIT License
 Digital chiming clock with 100+ chimes and 50 alarms + reminders. Multiple chime styles of Melody, Ships Bells, British Royal Ships Bells, Grande Sonnerie and Petite Sonnerie. On-screen date / time / part of day. Custom coloring, time / date format and many options.
 
 <img src="images/harmony-screenshot.jpg">
@@ -81,7 +81,7 @@ Digital chiming clock with 100+ chimes and 50 alarms + reminders. Multiple chime
 * 64bit compilation in Lazarus 4.4+ (functional/work in progress)
 
 # Download
-Download <a href="src/harmony.exe">harmony.exe</a> or from the "<a href="bin/">bin</a>" or "<a href="src/">src</a>" folders above - for Microsoft Windows, and Linux/MacOS via Wine
+Download <a href="src/harmony.exe">harmony.exe</a> or from the "<a href="bin/">bin</a>" or "<a href="src/">src</a>" folders above - for Microsoft Windows, and Linux/MacOS via Wine.
 
 # Images
 <img src="images/harmony-screenshot2.jpg">
