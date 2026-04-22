@@ -30,9 +30,9 @@ uses gossroot, {$ifdef gui}gossgui,{$endif} {$ifdef snd}gosssnd,{$endif} gosswin
 //##
 //## ==========================================================================================================================================================================================================================
 //## Library.................. app code (main.pas)
-//## Version.................. 1.00.4226 (+169)
+//## Version.................. 1.00.4228 (+171)
 //## Items.................... 3
-//## Last Updated ............ 17apr2026, 11apr2026, 11dec2025, 05dec2025, 04dec2025, 01dec2025, 30nov2025, 19nov2025, 15nov2022, 14nov2022, 13nov2022, 12nov2022, 09nov2022, 06nov2022, 15mar2022, 13mar2022, 09mar2022, 08mar2022, 07mar2022, 01mar2022, 28feb2022, 27feb2022
+//## Last Updated ............ 23apr2026, 17apr2026, 11apr2026, 11dec2025, 05dec2025, 04dec2025, 01dec2025, 30nov2025, 19nov2025, 15nov2022, 14nov2022, 13nov2022, 12nov2022, 09nov2022, 06nov2022, 15mar2022, 13mar2022, 09mar2022, 08mar2022, 07mar2022, 01mar2022, 28feb2022, 27feb2022
 //## Lines of Code............ 6,600+
 //## Origin .................. Human generated and maintained
 //##
@@ -579,8 +579,8 @@ else if (xname='language')            then result:='english-australia'//for Clyd
 else if (xname='codepage')            then result:='1252'//for Clyde
 else if (xname='msix.tags')           then result:='M'//for Clyde -> auto-enables midi support under MSIX - 10dec2025
 else if (xname='msstore.name')        then result:='HarmonyClock'//optional - overrides default name for Clyde - 11apr2026
-else if (xname='ver')                 then result:='1.00.4226'
-else if (xname='date')                then result:='17apr2026'
+else if (xname='ver')                 then result:='1.00.4228'
+else if (xname='date')                then result:='23apr2026'
 else if (xname='name')                then result:='Harmony'
 else if (xname='web.name')            then result:='harmony'//used for website name
 else if (xname='des')                 then result:='Digital chiming clock'
